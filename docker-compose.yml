@@ -1,0 +1,20 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8443:443"
+    volumes:
+      - ./:/var/www/html
+      - video_storage:/opt/ads
+      - db_data:/data
+    environment:
+      - PHP_UPLOAD_MAX_FILESIZE=500M
+      - PHP_POST_MAX_SIZE=500M
+
+volumes:
+  video_storage:
+  db_data:
