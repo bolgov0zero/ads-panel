@@ -56,6 +56,7 @@ case $choice in
             exit 1
         fi
         ;;
+esac
 
 echo ""
 echo "Установка завершена! 🎉"
