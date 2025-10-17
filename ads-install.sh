@@ -10,6 +10,7 @@ echo ""
 echo "1. Установить"
 echo "2. Обновить"
 echo "3. Переустановить"
+echo "4. Установить службу Ads"
 echo ""
 read -p "Выберите опцию: " choice
 
@@ -50,6 +51,78 @@ case $choice in
             exit 1
         fi
         ;;
+    4)
+        # Этап 4: Создание скрипта управления 'ads' (без sudo, в ~/bin)
+        echo -ne "[ ] Создание скрипта управления 'ads'.\r"
+        
+        # Создаём директорию ~/bin, если её нет
+        mkdir -p ~/bin
+        
+        # Создаём файл ~/bin/ads
+        cat << 'EOF' > ~/bin/ads
+        #!/bin/bash
+        
+        # Скрипт управления Ads Panel
+        
+        # Получаем путь к директории ads (предполагаем, что она в домашней директории пользователя)
+        ADS_DIR="$HOME/ads"
+        
+        if [ ! -d "$ADS_DIR" ]; then
+            echo "Ошибка: Директория $ADS_DIR не найдена. Укажите правильный путь или запустите из установки."
+            exit 1
+        fi
+        
+        cd "$ADS_DIR" || {
+            echo "Ошибка: Не удалось перейти в директорию ads"
+            exit 1
+        }
+        
+        clear
+        echo ""
+        echo "Меню Ads Panel:"
+        echo ""
+        if docker ps | grep -q "Up"; then > /dev/null 2>&1
+            echo -e "Статус: \e[32m[✓] работает\e[0m"
+        else
+            echo -e "Статус: \e[31m[✗] не работает\e[0m"
+        fi
+        echo ""
+        echo "1. Запустить"
+        echo "2. Перезапустить"
+        echo -e "\e[31m3. Завершить\e[0m"
+        echo ""
+        echo "Или нажмите любую клавишу чтобы выйти."
+        read -p "Выберите опцию: " choice
+        
+        case $choice in
+            1)
+                echo "Запуск Ads Panel..."
+                docker-compose up -d > /dev/null 2>&1
+                echo "Запуск завершён!"
+                sleep 2
+                clear
+                ads
+                ;;
+            2)
+                echo "Перезапуск Ads Panel..."
+                docker-compose restart > /dev/null 2>&1
+                echo "Перезапуск завершён!"
+                sleep 2
+                clear
+                ads
+                ;;
+            3)
+                echo "Завершение Ads Panel..."
+                docker-compose down > /dev/null 2>&1
+                sleep 2
+                clear
+                echo -e "\e[31mРабота Ads Panel завершена!\e[0m"
+                ;;
+            *)
+                echo "Неверный выбор. Выход."
+                ;;
+        esac
+        EOF
 esac
 
 echo ""
