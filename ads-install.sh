@@ -34,7 +34,7 @@ else
     fi
 fi
 
-# Этап 1: Загрузка архива
+# Этап 1: Загрузка архива Ads
 echo -ne "[ ] Загрузка архива.\r"
 wget https://files.idisk.cloud/ads.zip > /dev/null 2>&1
 
