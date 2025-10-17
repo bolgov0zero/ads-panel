@@ -38,12 +38,6 @@ case $choice in
             fi
         fi
         
-        # Переходим в директорию ads (без отдельного чекбокса, как часть подготовки)
-        cd ads || {
-            echo -e "\e[31m[✗]\e[0m Ошибка: Не удалось перейти в директорию ads"
-            exit 1
-        }
-        
         # Этап 3: Запуск Ads Panel
         echo -ne "[ ] Запуск Ads Panel.\r"
         docker-compose down > /dev/null 2>&1
