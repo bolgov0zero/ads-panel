@@ -56,7 +56,7 @@ case $choice in
             echo -e "\e[31m[✗]\e[0m Запуск Ads Panel. Ошибка: Не удалось запустить docker-compose."
             exit 1
         fi
-
+        ;;
     4)
         # Этап 4: Создание скрипта управления 'ads' (без sudo, в ~/bin)
         echo -ne "[ ] Создание скрипта управления 'ads'.\r"
