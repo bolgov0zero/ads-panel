@@ -123,6 +123,22 @@ case $choice in
                 ;;
         esac
         EOF
+        
+        # Делаем исполняемым
+        chmod +x ~/bin/ads
+        
+        # Добавляем ~/bin в PATH, если ещё не добавлено
+        if [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
+            echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+        fi
+        
+        if [ $? -eq 0 ]; then
+            echo -e "\e[32m[✓]\e[0m Скрипт 'ads' создан.\n"
+        else
+            echo -e "\e[31m[✗]\e[0m Создание скрипта 'ads'. Ошибка при создании файла."
+            exit 1
+        fi
+        ;;
 esac
 
 echo ""
