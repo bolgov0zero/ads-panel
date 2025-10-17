@@ -122,7 +122,7 @@ case $choice in
                 echo "Неверный выбор. Выход."
                 ;;
         esac
-        EOF
+EOF
         
         # Делаем исполняемым
         chmod +x ~/bin/ads
