@@ -36,8 +36,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_TEMPLATE_CONTENT: |
-            🐳 Docker image для bolgov0zero/ads-panel ${{ github.ref_name || 'latest' }} завершён!
+            🐳 Публикация образа Ads Panel завершёна!
             Статус: ${{ needs.build-and-push.result == 'success' && '✅ Успех' || needs.build-and-push.result == 'failure' && '❌ Ошибка' || '⚠️ Отмена' }}
-            Тег: ${{ needs.build-and-push.outputs.tags || 'latest' }}
-            Логи: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            Репозиторий: https://hub.docker.com/r/bolgov0zero/ads-panel/tags
+            Версия: ${{ needs.build-and-push.outputs.tags || 'latest' }}
+            
