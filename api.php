@@ -317,6 +317,35 @@ try {
 			}
 			break;
 
+		case 'update_message_settings':
+			$enabled = isset($input['enabled']) ? (int)$input['enabled'] : 0;
+			$text = $input['text'] ?? '';
+			$color = $input['color'] ?? '#ffffff';
+			$font_size = $input['font_size'] ?? 24;
+			$speed = $input['speed'] ?? 100;
+			$stmt = $db->prepare("
+				INSERT OR REPLACE INTO message_settings (id, enabled, text, color, font_size, speed)
+				VALUES (1, :enabled, :text, :color, :font_size, :speed)
+			");
+			$stmt->bindValue(':enabled', $enabled, SQLITE3_INTEGER);
+			$stmt->bindValue(':text', $text, SQLITE3_TEXT);
+			$stmt->bindValue(':color', $color, SQLITE3_TEXT);
+			$stmt->bindValue(':font_size', $font_size, SQLITE3_INTEGER);
+			$stmt->bindValue(':speed', $speed, SQLITE3_INTEGER);
+			$stmt->execute();
+			echo json_encode(['message' => 'Настройки сообщения обновлены']);
+			break;
+
+		case 'get_message_settings':
+			$stmt = $db->prepare("SELECT enabled, text, color, font_size, speed FROM message_settings WHERE id = 1");
+			$result = $stmt->execute();
+			if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+				echo json_encode($row);
+			} else {
+				echo json_encode(['enabled' => 0, 'text' => '', 'color' => '#ffffff', 'font_size' => 24, 'speed' => 100]);
+			}
+			break;
+
 		default:
 			echo json_encode(['error' => 'Неверное действие']);
 	}
