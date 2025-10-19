@@ -34,7 +34,8 @@ try {
 		CREATE TABLE IF NOT EXISTS clients (
 			uuid TEXT PRIMARY KEY,
 			name TEXT NOT NULL DEFAULT 'Без имени',
-			show_info INTEGER DEFAULT 1 -- 1 для показа UUID и имени, 0 для скрытия
+			show_info INTEGER DEFAULT 1, -- 1 для показа UUID и имени, 0 для скрытия
+			last_seen INTEGER -- Время последнего запроса (UNIX timestamp)
 		);
 		CREATE TABLE IF NOT EXISTS client_content (
 			uuid TEXT NOT NULL,

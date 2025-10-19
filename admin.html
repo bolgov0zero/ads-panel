@@ -74,6 +74,19 @@
             align-items: center;
             gap: 0.5rem;
         }
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-online {
+            background-color: #22c55e; /* Зеленый */
+        }
+        .status-offline {
+            background-color: #ef4444; /* Красный */
+        }
         @media (max-width: 640px) {
             .tab-button {
                 padding: 0.5rem 1rem;
@@ -112,7 +125,7 @@
                 <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('clientTab')">
                     <i class="fas fa-desktop mr-2"></i>Устройства
                 </button>
-                <button class="tab-button px-4 py-21 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('playlistTab')">
+                <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('playlistTab')">
                     <i class="fas fa-list mr-2"></i>Плейлисты
                 </button>
                 <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('messageTab')">
@@ -178,7 +191,8 @@
                     <table class="w-full bg-gray-800 rounded-xl shadow-lg">
                         <thead>
                             <tr class="bg-gray-700 text-gray-200">
-                                <th class="p-4 text-left rounded-tl-lg">UUID</th>
+                                <th class="p-4 text-left rounded-tl-lg">Статус</th>
+                                <th class="p-4 text-left">UUID</th>
                                 <th class="p-4 text-left">Имя устройства</th>
                                 <th class="p-4 text-left"><center>UUID/Имя</center></th>
                                 <th class="p-4 text-left rounded-tr-lg"><center>Действия</center></th>
@@ -289,194 +303,160 @@
             notification.className = `fixed top-4 right-4 ${bgClass} text-white px-4 py-2 rounded-lg shadow-lg transform transition-all duration-300 ease-in-out`;
             messageElement.textContent = message;
             notification.classList.remove('hidden', 'opacity-0', 'translate-y-4');
-            notification.classList.add('opacity-100', 'translate-y-0');
             setTimeout(() => {
-                notification.classList.remove('opacity-100', 'translate-y-0');
-                notification.classList.add('opacity-0', 'translate-y-4', 'hidden');
+                notification.classList.add('hidden');
             }, 3000);
         }
 
-        // Поиск по файлам
+        // Фильтрация файлов
         function filterFiles() {
-            const searchTerm = document.getElementById('fileSearch').value.toLowerCase();
+            const search = document.getElementById('fileSearch').value.toLowerCase();
             const rows = document.querySelectorAll('#fileTable tr');
             rows.forEach(row => {
-                const fileName = row.querySelector('td:nth-child(2) input').value.toLowerCase();
-                row.style.display = fileName.includes(searchTerm) ? '' : 'none';
+                const name = row.querySelector('td:nth-child(2) input').value.toLowerCase();
+                row.style.display = name.includes(search) ? '' : 'none';
             });
         }
 
-        // Загрузка списка файлов
+        // Загрузка файлов
         async function loadFiles() {
             try {
                 const response = await fetch('api.php?action=list_files');
                 const files = await response.json();
-                const tbody = document.querySelector('#fileTable');
-                const currentSearch = document.getElementById('fileSearch').value.toLowerCase();
+                const tbody = document.getElementById('fileTable');
                 const existingRows = Array.from(tbody.querySelectorAll('tr'));
-                const existingIds = existingRows.map(row => row.getAttribute('data-id'));
-
                 files.forEach(file => {
-                    const rowIndex = existingIds.indexOf(String(file.id));
+                    const rowIndex = existingRows.findIndex(row => row.getAttribute('data-id') === String(file.id));
                     const row = rowIndex !== -1 ? existingRows[rowIndex] : document.createElement('tr');
                     row.setAttribute('data-id', file.id);
-                    row.className = 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
                     row.innerHTML = `
                         <td class="p-3">${file.id}</td>
-                        <td class="p-3">
-                            <input type="text" value="${file.name}" 
-                                class="p-1 bg-gray-700 border border-gray-600 rounded w-full" 
-                                onchange="updateFileName(${file.id}, this.value)">
-                        </td>
-                        <td class="p-3"><center>${file.type === 'video' ? 'Видео' : 'PDF'}</center></td>
-                        <td class="p-3">
-                            <center><button onclick="deleteFile(${file.id})" 
-                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">
-                                Удалить
-                            </button></center>
-                        </td>
+                        <td class="p-3"><input type="text" value="${file.name}" class="p-1 bg-gray-700 border border-gray-600 rounded w-full" onchange="updateFileName(${file.id}, this.value)"></td>
+                        <td class="p-3"><center>${file.type}</center></td>
+                        <td class="p-3"><center>
+                            <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition-all duration-200" onclick="deleteFile(${file.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </center></td>
                     `;
                     if (rowIndex === -1) {
                         tbody.appendChild(row);
                     }
-                    if (currentSearch && !file.name.toLowerCase().includes(currentSearch)) {
-                        row.style.display = 'none';
-                    }
                 });
-
                 existingRows.forEach(row => {
                     if (!files.some(file => String(file.id) === row.getAttribute('data-id'))) {
                         row.remove();
                     }
                 });
+                filterFiles();
             } catch (err) {
                 console.error('Ошибка загрузки файлов:', err);
             }
         }
 
-        // Загрузка устройств
+        // Загрузка клиентов
         async function loadClients() {
             try {
                 const response = await fetch('api.php?action=list_clients');
                 const clients = await response.json();
-                const tbody = document.querySelector('#clientTable');
-                const select = document.querySelector('#clientSelect');
-                const currentUuid = select.value;
+                const tbody = document.getElementById('clientTable');
+                const select = document.getElementById('clientSelect');
                 const existingRows = Array.from(tbody.querySelectorAll('tr'));
-                const existingUuids = existingRows.map(row => row.getAttribute('data-uuid'));
-
+                const existingOptions = Array.from(select.querySelectorAll('option:not([value=""])'));
+                select.innerHTML = '<option value="">-- Выберите устройство --</option>';
                 clients.forEach(client => {
-                    const rowIndex = existingUuids.indexOf(client.uuid);
+                    const rowIndex = existingRows.findIndex(row => row.getAttribute('data-uuid') === client.uuid);
                     const row = rowIndex !== -1 ? existingRows[rowIndex] : document.createElement('tr');
                     row.setAttribute('data-uuid', client.uuid);
-                    row.className = 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
                     row.innerHTML = `
-                        <td class="p-3" style="text-transform: uppercase;">${client.uuid}</td>
-                        <td class="p-3">
-                            <input type="text" value="${client.name}" 
-                                class="p-1 bg-gray-700 border border-gray-600 rounded w-full" 
-                                onchange="updateClientName('${client.uuid}', this.value)">
-                        </td>
-                        <td class="p-3">
-                            <center><label class="ios-switch">
-                                <input type="checkbox" ${client.show_info === 1 ? 'checked' : ''} 
-                                    onchange="updateClientShowInfo('${client.uuid}', this.checked)">
+                        <td class="p-3"><span class="status-dot status-${client.status}"></span></td>
+                        <td class="p-3">${client.uuid}</td>
+                        <td class="p-3"><input type="text" value="${client.name}" class="p-1 bg-gray-700 border border-gray-600 rounded w-full" onchange="updateClientName('${client.uuid}', this.value)"></td>
+                        <td class="p-3"><center>
+                            <label class="ios-switch">
+                                <input type="checkbox" ${client.show_info ? 'checked' : ''} onchange="updateClientShowInfo('${client.uuid}', this.checked)">
                                 <span class="slider"></span>
-                            </label></center>
-                        </td>
-                        <td class="p-3">
-                            <center><button onclick="deleteClient('${client.uuid}')" 
-                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">
-                                Удалить
-                            </button></center>
-                        </td>
+                            </label>
+                        </center></td>
+                        <td class="p-3"><center>
+                            <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition-all duration-200" onclick="deleteClient('${client.uuid}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </center></td>
                     `;
                     if (rowIndex === -1) {
                         tbody.appendChild(row);
                     }
-                    const option = document.createElement('option');
-                    option.value = client.uuid;
-                    option.textContent = client.name;
-                    if (client.uuid === currentUuid) {
-                        option.selected = true;
-                    }
-                    if (rowIndex === -1) {
+                    const optionIndex = existingOptions.findIndex(opt => opt.value === client.uuid);
+                    if (optionIndex === -1) {
+                        const option = document.createElement('option');
+                        option.value = client.uuid;
+                        option.textContent = client.name;
                         select.appendChild(option);
                     } else {
-                        const existingOption = select.querySelector(`option[value="${client.uuid}"]`);
-                        if (existingOption) {
-                            existingOption.textContent = client.name;
-                        }
+                        existingOptions[optionIndex].textContent = client.name;
                     }
                 });
-
                 existingRows.forEach(row => {
                     if (!clients.some(client => client.uuid === row.getAttribute('data-uuid'))) {
                         row.remove();
                     }
                 });
-                Array.from(select.options).forEach(option => {
-                    if (option.value && !clients.some(client => client.uuid === option.value)) {
-                        option.remove();
+                existingOptions.forEach(opt => {
+                    if (!clients.some(client => client.uuid === opt.value)) {
+                        opt.remove();
                     }
                 });
+                if (select.value) {
+                    loadPlaylist();
+                }
             } catch (err) {
-                console.error('Ошибка загрузки устройств:', err);
+                console.error('Ошибка загрузки клиентов:', err);
             }
         }
 
         // Загрузка плейлиста
         async function loadPlaylist() {
-            const uuid = document.querySelector('#clientSelect').value;
+            const uuid = document.getElementById('clientSelect').value;
             if (!uuid) {
-                document.querySelector('#playlistTable').innerHTML = '';
+                document.getElementById('playlistTable').innerHTML = '';
                 return;
             }
             try {
-                const filesResponse = await fetch('api.php?action=list_files');
-                const files = await filesResponse.json();
+                const response = await fetch('api.php?action=list_files');
+                const files = await response.json();
                 const contentResponse = await fetch(`api.php?action=list_client_content&uuid=${uuid}`);
                 const content = await contentResponse.json();
-                const tbody = document.querySelector('#playlistTable');
+                const tbody = document.getElementById('playlistTable');
                 const existingRows = Array.from(tbody.querySelectorAll('tr'));
-                const existingIds = existingRows.map(row => row.getAttribute('data-id'));
-
                 files.forEach(file => {
                     const isUsed = content.some(c => c.id === file.id && c.type === file.type);
-                    const rowIndex = existingIds.indexOf(String(file.id));
+                    const rowIndex = existingRows.findIndex(row => row.getAttribute('data-id') === String(file.id));
                     const row = rowIndex !== -1 ? existingRows[rowIndex] : document.createElement('tr');
                     row.setAttribute('data-id', file.id);
-                    row.className = 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
                     row.innerHTML = `
                         <td class="p-3">${file.id}</td>
                         <td class="p-3">${file.name}</td>
-                        <td class="p-3"><center>${file.type === 'video' ? 'Видео' : 'PDF'}</center></td>
-                        <td class="p-3">
-                            <center><label class="ios-switch">
-                                <input type="checkbox" ${isUsed ? 'checked' : ''} 
-                                    onchange="updateClientContent('${uuid}', ${file.id}, '${file.type}', this.checked)">
+                        <td class="p-3"><center>${file.type}</center></td>
+                        <td class="p-3"><center>
+                            <label class="ios-switch">
+                                <input type="checkbox" ${isUsed ? 'checked' : ''} onchange="updateClientContent('${uuid}', ${file.id}, '${file.type}', this.checked)">
                                 <span class="slider"></span>
-                            </label></center>
-                        </td>
-                        <td class="p-3">
-                            <center><input type="number" value="${file.order_num}" 
-                                class="w-20 p-1 bg-gray-700 border border-gray-600 rounded" 
-                                onchange="updateOrder('file', ${file.id}, this.value)"></center>
-                        </td>
+                            </label>
+                        </center></td>
+                        <td class="p-3"><center>
+                            <input type="number" value="${file.order_num}" class="w-20 p-1 bg-gray-700 border border-gray-600 rounded" onchange="updateOrder('file', ${file.id}, this.value)">
+                        </center></td>
                         <td class="p-3"><center>
                             ${file.type === 'pdf' ? 
-                                `<input type="number" value="${file.duration || ''}" 
-                                    class="w-20 p-1 bg-gray-700 border border-gray-600 rounded" 
-                                    onchange="updateFileDuration(${file.id}, this.value)" 
-                                    placeholder="5" min="1">` 
-                                : '-'}</center>
-                        </td>
+                                `<input type="number" value="${file.duration || ''}" class="w-20 p-1 bg-gray-700 border border-gray-600 rounded" onchange="updateFileDuration(${file.id}, this.value)" placeholder="5" min="1">` 
+                                : '-'}
+                        </center></td>
                     `;
                     if (rowIndex === -1) {
                         tbody.appendChild(row);
                     }
                 });
-
                 existingRows.forEach(row => {
                     if (!files.some(file => String(file.id) === row.getAttribute('data-id'))) {
                         row.remove();
@@ -541,14 +521,15 @@
             }
         }
 
-        // Проверка новых устройств
+        // Проверка новых устройств и обновление статуса
         let clientCount = 0;
         async function checkNewClients() {
             try {
-                const response = await fetch('api.php?action=count_clients');
-                const result = await response.json();
-                if (result.count !== clientCount) {
-                    clientCount = result.count;
+                const response = await fetch('api.php?action=list_clients');
+                const clients = await response.json();
+                const newCount = clients.length;
+                if (newCount !== clientCount || document.getElementById('clientTab').classList.contains('hidden') === false) {
+                    clientCount = newCount;
                     loadClients();
                 }
             } catch (err) {
@@ -559,7 +540,7 @@
         // Запуск периодической проверки
         function startClientCheck() {
             checkNewClients();
-            setInterval(checkNewClients, 5000);
+            setInterval(checkNewClients, 2000); // Проверка каждые 2 секунды
         }
 
         // Загрузка файла
@@ -722,7 +703,7 @@
                 } else {
                     const row = document.querySelector(`#clientTable tr[data-uuid="${uuid}"]`);
                     if (row) {
-                        row.querySelector('td:nth-child(2) input').value = name;
+                        row.querySelector('td:nth-child(3) input').value = name;
                     }
                     const option = document.querySelector(`#clientSelect option[value="${uuid}"]`);
                     if (option) {
@@ -749,7 +730,7 @@
                     showNotification('Настройка отображения обновлена');
                     const row = document.querySelector(`#clientTable tr[data-uuid="${uuid}"]`);
                     if (row) {
-                        row.querySelector('td:nth-child(3) input').checked = show_info;
+                        row.querySelector('td:nth-child(4) input').checked = show_info;
                     }
                 }
             } catch (err) {

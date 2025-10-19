@@ -10,6 +10,17 @@ try {
 	$input = json_decode(file_get_contents('php://input'), true);
 	$action = $_POST['action'] ?? $_GET['action'] ?? $input['action'] ?? '';
 
+	// Обновление времени последнего запроса для действий, связанных с клиентом
+	if (in_array($action, ['add_client', 'get_client_info', 'list_client_content'])) {
+		$uuid = $_GET['uuid'] ?? $input['uuid'] ?? '';
+		if (!empty($uuid)) {
+			$stmt = $db->prepare("UPDATE clients SET last_seen = :last_seen WHERE uuid = :uuid");
+			$stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+			$stmt->bindValue(':last_seen', time(), SQLITE3_INTEGER);
+			$stmt->execute();
+		}
+	}
+
 	switch ($action) {
 		case 'upload_file':
 			$uploadDir = '/opt/ads/';
@@ -95,10 +106,11 @@ try {
 				break;
 			}
 			// Вставка клиента
-			$stmt = $db->prepare("INSERT OR REPLACE INTO clients (uuid, name, show_info) VALUES (:uuid, :name, :show_info)");
+			$stmt = $db->prepare("INSERT OR REPLACE INTO clients (uuid, name, show_info, last_seen) VALUES (:uuid, :name, :show_info, :last_seen)");
 			$stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
 			$stmt->bindValue(':name', $name, SQLITE3_TEXT);
 			$stmt->bindValue(':show_info', $show_info, SQLITE3_INTEGER);
+			$stmt->bindValue(':last_seen', time(), SQLITE3_INTEGER);
 			$stmt->execute();
 			echo json_encode(['message' => 'Клиент создан']);
 			break;
@@ -109,10 +121,11 @@ try {
 				echo json_encode(['error' => 'UUID не указан']);
 				break;
 			}
-			$stmt = $db->prepare("SELECT uuid, name, show_info FROM clients WHERE uuid = :uuid");
+			$stmt = $db->prepare("SELECT uuid, name, show_info, last_seen FROM clients WHERE uuid = :uuid");
 			$stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
 			$result = $stmt->execute();
 			if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+				$row['status'] = (time() - $row['last_seen'] <= 5) ? 'online' : 'offline';
 				echo json_encode($row);
 			} else {
 				echo json_encode(['error' => 'Устройство не найдено']);
@@ -126,9 +139,10 @@ try {
 				echo json_encode(['error' => 'UUID не указан']);
 				break;
 			}
-			$stmt = $db->prepare("UPDATE clients SET name = :name WHERE uuid = :uuid");
+			$stmt = $db->prepare("UPDATE clients SET name = :name, last_seen = :last_seen WHERE uuid = :uuid");
 			$stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
 			$stmt->bindValue(':name', $name, SQLITE3_TEXT);
+			$stmt->bindValue(':last_seen', time(), SQLITE3_INTEGER);
 			$stmt->execute();
 			echo json_encode(['message' => 'Имя клиента обновлено']);
 			break;
@@ -140,9 +154,10 @@ try {
 				echo json_encode(['error' => 'UUID не указан']);
 				break;
 			}
-			$stmt = $db->prepare("UPDATE clients SET show_info = :show_info WHERE uuid = :uuid");
+			$stmt = $db->prepare("UPDATE clients SET show_info = :show_info, last_seen = :last_seen WHERE uuid = :uuid");
 			$stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
 			$stmt->bindValue(':show_info', $show_info, SQLITE3_INTEGER);
+			$stmt->bindValue(':last_seen', time(), SQLITE3_INTEGER);
 			$stmt->execute();
 			echo json_encode(['message' => 'Настройка отображения обновлена']);
 			break;
@@ -185,7 +200,7 @@ try {
 			break;
 
 		case 'list_clients':
-			$result = $db->query("SELECT uuid, name, show_info FROM clients");
+			$result = $db->query("SELECT uuid, name, show_info, last_seen FROM clients");
 			$clients = [];
 			while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 				$stmt = $db->prepare("SELECT content_id, content_type FROM client_content WHERE uuid = :uuid");
@@ -195,7 +210,8 @@ try {
 				while ($c = $contentResult->fetchArray(SQLITE3_ASSOC)) {
 					$content[] = ['id' => $c['content_id'], 'type' => $c['content_type']];
 				}
-				$clients[] = ['uuid' => $row['uuid'], 'name' => $row['name'], 'show_info' => $row['show_info'], 'content' => $content];
+				$row['status'] = (time() - $row['last_seen'] <= 5) ? 'online' : 'offline';
+				$clients[] = ['uuid' => $row['uuid'], 'name' => $row['name'], 'show_info' => $row['show_info'], 'content' => $content, 'status' => $row['status']];
 			}
 			echo json_encode($clients);
 			break;
