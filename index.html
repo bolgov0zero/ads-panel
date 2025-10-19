@@ -113,7 +113,7 @@ let currentTime = 0;
 let pdfTimer = null;
 let currentContentUrl = null;
 const DEFAULT_PDF_DURATION = 5000;
-let messageSettings = { enabled: 0, text: '', color: '#ffffff', font_size: 24, speed: 100, bold: 0 };
+let messageSettings = { enabled: 0, text: '', color: '#ffffff', font_size: 24, speed: 100, bold: 0, background_color: '#000000' };
 
 // Остановка текущего контента
 function stopCurrentContent(force = false) {
@@ -223,6 +223,7 @@ async function loadMessageSettings() {
             if (messageSettings.enabled && messageSettings.text) {
                 stopCurrentContent(true);
                 marquee.style.display = 'block';
+                marquee.style.backgroundColor = messageSettings.background_color;
                 marqueeText.textContent = messageSettings.text;
                 marqueeText.style.color = messageSettings.color;
                 marqueeText.style.fontSize = `${messageSettings.font_size}px`;
@@ -246,6 +247,7 @@ async function loadMessageSettings() {
                 marqueeText.style.animation = 'none';
                 marqueeText.textContent = '';
                 marquee.style.height = '100px'; // Сбрасываем высоту
+                marquee.style.backgroundColor = 'transparent'; // Сбрасываем цвет фона
                 showContent(currentIndex, currentTime);
                 loadClientInfo();
                 if (!document.fullscreenElement) {
