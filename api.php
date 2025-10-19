@@ -323,26 +323,28 @@ try {
 			$color = $input['color'] ?? '#ffffff';
 			$font_size = $input['font_size'] ?? 24;
 			$speed = $input['speed'] ?? 100;
+			$bold = isset($input['bold']) ? (int)$input['bold'] : 0;
 			$stmt = $db->prepare("
-				INSERT OR REPLACE INTO message_settings (id, enabled, text, color, font_size, speed)
-				VALUES (1, :enabled, :text, :color, :font_size, :speed)
+				INSERT OR REPLACE INTO message_settings (id, enabled, text, color, font_size, speed, bold)
+				VALUES (1, :enabled, :text, :color, :font_size, :speed, :bold)
 			");
 			$stmt->bindValue(':enabled', $enabled, SQLITE3_INTEGER);
 			$stmt->bindValue(':text', $text, SQLITE3_TEXT);
 			$stmt->bindValue(':color', $color, SQLITE3_TEXT);
 			$stmt->bindValue(':font_size', $font_size, SQLITE3_INTEGER);
 			$stmt->bindValue(':speed', $speed, SQLITE3_INTEGER);
+			$stmt->bindValue(':bold', $bold, SQLITE3_INTEGER);
 			$stmt->execute();
 			echo json_encode(['message' => 'Настройки сообщения обновлены']);
 			break;
 
 		case 'get_message_settings':
-			$stmt = $db->prepare("SELECT enabled, text, color, font_size, speed FROM message_settings WHERE id = 1");
+			$stmt = $db->prepare("SELECT enabled, text, color, font_size, speed, bold FROM message_settings WHERE id = 1");
 			$result = $stmt->execute();
 			if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 				echo json_encode($row);
 			} else {
-				echo json_encode(['enabled' => 0, 'text' => '', 'color' => '#ffffff', 'font_size' => 24, 'speed' => 100]);
+				echo json_encode(['enabled' => 0, 'text' => '', 'color' => '#ffffff', 'font_size' => 24, 'speed' => 100, 'bold' => 0]);
 			}
 			break;
 
