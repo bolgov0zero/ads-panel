@@ -160,6 +160,8 @@ async function renderPDF(url) {
         const page = await pdfDoc.getPage(1);
         const viewport = page.getViewport({ scale: 1.0 });
         const ctx = pdfCanvas.getContext('2d');
+        // Сбрасываем матрицу трансформации canvas
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
         const scale = window.innerHeight / viewport.height;
         const scaledWidth = viewport.width * scale;
         pdfCanvas.width = scaledWidth;
