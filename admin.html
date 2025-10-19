@@ -14,37 +14,6 @@
             opacity: 0;
             transform: translateY(1rem);
         }
-        #fileTable tr, #clientTable tr, #playlistTable tr {
-            animation: fadeIn 0.3s ease-in;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @media (max-width: 640px) {
-            .tab-button {
-                padding: 0.5rem 1rem;
-                font-size: 0.875rem;
-            }
-            table {
-                font-size: 0.875rem;
-            }
-            th, td {
-                padding: 0.5rem;
-            }
-        }
-        /* Кастомизация полосы прокрутки */
-        .overflow-x-auto::-webkit-scrollbar {
-            height: 8px;
-        }
-        .overflow-x-auto::-webkit-scrollbar-thumb {
-            background: #4b5563;
-            border-radius: 4px;
-        }
-        .overflow-x-auto::-webkit-scrollbar-track {
-            background: #1f2937;
-        }
-        /* Стили для iOS-подобных переключателей */
         .ios-switch {
             position: relative;
             display: inline-block;
@@ -84,9 +53,27 @@
         .ios-switch input:checked + .slider:before {
             transform: translateX(16px);
         }
-        /* Отключение анимации для существующих строк */
-        tr.existing {
-            animation: none;
+        .overflow-x-auto::-webkit-scrollbar {
+            height: 8px;
+        }
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+        .overflow-x-auto::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        @media (max-width: 640px) {
+            .tab-button {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+            table {
+                font-size: 0.875rem;
+            }
+            th, td {
+                padding: 0.5rem;
+            }
         }
     </style>
 </head>
@@ -109,6 +96,9 @@
                 </button>
                 <button class="tab-button px-4 py-2 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('playlistTab')">
                     <i class="fas fa-list mr-2"></i>Плейлисты
+                </button>
+                <button class="tab-button px-4 py-2 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('messageTab')">
+                    <i class="fas fa-comment mr-2"></i>Сообщение
                 </button>
             </div>
         </div>
@@ -148,7 +138,7 @@
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full bg-gray-800 rounded-xl shadow-lg">
-                        <thead8927>
+                        <thead>
                             <tr class="bg-gray-700 text-gray-200">
                                 <th class="p-4 text-left">ID</th>
                                 <th class="p-4 text-left">Имя файла</th>
@@ -210,9 +200,41 @@
             </div>
         </div>
 
+        <!-- Вкладка Сообщение -->
+        <div id="messageTab" class="tab-content hidden">
+            <div class="mb-8">
+                <h3 class="text-xl font-semibold mb-4 text-gray-100">Настройка сообщения</h3>
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <div class="mb-4">
+                        <label class="ios-switch">
+                            <input type="checkbox" id="messageEnabled" onchange="updateMessageSettings()">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="ml-2 text-gray-200">Включить бегущую строку</span>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block mb-2 text-gray-200">Текст сообщения:</label>
+                        <textarea id="messageText" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500" rows="4" onchange="updateMessageSettings()"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block mb-2 text-gray-200">Цвет текста:</label>
+                        <input type="color" id="messageColor" value="#ffffff" class="p-1 bg-gray-700 border border-gray-600 rounded-lg h-10" onchange="updateMessageSettings()">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block mb-2 text-gray-200">Размер шрифта (пиксели):</label>
+                        <input type="number" id="messageFontSize" value="24" min="10" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500" onchange="updateMessageSettings()">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block mb-2 text-gray-200">Скорость прокрутки (пиксели/сек):</label>
+                        <input type="number" id="messageSpeed" value="100" min="10" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500" onchange="updateMessageSettings()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Футер -->
         <footer class="mt-8 bg-gray-800 text-gray-400 text-center py-4 text-sm rounded-t-lg">
-            2025 © Болгов Иван | Версия: v1.1.2
+            2025 © Болгов Иван | Версия: v1.2.0
         </footer>
     </div>
 
@@ -267,19 +289,19 @@
                     const rowIndex = existingIds.indexOf(String(file.id));
                     const row = rowIndex !== -1 ? existingRows[rowIndex] : document.createElement('tr');
                     row.setAttribute('data-id', file.id);
-                    row.className = rowIndex !== -1 ? 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150 existing' : 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
+                    row.className = 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
                     row.innerHTML = `
-                        <td class="p-4">${file.id}</td>
-                        <td class="p-4">
+                        <td class="p-3">${file.id}</td>
+                        <td class="p-3">
                             <input type="text" value="${file.name}" 
-                                class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500" 
+                                class="p-1 bg-gray-700 border border-gray-600 rounded w-full" 
                                 onchange="updateFileName(${file.id}, this.value)">
                         </td>
-                        <td class="p-4">${file.type === 'video' ? 'Видео' : 'PDF'}</td>
-                        <td class="p-4">
+                        <td class="p-3">${file.type === 'video' ? 'Видео' : 'PDF'}</td>
+                        <td class="p-3">
                             <button onclick="deleteFile(${file.id})" 
-                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-all duration-200">
-                                <i class="fas fa-trash mr-2"></i>Удалить
+                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">
+                                Удалить
                             </button>
                         </td>
                     `;
@@ -291,7 +313,6 @@
                     }
                 });
 
-                // Удаляем строки, которых больше нет в данных
                 existingRows.forEach(row => {
                     if (!files.some(file => String(file.id) === row.getAttribute('data-id'))) {
                         row.remove();
@@ -317,50 +338,56 @@
                     const rowIndex = existingUuids.indexOf(client.uuid);
                     const row = rowIndex !== -1 ? existingRows[rowIndex] : document.createElement('tr');
                     row.setAttribute('data-uuid', client.uuid);
-                    row.className = rowIndex !== -1 ? 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150 existing' : 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
+                    row.className = 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
                     row.innerHTML = `
-                        <td class="p-4" style="text-transform: uppercase;">${client.uuid}</td>
-                        <td class="p-4">
+                        <td class="p-3" style="text-transform: uppercase;">${client.uuid}</td>
+                        <td class="p-3">
                             <input type="text" value="${client.name}" 
-                                class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500" 
+                                class="p-1 bg-gray-700 border border-gray-600 rounded w-full" 
                                 onchange="updateClientName('${client.uuid}', this.value)">
                         </td>
-                        <td class="p-4">
+                        <td class="p-3">
                             <label class="ios-switch">
                                 <input type="checkbox" ${client.show_info === 1 ? 'checked' : ''} 
                                     onchange="updateClientShowInfo('${client.uuid}', this.checked)">
                                 <span class="slider"></span>
                             </label>
                         </td>
-                        <td class="p-4">
+                        <td class="p-3">
                             <button onclick="deleteClient('${client.uuid}')" 
-                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-all duration-200">
-                                <i class="fas fa-trash mr-2"></i>Удалить
+                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">
+                                Удалить
                             </button>
                         </td>
                     `;
                     if (rowIndex === -1) {
                         tbody.appendChild(row);
                     }
-                });
-
-                // Удаляем строки, которых больше нет в данных
-                existingRows.forEach(row => {
-                    if (!clients.some(client => client.uuid === row.getAttribute('data-uuid'))) {
-                        row.remove();
-                    }
-                });
-
-                // Обновляем выпадающий список
-                select.innerHTML = '<option value="">-- Выберите устройство --</option>';
-                clients.forEach(client => {
                     const option = document.createElement('option');
                     option.value = client.uuid;
                     option.textContent = client.name;
                     if (client.uuid === currentUuid) {
                         option.selected = true;
                     }
-                    select.appendChild(option);
+                    if (rowIndex === -1) {
+                        select.appendChild(option);
+                    } else {
+                        const existingOption = select.querySelector(`option[value="${client.uuid}"]`);
+                        if (existingOption) {
+                            existingOption.textContent = client.name;
+                        }
+                    }
+                });
+
+                existingRows.forEach(row => {
+                    if (!clients.some(client => client.uuid === row.getAttribute('data-uuid'))) {
+                        row.remove();
+                    }
+                });
+                Array.from(select.options).forEach(option => {
+                    if (option.value && !clients.some(client => client.uuid === option.value)) {
+                        option.remove();
+                    }
                 });
             } catch (err) {
                 console.error('Ошибка загрузки устройств:', err);
@@ -388,27 +415,27 @@
                     const rowIndex = existingIds.indexOf(String(file.id));
                     const row = rowIndex !== -1 ? existingRows[rowIndex] : document.createElement('tr');
                     row.setAttribute('data-id', file.id);
-                    row.className = rowIndex !== -1 ? 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150 existing' : 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
+                    row.className = 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
                     row.innerHTML = `
-                        <td class="p-4">${file.id}</td>
-                        <td class="p-4">${file.name}</td>
-                        <td class="p-4">${file.type === 'video' ? 'Видео' : 'PDF'}</td>
-                        <td class="p-4">
+                        <td class="p-3">${file.id}</td>
+                        <td class="p-3">${file.name}</td>
+                        <td class="p-3">${file.type === 'video' ? 'Видео' : 'PDF'}</td>
+                        <td class="p-3">
                             <label class="ios-switch">
                                 <input type="checkbox" ${isUsed ? 'checked' : ''} 
                                     onchange="updateClientContent('${uuid}', ${file.id}, '${file.type}', this.checked)">
                                 <span class="slider"></span>
                             </label>
                         </td>
-                        <td class="p-4">
+                        <td class="p-3">
                             <input type="number" value="${file.order_num}" 
-                                class="w-20 p-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-blue-500" 
+                                class="w-20 p-1 bg-gray-700 border border-gray-600 rounded" 
                                 onchange="updateOrder('file', ${file.id}, this.value)">
                         </td>
-                        <td class="p-4">
+                        <td class="p-3">
                             ${file.type === 'pdf' ? 
                                 `<input type="number" value="${file.duration || ''}" 
-                                    class="w-20 p-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-blue-500" 
+                                    class="w-20 p-1 bg-gray-700 border border-gray-600 rounded" 
                                     onchange="updateFileDuration(${file.id}, this.value)" 
                                     placeholder="5" min="1">` 
                                 : '-'}
@@ -419,7 +446,6 @@
                     }
                 });
 
-                // Удаляем строки, которых больше нет в данных
                 existingRows.forEach(row => {
                     if (!files.some(file => String(file.id) === row.getAttribute('data-id'))) {
                         row.remove();
@@ -427,6 +453,54 @@
                 });
             } catch (err) {
                 console.error('Ошибка загрузки плейлиста:', err);
+            }
+        }
+
+        // Загрузка настроек сообщения
+        async function loadMessageSettings() {
+            try {
+                const response = await fetch('api.php?action=get_message_settings');
+                const settings = await response.json();
+                document.getElementById('messageEnabled').checked = settings.enabled === 1;
+                document.getElementById('messageText').value = settings.text || '';
+                document.getElementById('messageColor').value = settings.color || '#ffffff';
+                document.getElementById('messageFontSize').value = settings.font_size || 24;
+                document.getElementById('messageSpeed').value = settings.speed || 100;
+            } catch (err) {
+                console.error('Ошибка загрузки настроек сообщения:', err);
+            }
+        }
+
+        // Обновление настроек сообщения
+        async function updateMessageSettings() {
+            try {
+                const enabled = document.getElementById('messageEnabled').checked ? 1 : 0;
+                const text = document.getElementById('messageText').value;
+                const color = document.getElementById('messageColor').value;
+                const font_size = parseInt(document.getElementById('messageFontSize').value) || 24;
+                const speed = parseInt(document.getElementById('messageSpeed').value) || 100;
+                const response = await fetch('api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'update_message_settings',
+                        enabled,
+                        text,
+                        color,
+                        font_size,
+                        speed
+                    })
+                });
+                const result = await response.json();
+                if (result.error) {
+                    console.error(result.error);
+                    showNotification('Ошибка сохранения настроек сообщения', 'bg-red-500');
+                } else {
+                    showNotification('Настройки сообщения сохранены');
+                }
+            } catch (err) {
+                console.error('Ошибка:', err);
+                showNotification('Ошибка сохранения настроек сообщения', 'bg-red-500');
             }
         }
 
@@ -438,7 +512,7 @@
                 const result = await response.json();
                 if (result.count !== clientCount) {
                     clientCount = result.count;
-                    loadClients(); // Обновляем только устройства
+                    loadClients();
                 }
             } catch (err) {
                 console.error('Ошибка проверки новых устройств:', err);
@@ -464,15 +538,15 @@
                 spinner.classList.add('hidden');
                 if (result.error) {
                     console.error(result.error);
-                    showNotification('Ошибка при загрузке файла', 'bg-red-500');
+                    showNotification(result.error, 'bg-red-500');
                 } else {
                     showNotification('Файл успешно загружен!');
-                    loadFiles(); // Обновляем только таблицу файлов
+                    loadFiles();
                 }
             } catch (err) {
                 spinner.classList.add('hidden');
                 console.error('Ошибка загрузки:', err);
-                showNotification('Ошибка при загрузке файла', 'bg-red-500');
+                showNotification('Ошибка загрузки файла', 'bg-red-500');
             }
         });
 
@@ -491,9 +565,9 @@
                     const row = document.querySelector(`#fileTable tr[data-id="${id}"]`);
                     if (row) {
                         row.querySelector('td:nth-child(2) input').value = name;
-                        filterFiles(); // Применяем фильтр поиска
+                        filterFiles();
                     }
-                    loadPlaylist(); // Обновляем плейлист, так как имя файла изменилось
+                    loadPlaylist();
                 }
             } catch (err) {
                 console.error('Ошибка:', err);
@@ -516,7 +590,7 @@
                     if (row && row.querySelector('td:nth-child(6) input')) {
                         row.querySelector('td:nth-child(6) input').value = duration || '';
                     }
-                    loadFiles(); // Обновляем таблицу файлов, так как продолжительность влияет на нее
+                    loadFiles();
                 }
             } catch (err) {
                 console.error('Ошибка:', err);
@@ -539,7 +613,7 @@
                     if (row) {
                         row.querySelector('td:nth-child(5) input').value = order;
                     }
-                    loadFiles(); // Обновляем таблицу файлов, так как порядок влияет на нее
+                    loadFiles();
                 }
             } catch (err) {
                 console.error('Ошибка:', err);
@@ -672,6 +746,7 @@
         document.getElementById('fileSearch').addEventListener('input', filterFiles);
         loadFiles();
         loadClients();
+        loadMessageSettings();
         startClientCheck();
         openTab('fileTab');
     </script>
