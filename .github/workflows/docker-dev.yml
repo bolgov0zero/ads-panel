@@ -2,7 +2,7 @@ name: Dev Docker image
 
 on:
   workflow_dispatch:
-    branches: ['main']
+    branches: ['dev']
 
 jobs:
   build-and-push:
@@ -22,7 +22,7 @@ jobs:
       with:
         context: .
         push: true
-        tags: bolgov0zero/ads-panel:latest
+        tags: bolgov0zero/ads-panel:dev
 
   notify:
     runs-on: ubuntu-latest
