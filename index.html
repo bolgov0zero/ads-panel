@@ -55,11 +55,11 @@ canvas#pdfCanvas {
     top: 50%;
     left: 0;
     width: 100%;
-    height: 100px; /* Явная высота для видимости текста */
     overflow: hidden;
     display: none;
     z-index: 20; /* Выше всех других элементов */
     transform: translateY(-50%);
+    padding: 10px 0; /* Отступ для больших шрифтов */
 }
 #marquee span {
     display: inline-block;
@@ -227,6 +227,8 @@ async function loadMessageSettings() {
                 marqueeText.style.color = messageSettings.color;
                 marqueeText.style.fontSize = `${messageSettings.font_size}px`;
                 marqueeText.style.fontWeight = messageSettings.bold ? 'bold' : 'normal';
+                // Устанавливаем высоту контейнера на основе размера шрифта
+                marquee.style.height = `${messageSettings.font_size * 1.5}px`; // Учитываем высоту строки
                 // Сбрасываем анимацию
                 marqueeText.style.animation = 'none';
                 marqueeText.offsetHeight; // Принудительный рефлоу
@@ -243,6 +245,7 @@ async function loadMessageSettings() {
                 marquee.style.display = 'none';
                 marqueeText.style.animation = 'none';
                 marqueeText.textContent = '';
+                marquee.style.height = '100px'; // Сбрасываем высоту
                 showContent(currentIndex, currentTime);
                 loadClientInfo();
                 if (!document.fullscreenElement) {
