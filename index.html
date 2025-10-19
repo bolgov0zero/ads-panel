@@ -22,8 +22,8 @@ canvas#pdfCanvas {
     max-width: 100vw;
     height: 100vh;
     display: none;
-    margin: 0 auto;
-    transform: none !important;
+    margin: 0 auto; /* Центрирование по горизонтали */
+    transform: none !important; /* Предотвращаем CSS-трансформации */
 }
 #fullscreenBtn, #reconnectBtn {
     position: absolute;
@@ -151,6 +151,9 @@ function stopCurrentContent(force = false) {
         pdfTimer = null;
     }
     pdfCanvas.style.display = 'none';
+    // Очищаем canvas
+    const ctx = pdfCanvas.getContext('2d');
+    ctx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
     currentContentUrl = null;
 }
 
@@ -161,8 +164,12 @@ async function renderPDF(url) {
         const page = await pdfDoc.getPage(1);
         const viewport = page.getViewport({ scale: 1.0 });
         const ctx = pdfCanvas.getContext('2d');
-        // Сбрасываем матрицу трансформации canvas
+        // Логируем текущую трансформацию
+        console.log('Transform before reset:', ctx.getTransform());
+        // Сбрасываем матрицу трансформации и очищаем canvas
         ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+        console.log('Transform after reset:', ctx.getTransform());
         const scale = window.innerHeight / viewport.height;
         const scaledWidth = viewport.width * scale;
         pdfCanvas.width = scaledWidth;
