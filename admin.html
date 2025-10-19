@@ -160,7 +160,7 @@
                             <tr class="bg-gray-700 text-gray-200">
                                 <th class="p-4 text-left rounded-tl-lg">ID</th>
                                 <th class="p-4 text-left">Имя файла</th>
-                                <th class="p-4 text-left">Тип</th>
+                                <th class="p-4 text-left"><center>Тип</center></th>
                                 <th class="p-4 text-left rounded-tr-lg"><center>Действия</center></th>
                             </tr>
                         </thead>
@@ -180,7 +180,7 @@
                             <tr class="bg-gray-700 text-gray-200">
                                 <th class="p-4 text-left rounded-tl-lg">UUID</th>
                                 <th class="p-4 text-left">Имя устройства</th>
-                                <th class="p-4 text-left">UUID/Имя</th>
+                                <th class="p-4 text-left"><center>UUID/Имя</center></th>
                                 <th class="p-4 text-left rounded-tr-lg"><center>Действия</center></th>
                             </tr>
                         </thead>
@@ -206,10 +206,10 @@
                             <tr class="bg-gray-700 text-gray-200">
                                 <th class="p-4 text-left rounded-tl-lg">ID</th>
                                 <th class="p-4 text-left">Имя файла</th>
-                                <th class="p-4 text-left">Тип</th>
-                                <th class="p-4 text-left">Использовать</th>
-                                <th class="p-4 text-left">Очередность</th>
-                                <th class="p-4 text-left rounded-tr-lg">Продолжительность (PDF)</th>
+                                <th class="p-4 text-left"><center>Тип</center></th>
+                                <th class="p-4 text-left"><center>Использовать</center></th>
+                                <th class="p-4 text-left"><center>Очередность</center></th>
+                                <th class="p-4 text-left rounded-tr-lg"><center>Продолжительность (PDF)</center></th>
                             </tr>
                         </thead>
                         <tbody id="playlistTable" class="divide-y divide-gray-700"></tbody>
@@ -328,7 +328,7 @@
                                 class="p-1 bg-gray-700 border border-gray-600 rounded w-full" 
                                 onchange="updateFileName(${file.id}, this.value)">
                         </td>
-                        <td class="p-3">${file.type === 'video' ? 'Видео' : 'PDF'}</td>
+                        <td class="p-3"><center>${file.type === 'video' ? 'Видео' : 'PDF'}</center></td>
                         <td class="p-3">
                             <center><button onclick="deleteFile(${file.id})" 
                                 class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">
@@ -378,11 +378,11 @@
                                 onchange="updateClientName('${client.uuid}', this.value)">
                         </td>
                         <td class="p-3">
-                            <label class="ios-switch">
+                            <center><label class="ios-switch">
                                 <input type="checkbox" ${client.show_info === 1 ? 'checked' : ''} 
                                     onchange="updateClientShowInfo('${client.uuid}', this.checked)">
                                 <span class="slider"></span>
-                            </label>
+                            </label></center>
                         </td>
                         <td class="p-3">
                             <center><button onclick="deleteClient('${client.uuid}')" 
@@ -450,26 +450,26 @@
                     row.innerHTML = `
                         <td class="p-3">${file.id}</td>
                         <td class="p-3">${file.name}</td>
-                        <td class="p-3">${file.type === 'video' ? 'Видео' : 'PDF'}</td>
+                        <td class="p-3"><center>${file.type === 'video' ? 'Видео' : 'PDF'}</center></td>
                         <td class="p-3">
-                            <label class="ios-switch">
+                            <center><label class="ios-switch">
                                 <input type="checkbox" ${isUsed ? 'checked' : ''} 
                                     onchange="updateClientContent('${uuid}', ${file.id}, '${file.type}', this.checked)">
                                 <span class="slider"></span>
-                            </label>
+                            </label></center>
                         </td>
                         <td class="p-3">
-                            <input type="number" value="${file.order_num}" 
+                            <center><input type="number" value="${file.order_num}" 
                                 class="w-20 p-1 bg-gray-700 border border-gray-600 rounded" 
-                                onchange="updateOrder('file', ${file.id}, this.value)">
+                                onchange="updateOrder('file', ${file.id}, this.value)"></center>
                         </td>
-                        <td class="p-3">
+                        <td class="p-3"><center>
                             ${file.type === 'pdf' ? 
                                 `<input type="number" value="${file.duration || ''}" 
                                     class="w-20 p-1 bg-gray-700 border border-gray-600 rounded" 
                                     onchange="updateFileDuration(${file.id}, this.value)" 
                                     placeholder="5" min="1">` 
-                                : '-'}
+                                : '-'}</center>
                         </td>
                     `;
                     if (rowIndex === -1) {
