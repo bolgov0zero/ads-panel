@@ -44,6 +44,46 @@
         .overflow-x-auto::-webkit-scrollbar-track {
             background: #1f2937;
         }
+        /* Стили для iOS-подобных переключателей */
+        .ios-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 24px;
+        }
+        .ios-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .ios-switch .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #4b5563;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        .ios-switch .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        .ios-switch input:checked + .slider {
+            background-color: #2563eb;
+        }
+        .ios-switch input:checked + .slider:before {
+            transform: translateX(16px);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-b from-gray-900 to-gray-800 text-gray-100 min-h-screen p-4 md:p-6">
@@ -83,15 +123,17 @@
                 <h3 class="text-xl font-semibold mb-4 text-gray-100">Загрузка файла</h3>
                 <form id="uploadForm" enctype="multipart/form-data" class="bg-gray-800 p-6 rounded-xl shadow-lg">
                     <label class="block mb-2 text-gray-200">Файл (MP4 или PDF):</label>
-                    <div class="relative">
-                        <input type="file" name="file" accept="video/mp4,application/pdf" required class="mb-4 p-3 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:hover:bg-blue-700 transition-all">
-                        <div id="uploadSpinner" class="hidden absolute right-4 top-1/2 transform -translate-y-1/2">
-                            <i class="fas fa-spinner fa-spin text-blue-500"></i>
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                        <div class="relative flex-1">
+                            <input type="file" name="file" accept="video/mp4,application/pdf" required class="p-3 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:hover:bg-blue-700 transition-all">
+                            <div id="uploadSpinner" class="hidden absolute right-4 top-1/2 transform -translate-y-1/2">
+                                <i class="fas fa-spinner fa-spin text-blue-500"></i>
+                            </div>
                         </div>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200 flex items-center">
+                            <i class="fas fa-upload mr-2"></i>Загрузить
+                        </button>
                     </div>
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200 flex items-center">
-                        <i class="fas fa-upload mr-2"></i>Загрузить
-                    </button>
                 </form>
             </div>
 
@@ -126,7 +168,7 @@
                             <tr class="bg-gray-700 text-gray-200">
                                 <th class="p-4 text-left">UUID</th>
                                 <th class="p-4 text-left">Имя устройства</th>
-                                <th class="p-4 text-left">Показывать UUID/Имя</th>
+                                <th class="p-4 text-left">UUID/Имя</th>
                                 <th class="p-4 text-left">Действия</th>
                             </tr>
                         </thead>
@@ -166,7 +208,7 @@
 
         <!-- Футер -->
         <footer class="mt-8 bg-gray-800 text-gray-400 text-center py-4 text-sm rounded-t-lg">
-            2025 © Болгов Иван | Версия: v1.1.0
+            2025 © Болгов Иван | Версия: v1.0.3
         </footer>
     </div>
 
@@ -267,9 +309,11 @@
                                 onchange="updateClientName('${client.uuid}', this.value)">
                         </td>
                         <td class="p-4">
-                            <input type="checkbox" class="form-checkbox text-blue-600 h-5 w-5" 
-                                ${client.show_info === 1 ? 'checked' : ''} 
-                                onchange="updateClientShowInfo('${client.uuid}', this.checked)">
+                            <label class="ios-switch">
+                                <input type="checkbox" ${client.show_info === 1 ? 'checked' : ''} 
+                                    onchange="updateClientShowInfo('${client.uuid}', this.checked)">
+                                <span class="slider"></span>
+                            </label>
                         </td>
                         <td class="p-4">
                             <button onclick="deleteClient('${client.uuid}')" 
@@ -315,9 +359,11 @@
                         <td class="p-4">${file.name}</td>
                         <td class="p-4">${file.type === 'video' ? 'Видео' : 'PDF'}</td>
                         <td class="p-4">
-                            <input type="checkbox" class="form-checkbox text-blue-600 h-5 w-5" 
-                                ${isUsed ? 'checked' : ''} 
-                                onchange="updateClientContent('${uuid}', ${file.id}, '${file.type}', this.checked)">
+                            <label class="ios-switch">
+                                <input type="checkbox" ${isUsed ? 'checked' : ''} 
+                                    onchange="updateClientContent('${uuid}', ${file.id}, '${file.type}', this.checked)">
+                                <span class="slider"></span>
+                            </label>
                         </td>
                         <td class="p-4">
                             <input type="number" value="${file.order_num}" 
