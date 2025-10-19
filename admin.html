@@ -415,13 +415,16 @@
             }
         }
 
-        // Обновление статусов клиентов
+        // Обновление статусов клиентов и списка устройств в <select>
         async function updateClientStatuses() {
             try {
                 const response = await fetch('api.php?action=list_clients');
                 const clients = await response.json();
                 const tbody = document.getElementById('clientTable');
+                const select = document.getElementById('clientSelect');
                 const rows = tbody.querySelectorAll('tr');
+                const existingOptions = Array.from(select.querySelectorAll('option:not([value=""])'));
+                // Обновление статусов в таблице
                 rows.forEach(row => {
                     const uuid = row.getAttribute('data-uuid');
                     const client = clients.find(c => c.uuid === uuid);
@@ -432,6 +435,31 @@
                         }
                     }
                 });
+                // Обновление списка <select>
+                select.innerHTML = '<option value="">-- Выберите устройство --</option>';
+                clients.forEach(client => {
+                    const optionIndex = existingOptions.findIndex(opt => opt.value === client.uuid);
+                    const option = optionIndex !== -1 ? existingOptions[optionIndex] : document.createElement('option');
+                    option.value = client.uuid;
+                    option.textContent = client.name;
+                    if (optionIndex === -1) {
+                        select.appendChild(option);
+                    }
+                });
+                // Восстановление выбранного значения, если оно все еще существует
+                const currentValue = select.dataset.lastValue || '';
+                if (clients.some(client => client.uuid === currentValue)) {
+                    select.value = currentValue;
+                } else {
+                    select.value = '';
+                    document.getElementById('playlistTable').innerHTML = '';
+                }
+                // Сохранение текущего значения для следующего обновления
+                select.dataset.lastValue = select.value;
+                // Обновление плейлиста, если устройство выбрано
+                if (select.value) {
+                    loadPlaylist();
+                }
             } catch (err) {
                 console.error('Ошибка обновления статусов клиентов:', err);
             }
@@ -552,7 +580,7 @@
                 if (result.count !== clientCount) {
                     clientCount = result.count;
                     loadClients();
-                } else if (document.getElementById('clientTab').classList.contains('hidden') === false) {
+                } else if (document.getElementById('clientTab').classList.contains('hidden') === false || document.getElementById('playlistTab').classList.contains('hidden') === false) {
                     updateClientStatuses();
                 }
             } catch (err) {
