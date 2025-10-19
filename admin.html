@@ -82,11 +82,11 @@
             margin-right: 8px;
         }
         .status-online {
-            background-color: #22c55e; /* Зеленый */
-            animation: blink 1.5s ease-in-out infinite; /* Анимация моргания */
+            background-color: #22c55e;
         }
         .status-offline {
-            background-color: #ef4444; /* Красный */
+            background-color: #ef4444;
+            animation: blink 1s ease-in-out infinite;
         }
         @keyframes blink {
             0%, 100% {
@@ -164,11 +164,8 @@
                                 <i class="fas fa-spinner fa-spin text-blue-500"></i>
                             </div>
                         </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200 flex items-center h-10">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200 flex items-center">
                             <i class="fas fa-upload mr-2"></i>Загрузить
-                        </button>
-                        <button type="button" id="scanFilesBtn" class="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg transition-all duration-200 flex items-center h-10">
-                            <i class="fas fa-search"></i>
                         </button>
                     </div>
                 </form>
@@ -203,7 +200,7 @@
                     <table class="w-full bg-gray-800 rounded-xl shadow-lg">
                         <thead>
                             <tr class="bg-gray-700 text-gray-200">
-                                <th class="p-4 text-left rounded-tl-lg">Статус</th>
+                                <th class="p-4 text-left rounded-tl-lg"><center>Статус</center></th>
                                 <th class="p-4 text-left">UUID</th>
                                 <th class="p-4 text-left">Имя устройства</th>
                                 <th class="p-4 text-left"><center>UUID/Имя</center></th>
@@ -291,7 +288,7 @@
 
         <!-- Футер -->
         <footer class="mt-8 bg-gray-800 text-gray-400 text-center py-4 text-sm rounded-t-lg rounded-b-lg">
-            2025 © Болгов Иван | Версия: v1.3.9
+            2025 © Болгов Иван | Версия: v1.5.0
         </footer>
     </div>
 
@@ -303,68 +300,31 @@
                 btn.classList.remove('bg-blue-600', 'text-white');
                 btn.classList.add('bg-gray-800', 'text-gray-100');
             });
-            const tab = document.getElementById(tabId);
-            if (tab) {
-                tab.classList.remove('hidden');
-            }
-            if (event.currentTarget) {
-                event.currentTarget.classList.remove('bg-gray-800', 'text-gray-100');
-                event.currentTarget.classList.add('bg-blue-600', 'text-white');
-            }
+            document.getElementById(tabId).classList.remove('hidden');
+            event.currentTarget.classList.remove('bg-gray-800', 'text-gray-100');
+            event.currentTarget.classList.add('bg-blue-600', 'text-white');
         }
 
         // Показ уведомления
         function showNotification(message, bgClass = 'bg-green-500') {
             const notification = document.getElementById('notification');
             const messageElement = document.getElementById('notificationMessage');
-            if (notification && messageElement) {
-                notification.className = `fixed top-4 right-4 ${bgClass} text-white px-4 py-2 rounded-lg shadow-lg transform transition-all duration-300 ease-in-out`;
-                messageElement.textContent = message;
-                notification.classList.remove('hidden', 'opacity-0', 'translate-y-4');
-                setTimeout(() => {
-                    notification.classList.add('hidden');
-                }, 3000);
-            }
+            notification.className = `fixed top-4 right-4 ${bgClass} text-white px-4 py-2 rounded-lg shadow-lg transform transition-all duration-300 ease-in-out`;
+            messageElement.textContent = message;
+            notification.classList.remove('hidden', 'opacity-0', 'translate-y-4');
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 3000);
         }
 
         // Фильтрация файлов
         function filterFiles() {
-            const searchInput = document.getElementById('fileSearch');
-            if (!searchInput) return;
-            const search = searchInput.value.toLowerCase();
+            const search = document.getElementById('fileSearch').value.toLowerCase();
             const rows = document.querySelectorAll('#fileTable tr');
             rows.forEach(row => {
-                const nameInput = row.querySelector('td:nth-child(2) input');
-                if (nameInput) {
-                    const name = nameInput.value.toLowerCase();
-                    row.style.display = name.includes(search) ? '' : 'none';
-                }
+                const name = row.querySelector('td:nth-child(2) input').value.toLowerCase();
+                row.style.display = name.includes(search) ? '' : 'none';
             });
-        }
-
-        // Сканирование файлов в папке
-        async function scanFiles() {
-            const btn = document.getElementById('scanFilesBtn');
-            if (!btn) return;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            btn.disabled = true;
-            try {
-                const response = await fetch('api.php?action=scan_files');
-                const result = await response.json();
-                if (result.error) {
-                    console.error(result.error);
-                    showNotification(result.error, 'bg-red-500');
-                } else {
-                    showNotification(result.message);
-                    loadFiles();
-                }
-            } catch (err) {
-                console.error('Ошибка сканирования файлов:', err);
-                showNotification('Ошибка сканирования файлов', 'bg-red-500');
-            } finally {
-                btn.innerHTML = '<i class="fas fa-search"></i>';
-                btn.disabled = false;
-            }
         }
 
         // Загрузка файлов
@@ -374,7 +334,6 @@
                 const files = await response.json();
                 console.log('Загруженные файлы:', files); // Отладка
                 const tbody = document.getElementById('fileTable');
-                if (!tbody) return;
                 const existingRows = Array.from(tbody.querySelectorAll('tr'));
                 files.forEach(file => {
                     const rowIndex = existingRows.findIndex(row => row.getAttribute('data-id') === String(file.id));
@@ -413,18 +372,18 @@
                 console.log('Загруженные клиенты:', clients); // Отладка
                 const tbody = document.getElementById('clientTable');
                 const select = document.getElementById('clientSelect');
-                if (!tbody || !select) return;
                 const existingRows = Array.from(tbody.querySelectorAll('tr'));
                 const existingOptions = Array.from(select.querySelectorAll('option:not([value=""])'));
                 const currentValue = select.value;
 
+                // Очищаем и заполняем <select>
                 select.innerHTML = '<option value="">-- Выберите устройство --</option>';
                 clients.forEach(client => {
                     const rowIndex = existingRows.findIndex(row => row.getAttribute('data-uuid') === client.uuid);
                     const row = rowIndex !== -1 ? existingRows[rowIndex] : document.createElement('tr');
                     row.setAttribute('data-uuid', client.uuid);
                     row.innerHTML = `
-                        <td class="p-3"><span class="status-dot status-${client.status}"></span></td>
+                        <td class="p-3"><center><span class="status-dot status-${client.status}"></center></span></td>
                         <td class="p-3">${client.uuid}</td>
                         <td class="p-3"><input type="text" value="${client.name}" class="p-1 bg-gray-700 border border-gray-600 rounded w-full" onchange="updateClientName('${client.uuid}', this.value)"></td>
                         <td class="p-3"><center>
@@ -448,6 +407,7 @@
                     select.appendChild(option);
                 });
 
+                // Удаляем устаревшие строки и опции
                 existingRows.forEach(row => {
                     if (!clients.some(client => client.uuid === row.getAttribute('data-uuid'))) {
                         row.remove();
@@ -459,17 +419,18 @@
                     }
                 });
 
+                // Восстановление выбранного значения
                 if (currentValue && clients.some(client => client.uuid === currentValue)) {
                     select.value = currentValue;
                 } else {
                     select.value = '';
-                    document.getElementById('playlistTable')?.innerHTML = '';
+                    document.getElementById('playlistTable').innerHTML = '';
                 }
 
+                // Обновление плейлиста, если выбрано устройство
                 if (select.value) {
                     loadPlaylist();
                 }
-                console.log('Состояние <select> после загрузки:', select.innerHTML); // Отладка
             } catch (err) {
                 console.error('Ошибка загрузки клиентов:', err);
             }
@@ -482,9 +443,9 @@
                 const clients = await response.json();
                 console.log('Обновление статусов, клиенты:', clients); // Отладка
                 const tbody = document.getElementById('clientTable');
-                if (!tbody) return;
                 const rows = tbody.querySelectorAll('tr');
 
+                // Обновление только статусов в таблице
                 rows.forEach(row => {
                     const uuid = row.getAttribute('data-uuid');
                     const client = clients.find(c => c.uuid === uuid);
@@ -502,12 +463,9 @@
 
         // Загрузка плейлиста
         async function loadPlaylist() {
-            const select = document.getElementById('clientSelect');
-            if (!select) return;
-            const uuid = select.value;
+            const uuid = document.getElementById('clientSelect').value;
             if (!uuid) {
-                const playlistTable = document.getElementById('playlistTable');
-                if (playlistTable) playlistTable.innerHTML = '';
+                document.getElementById('playlistTable').innerHTML = '';
                 return;
             }
             try {
@@ -517,7 +475,6 @@
                 const content = await contentResponse.json();
                 console.log('Загружен плейлист для UUID:', uuid, 'Файлы:', files, 'Контент:', content); // Отладка
                 const tbody = document.getElementById('playlistTable');
-                if (!tbody) return;
                 const existingRows = Array.from(tbody.querySelectorAll('tr'));
                 files.forEach(file => {
                     const isUsed = content.some(c => c.id === file.id && c.type === file.type);
@@ -563,20 +520,13 @@
                 const response = await fetch('api.php?action=get_message_settings');
                 const settings = await response.json();
                 console.log('Загружены настройки сообщения:', settings); // Отладка
-                const messageEnabled = document.getElementById('messageEnabled');
-                const messageText = document.getElementById('messageText');
-                const messageColor = document.getElementById('messageColor');
-                const messageBackgroundColor = document.getElementById('messageBackgroundColor');
-                const messageFontSize = document.getElementById('messageFontSize');
-                const messageSpeed = document.getElementById('messageSpeed');
-                const messageBold = document.getElementById('messageBold');
-                if (messageEnabled) messageEnabled.checked = settings.enabled === 1;
-                if (messageText) messageText.value = settings.text || '';
-                if (messageColor) messageColor.value = settings.color || '#ffffff';
-                if (messageBackgroundColor) messageBackgroundColor.value = settings.background_color || '#000000';
-                if (messageFontSize) messageFontSize.value = settings.font_size || 24;
-                if (messageSpeed) messageSpeed.value = settings.speed || 100;
-                if (messageBold) messageBold.checked = settings.bold === 1;
+                document.getElementById('messageEnabled').checked = settings.enabled === 1;
+                document.getElementById('messageText').value = settings.text || '';
+                document.getElementById('messageColor').value = settings.color || '#ffffff';
+                document.getElementById('messageBackgroundColor').value = settings.background_color || '#000000';
+                document.getElementById('messageFontSize').value = settings.font_size || 24;
+                document.getElementById('messageSpeed').value = settings.speed || 100;
+                document.getElementById('messageBold').checked = settings.bold === 1;
             } catch (err) {
                 console.error('Ошибка загрузки настроек сообщения:', err);
             }
@@ -585,21 +535,13 @@
         // Обновление настроек сообщения
         async function updateMessageSettings() {
             try {
-                const messageEnabled = document.getElementById('messageEnabled');
-                const messageText = document.getElementById('messageText');
-                const messageColor = document.getElementById('messageColor');
-                const messageBackgroundColor = document.getElementById('messageBackgroundColor');
-                const messageFontSize = document.getElementById('messageFontSize');
-                const messageSpeed = document.getElementById('messageSpeed');
-                const messageBold = document.getElementById('messageBold');
-                if (!messageEnabled || !messageText || !messageColor || !messageBackgroundColor || !messageFontSize || !messageSpeed || !messageBold) return;
-                const enabled = messageEnabled.checked ? 1 : 0;
-                const text = messageText.value;
-                const color = messageColor.value;
-                const background_color = messageBackgroundColor.value;
-                const font_size = parseInt(messageFontSize.value) || 24;
-                const speed = parseInt(messageSpeed.value) || 100;
-                const bold = messageBold.checked ? 1 : 0;
+                const enabled = document.getElementById('messageEnabled').checked ? 1 : 0;
+                const text = document.getElementById('messageText').value;
+                const color = document.getElementById('messageColor').value;
+                const background_color = document.getElementById('messageBackgroundColor').value;
+                const font_size = parseInt(document.getElementById('messageFontSize').value) || 24;
+                const speed = parseInt(document.getElementById('messageSpeed').value) || 100;
+                const bold = document.getElementById('messageBold').checked ? 1 : 0;
                 const response = await fetch('api.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -652,34 +594,29 @@
         }
 
         // Загрузка файла
-        function setupUploadForm() {
-            const uploadForm = document.getElementById('uploadForm');
-            if (uploadForm) {
-                uploadForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const spinner = document.getElementById('uploadSpinner');
-                    if (spinner) spinner.classList.remove('hidden');
-                    const formData = new FormData(e.target);
-                    formData.append('action', 'upload_file');
-                    try {
-                        const response = await fetch('api.php', { method: 'POST', body: formData });
-                        const result = await response.json();
-                        if (spinner) spinner.classList.add('hidden');
-                        if (result.error) {
-                            console.error(result.error);
-                            showNotification(result.error, 'bg-red-500');
-                        } else {
-                            showNotification('Файл успешно загружен!');
-                            loadFiles();
-                        }
-                    } catch (err) {
-                        if (spinner) spinner.classList.add('hidden');
-                        console.error('Ошибка загрузки:', err);
-                        showNotification('Ошибка загрузки файла', 'bg-red-500');
-                    }
-                });
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const spinner = document.getElementById('uploadSpinner');
+            spinner.classList.remove('hidden');
+            const formData = new FormData(e.target);
+            formData.append('action', 'upload_file');
+            try {
+                const response = await fetch('api.php', { method: 'POST', body: formData });
+                const result = await response.json();
+                spinner.classList.add('hidden');
+                if (result.error) {
+                    console.error(result.error);
+                    showNotification(result.error, 'bg-red-500');
+                } else {
+                    showNotification('Файл успешно загружен!');
+                    loadFiles();
+                }
+            } catch (err) {
+                spinner.classList.add('hidden');
+                console.error('Ошибка загрузки:', err);
+                showNotification('Ошибка загрузки файла', 'bg-red-500');
             }
-        }
+        });
 
         // Обновление имени файла
         async function updateFileName(id, name) {
@@ -792,10 +729,8 @@
                         if (row) row.remove();
                         const option = document.querySelector(`#clientSelect option[value="${uuid}"]`);
                         if (option) option.remove();
-                        const select = document.getElementById('clientSelect');
-                        if (select && select.value === uuid) {
-                            select.value = '';
-                            document.getElementById('playlistTable')?.innerHTML = '';
+                        if (document.querySelector('#clientSelect').value === uuid) {
+                            document.querySelector('#playlistTable').innerHTML = '';
                         }
                     }
                 } catch (err) {
@@ -876,21 +811,12 @@
         }
 
         // Инициализация
-        function initialize() {
-            const fileSearch = document.getElementById('fileSearch');
-            const scanFilesBtn = document.getElementById('scanFilesBtn');
-            if (fileSearch) fileSearch.addEventListener('input', filterFiles);
-            if (scanFilesBtn) scanFilesBtn.addEventListener('click', scanFiles);
-            setupUploadForm();
-            loadFiles();
-            loadClients();
-            loadMessageSettings();
-            startClientCheck();
-            openTab('fileTab');
-        }
-
-        // Запуск инициализации после загрузки DOM
-        document.addEventListener('DOMContentLoaded', initialize);
+        document.getElementById('fileSearch').addEventListener('input', filterFiles);
+        loadFiles();
+        loadClients();
+        loadMessageSettings();
+        startClientCheck();
+        openTab('fileTab');
     </script>
 </body>
 </html>
