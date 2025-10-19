@@ -60,18 +60,17 @@ canvas#pdfCanvas {
     display: none;
     z-index: 20; /* Выше всех других элементов */
     transform: translateY(-50%);
-    text-align: right; /* Начальная точка текста у правого края */
 }
 #marquee span {
     display: inline-block;
     white-space: nowrap;
     position: absolute;
-    right: 0;
+    left: 100%; /* Начальная позиция за правым краем */
     animation: marquee linear infinite;
 }
 @keyframes marquee {
     0% { transform: translateX(0); }
-    100% { transform: translateX(-100%); }
+    100% { transform: translateX(-200%); } /* Учитываем ширину текста + окна */
 }
 </style>
 </head>
@@ -237,6 +236,7 @@ async function loadMessageSettings() {
                 const totalWidth = textWidth + containerWidth;
                 const duration = totalWidth / (messageSettings.speed || 100);
                 marqueeText.style.animation = `marquee ${duration}s linear infinite`;
+                console.log(`Ширина текста: ${textWidth}, Длительность анимации: ${duration}s`); // Отладка
                 clientInfo.style.display = 'none';
                 fullscreenBtn.style.display = 'none';
             } else {
