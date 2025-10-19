@@ -243,6 +243,10 @@
                             <input type="color" id="messageColor" value="#ffffff" class="p-1 bg-gray-700 border border-gray-600 rounded-lg h-8" onchange="updateMessageSettings()">
                         </div>
                         <div>
+                            <span class="text-gray-200 text-sm">Фон:</span>
+                            <input type="color" id="messageBackgroundColor" value="#000000" class="p-1 bg-gray-700 border border-gray-600 rounded-lg h-8" onchange="updateMessageSettings()">
+                        </div>
+                        <div>
                             <span class="text-gray-200 text-sm">Размер (px):</span>
                             <input type="number" id="messageFontSize" value="24" min="10" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-20 text-gray-200 focus:ring-2 focus:ring-blue-500" onchange="updateMessageSettings()">
                         </div>
@@ -261,7 +265,7 @@
 
         <!-- Футер -->
         <footer class="mt-8 bg-gray-800 text-gray-400 text-center py-4 text-sm rounded-t-lg">
-            2025 © Болгов Иван | Версия: v1.3.0
+            2025 © Болгов Иван | Версия: v1.0.3
         </footer>
     </div>
 
@@ -491,6 +495,7 @@
                 document.getElementById('messageEnabled').checked = settings.enabled === 1;
                 document.getElementById('messageText').value = settings.text || '';
                 document.getElementById('messageColor').value = settings.color || '#ffffff';
+                document.getElementById('messageBackgroundColor').value = settings.background_color || '#000000';
                 document.getElementById('messageFontSize').value = settings.font_size || 24;
                 document.getElementById('messageSpeed').value = settings.speed || 100;
                 document.getElementById('messageBold').checked = settings.bold === 1;
@@ -505,6 +510,7 @@
                 const enabled = document.getElementById('messageEnabled').checked ? 1 : 0;
                 const text = document.getElementById('messageText').value;
                 const color = document.getElementById('messageColor').value;
+                const background_color = document.getElementById('messageBackgroundColor').value;
                 const font_size = parseInt(document.getElementById('messageFontSize').value) || 24;
                 const speed = parseInt(document.getElementById('messageSpeed').value) || 100;
                 const bold = document.getElementById('messageBold').checked ? 1 : 0;
@@ -516,6 +522,7 @@
                         enabled,
                         text,
                         color,
+                        background_color,
                         font_size,
                         speed,
                         bold
