@@ -84,6 +84,10 @@
         .ios-switch input:checked + .slider:before {
             transform: translateX(16px);
         }
+        /* Отключение анимации для существующих строк */
+        tr.existing {
+            animation: none;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-b from-gray-900 to-gray-800 text-gray-100 min-h-screen p-4 md:p-6">
@@ -144,7 +148,7 @@
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full bg-gray-800 rounded-xl shadow-lg">
-                        <thead>
+                        <thead8927>
                             <tr class="bg-gray-700 text-gray-200">
                                 <th class="p-4 text-left">ID</th>
                                 <th class="p-4 text-left">Имя файла</th>
@@ -208,7 +212,7 @@
 
         <!-- Футер -->
         <footer class="mt-8 bg-gray-800 text-gray-400 text-center py-4 text-sm rounded-t-lg">
-            2025 © Болгов Иван | Версия: v1.0.3
+            2025 © Болгов Иван | Версия: v1.1.2
         </footer>
     </div>
 
@@ -239,13 +243,6 @@
             }, 3000);
         }
 
-        // Обновление всех данных
-        function refreshAll() {
-            loadFiles();
-            loadClients();
-            loadPlaylist();
-        }
-
         // Поиск по файлам
         function filterFiles() {
             const searchTerm = document.getElementById('fileSearch').value.toLowerCase();
@@ -263,11 +260,14 @@
                 const files = await response.json();
                 const tbody = document.querySelector('#fileTable');
                 const currentSearch = document.getElementById('fileSearch').value.toLowerCase();
-                tbody.innerHTML = '';
+                const existingRows = Array.from(tbody.querySelectorAll('tr'));
+                const existingIds = existingRows.map(row => row.getAttribute('data-id'));
+
                 files.forEach(file => {
-                    const row = document.createElement('tr');
-                    row.className = 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
+                    const rowIndex = existingIds.indexOf(String(file.id));
+                    const row = rowIndex !== -1 ? existingRows[rowIndex] : document.createElement('tr');
                     row.setAttribute('data-id', file.id);
+                    row.className = rowIndex !== -1 ? 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150 existing' : 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
                     row.innerHTML = `
                         <td class="p-4">${file.id}</td>
                         <td class="p-4">
@@ -283,10 +283,19 @@
                             </button>
                         </td>
                     `;
+                    if (rowIndex === -1) {
+                        tbody.appendChild(row);
+                    }
                     if (currentSearch && !file.name.toLowerCase().includes(currentSearch)) {
                         row.style.display = 'none';
                     }
-                    tbody.appendChild(row);
+                });
+
+                // Удаляем строки, которых больше нет в данных
+                existingRows.forEach(row => {
+                    if (!files.some(file => String(file.id) === row.getAttribute('data-id'))) {
+                        row.remove();
+                    }
                 });
             } catch (err) {
                 console.error('Ошибка загрузки файлов:', err);
@@ -301,12 +310,14 @@
                 const tbody = document.querySelector('#clientTable');
                 const select = document.querySelector('#clientSelect');
                 const currentUuid = select.value;
-                tbody.innerHTML = '';
-                select.innerHTML = '<option value="">-- Выберите устройство --</option>';
+                const existingRows = Array.from(tbody.querySelectorAll('tr'));
+                const existingUuids = existingRows.map(row => row.getAttribute('data-uuid'));
+
                 clients.forEach(client => {
-                    const row = document.createElement('tr');
-                    row.className = 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
+                    const rowIndex = existingUuids.indexOf(client.uuid);
+                    const row = rowIndex !== -1 ? existingRows[rowIndex] : document.createElement('tr');
                     row.setAttribute('data-uuid', client.uuid);
+                    row.className = rowIndex !== -1 ? 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150 existing' : 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
                     row.innerHTML = `
                         <td class="p-4" style="text-transform: uppercase;">${client.uuid}</td>
                         <td class="p-4">
@@ -328,7 +339,21 @@
                             </button>
                         </td>
                     `;
-                    tbody.appendChild(row);
+                    if (rowIndex === -1) {
+                        tbody.appendChild(row);
+                    }
+                });
+
+                // Удаляем строки, которых больше нет в данных
+                existingRows.forEach(row => {
+                    if (!clients.some(client => client.uuid === row.getAttribute('data-uuid'))) {
+                        row.remove();
+                    }
+                });
+
+                // Обновляем выпадающий список
+                select.innerHTML = '<option value="">-- Выберите устройство --</option>';
+                clients.forEach(client => {
                     const option = document.createElement('option');
                     option.value = client.uuid;
                     option.textContent = client.name;
@@ -355,12 +380,15 @@
                 const contentResponse = await fetch(`api.php?action=list_client_content&uuid=${uuid}`);
                 const content = await contentResponse.json();
                 const tbody = document.querySelector('#playlistTable');
-                tbody.innerHTML = '';
+                const existingRows = Array.from(tbody.querySelectorAll('tr'));
+                const existingIds = existingRows.map(row => row.getAttribute('data-id'));
+
                 files.forEach(file => {
                     const isUsed = content.some(c => c.id === file.id && c.type === file.type);
-                    const row = document.createElement('tr');
-                    row.className = 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
+                    const rowIndex = existingIds.indexOf(String(file.id));
+                    const row = rowIndex !== -1 ? existingRows[rowIndex] : document.createElement('tr');
                     row.setAttribute('data-id', file.id);
+                    row.className = rowIndex !== -1 ? 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150 existing' : 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
                     row.innerHTML = `
                         <td class="p-4">${file.id}</td>
                         <td class="p-4">${file.name}</td>
@@ -386,7 +414,16 @@
                                 : '-'}
                         </td>
                     `;
-                    tbody.appendChild(row);
+                    if (rowIndex === -1) {
+                        tbody.appendChild(row);
+                    }
+                });
+
+                // Удаляем строки, которых больше нет в данных
+                existingRows.forEach(row => {
+                    if (!files.some(file => String(file.id) === row.getAttribute('data-id'))) {
+                        row.remove();
+                    }
                 });
             } catch (err) {
                 console.error('Ошибка загрузки плейлиста:', err);
@@ -451,7 +488,12 @@
                 if (result.error) {
                     console.error(result.error);
                 } else {
-                    loadFiles(); // Обновляем только таблицу файлов
+                    const row = document.querySelector(`#fileTable tr[data-id="${id}"]`);
+                    if (row) {
+                        row.querySelector('td:nth-child(2) input').value = name;
+                        filterFiles(); // Применяем фильтр поиска
+                    }
+                    loadPlaylist(); // Обновляем плейлист, так как имя файла изменилось
                 }
             } catch (err) {
                 console.error('Ошибка:', err);
@@ -470,8 +512,11 @@
                 if (result.error) {
                     console.error(result.error);
                 } else {
-                    loadFiles(); // Обновляем только таблицу файлов
-                    loadPlaylist(); // Обновляем плейлист, так как продолжительность может влиять на него
+                    const row = document.querySelector(`#playlistTable tr[data-id="${id}"]`);
+                    if (row && row.querySelector('td:nth-child(6) input')) {
+                        row.querySelector('td:nth-child(6) input').value = duration || '';
+                    }
+                    loadFiles(); // Обновляем таблицу файлов, так как продолжительность влияет на нее
                 }
             } catch (err) {
                 console.error('Ошибка:', err);
@@ -490,8 +535,11 @@
                 if (result.error) {
                     console.error(result.error);
                 } else {
-                    loadFiles(); // Обновляем только таблицу файлов
-                    loadPlaylist(); // Обновляем плейлист, так как порядок может влиять на него
+                    const row = document.querySelector(`#playlistTable tr[data-id="${id}"]`);
+                    if (row) {
+                        row.querySelector('td:nth-child(5) input').value = order;
+                    }
+                    loadFiles(); // Обновляем таблицу файлов, так как порядок влияет на нее
                 }
             } catch (err) {
                 console.error('Ошибка:', err);
@@ -511,8 +559,10 @@
                     if (result.error) {
                         console.error(result.error);
                     } else {
-                        loadFiles(); // Обновляем только таблицу файлов
-                        loadPlaylist(); // Обновляем плейлист, так как файл мог быть в нем
+                        const fileRow = document.querySelector(`#fileTable tr[data-id="${id}"]`);
+                        if (fileRow) fileRow.remove();
+                        const playlistRow = document.querySelector(`#playlistTable tr[data-id="${id}"]`);
+                        if (playlistRow) playlistRow.remove();
                     }
                 } catch (err) {
                     console.error('Ошибка:', err);
@@ -533,8 +583,13 @@
                     if (result.error) {
                         console.error(result.error);
                     } else {
-                        loadClients(); // Обновляем только таблицу устройств
-                        loadPlaylist(); // Обновляем плейлист, так как устройство могло быть выбрано
+                        const row = document.querySelector(`#clientTable tr[data-uuid="${uuid}"]`);
+                        if (row) row.remove();
+                        const option = document.querySelector(`#clientSelect option[value="${uuid}"]`);
+                        if (option) option.remove();
+                        if (document.querySelector('#clientSelect').value === uuid) {
+                            document.querySelector('#playlistTable').innerHTML = '';
+                        }
                     }
                 } catch (err) {
                     console.error('Ошибка:', err);
@@ -554,7 +609,14 @@
                 if (result.error) {
                     console.error(result.error);
                 } else {
-                    loadClients(); // Обновляем только таблицу устройств
+                    const row = document.querySelector(`#clientTable tr[data-uuid="${uuid}"]`);
+                    if (row) {
+                        row.querySelector('td:nth-child(2) input').value = name;
+                    }
+                    const option = document.querySelector(`#clientSelect option[value="${uuid}"]`);
+                    if (option) {
+                        option.textContent = name;
+                    }
                 }
             } catch (err) {
                 console.error('Ошибка:', err);
@@ -574,7 +636,10 @@
                     console.error(result.error);
                 } else {
                     showNotification('Настройка отображения обновлена');
-                    loadClients(); // Обновляем только таблицу устройств
+                    const row = document.querySelector(`#clientTable tr[data-uuid="${uuid}"]`);
+                    if (row) {
+                        row.querySelector('td:nth-child(3) input').checked = show_info;
+                    }
                 }
             } catch (err) {
                 console.error('Ошибка:', err);
@@ -593,7 +658,10 @@
                 if (result.error) {
                     console.error(result.error);
                 } else {
-                    loadPlaylist(); // Обновляем только плейлист
+                    const row = document.querySelector(`#playlistTable tr[data-id="${content_id}"]`);
+                    if (row) {
+                        row.querySelector('td:nth-child(4) input').checked = enabled;
+                    }
                 }
             } catch (err) {
                 console.error('Ошибка:', err);
@@ -602,7 +670,8 @@
 
         // Инициализация
         document.getElementById('fileSearch').addEventListener('input', filterFiles);
-        refreshAll();
+        loadFiles();
+        loadClients();
         startClientCheck();
         openTab('fileTab');
     </script>
