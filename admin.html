@@ -167,6 +167,9 @@
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200 flex items-center">
                             <i class="fas fa-upload mr-2"></i>Загрузить
                         </button>
+                        <button type="button" id="scanFilesBtn" class="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg transition-all duration-200 flex items-center">
+                            <i class="fas fa-search"></i>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -301,20 +304,18 @@
                 btn.classList.add('bg-gray-800', 'text-gray-100');
             });
             document.getElementById(tabId).classList.remove('hidden');
-            event.currentTarget.classList.remove('bg-gray-800', 'text-gray-100');
-            event.currentTarget.classList.add('bg-blue-600', 'text-white');
+            document.querySelector(`button[onclick="openTab('${tabId}')"]`).classList.add('bg-blue-600', 'text-white');
         }
 
         // Показ уведомления
         function showNotification(message, bgClass = 'bg-green-500') {
             const notification = document.getElementById('notification');
-            const messageElement = document.getElementById('notificationMessage');
-            notification.className = `fixed top-4 right-4 ${bgClass} text-white px-4 py-2 rounded-lg shadow-lg transform transition-all duration-300 ease-in-out`;
-            messageElement.textContent = message;
-            notification.classList.remove('hidden', 'opacity-0', 'translate-y-4');
-            setTimeout(() => {
-                notification.classList.add('hidden');
-            }, 3000);
+            const notificationMessage = document.getElementById('notificationMessage');
+            notificationMessage.textContent = message;
+            notification.classList.remove('bg-green-500', 'bg-red-500');
+            notification.classList.add(bgClass);
+            notification.classList.remove('hidden');
+            setTimeout(() => notification.classList.add('hidden'), 3000);
         }
 
         // Фильтрация файлов
@@ -327,110 +328,83 @@
             });
         }
 
-        // Загрузка файлов
+        // Загрузка списка файлов
         async function loadFiles() {
             try {
                 const response = await fetch('api.php?action=list_files');
                 const files = await response.json();
-                console.log('Загруженные файлы:', files); // Отладка
                 const tbody = document.getElementById('fileTable');
                 const existingRows = Array.from(tbody.querySelectorAll('tr'));
                 files.forEach(file => {
                     const rowIndex = existingRows.findIndex(row => row.getAttribute('data-id') === String(file.id));
-                    const row = rowIndex !== -1 ? existingRows[rowIndex] : document.createElement('tr');
-                    row.setAttribute('data-id', file.id);
+                    let row;
+                    if (rowIndex !== -1) {
+                        row = existingRows[rowIndex];
+                        existingRows.splice(rowIndex, 1);
+                    } else {
+                        row = document.createElement('tr');
+                        row.setAttribute('data-id', file.id);
+                        tbody.appendChild(row);
+                    }
                     row.innerHTML = `
                         <td class="p-3">${file.id}</td>
                         <td class="p-3"><input type="text" value="${file.name}" class="p-1 bg-gray-700 border border-gray-600 rounded w-full" onchange="updateFileName(${file.id}, this.value)"></td>
-                        <td class="p-3"><center>${file.type}</center></td>
+                        <td class="p-3"><center>${file.type === 'video' ? 'Видео' : 'PDF'}</center></td>
                         <td class="p-3"><center>
-                            <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition-all duration-200" onclick="deleteFile(${file.id})">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <button class="text-red-500 hover:text-red-400" onclick="deleteFile(${file.id})"><i class="fas fa-trash"></i></button>
                         </center></td>
                     `;
-                    if (rowIndex === -1) {
-                        tbody.appendChild(row);
-                    }
                 });
-                existingRows.forEach(row => {
-                    if (!files.some(file => String(file.id) === row.getAttribute('data-id'))) {
-                        row.remove();
-                    }
-                });
+                existingRows.forEach(row => row.remove());
                 filterFiles();
             } catch (err) {
                 console.error('Ошибка загрузки файлов:', err);
             }
         }
 
-        // Загрузка клиентов
+        // Загрузка списка клиентов
         async function loadClients() {
             try {
                 const response = await fetch('api.php?action=list_clients');
                 const clients = await response.json();
-                console.log('Загруженные клиенты:', clients); // Отладка
                 const tbody = document.getElementById('clientTable');
-                const select = document.getElementById('clientSelect');
+                const clientSelect = document.getElementById('clientSelect');
                 const existingRows = Array.from(tbody.querySelectorAll('tr'));
-                const existingOptions = Array.from(select.querySelectorAll('option:not([value=""])'));
-                const currentValue = select.value;
-
-                // Очищаем и заполняем <select>
-                select.innerHTML = '<option value="">-- Выберите устройство --</option>';
+                const existingOptions = Array.from(clientSelect.querySelectorAll('option:not([value=""])'));
                 clients.forEach(client => {
                     const rowIndex = existingRows.findIndex(row => row.getAttribute('data-uuid') === client.uuid);
-                    const row = rowIndex !== -1 ? existingRows[rowIndex] : document.createElement('tr');
-                    row.setAttribute('data-uuid', client.uuid);
-                    row.innerHTML = `
-                        <td class="p-3"><center><span class="status-dot status-${client.status}"></center></span></td>
-                        <td class="p-3">${client.uuid}</td>
-                        <td class="p-3"><input type="text" value="${client.name}" class="p-1 bg-gray-700 border border-gray-600 rounded w-full" onchange="updateClientName('${client.uuid}', this.value)"></td>
-                        <td class="p-3"><center>
-                            <label class="ios-switch">
-                                <input type="checkbox" ${client.show_info ? 'checked' : ''} onchange="updateClientShowInfo('${client.uuid}', this.checked)">
-                                <span class="slider"></span>
-                            </label>
-                        </center></td>
-                        <td class="p-3"><center>
-                            <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition-all duration-200" onclick="deleteClient('${client.uuid}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </center></td>
-                    `;
-                    if (rowIndex === -1) {
+                    let row;
+                    if (rowIndex !== -1) {
+                        row = existingRows[rowIndex];
+                        existingRows.splice(rowIndex, 1);
+                    } else {
+                        row = document.createElement('tr');
+                        row.setAttribute('data-uuid', client.uuid);
                         tbody.appendChild(row);
                     }
-                    const option = document.createElement('option');
-                    option.value = client.uuid;
+                    row.innerHTML = `
+                        <td class="p-3"><center><span class="status-dot ${client.status === 'online' ? 'status-online' : 'status-offline'}"></span></center></td>
+                        <td class="p-3">${client.uuid.toUpperCase()}</td>
+                        <td class="p-3"><input type="text" value="${client.name}" class="p-1 bg-gray-700 border border-gray-600 rounded w-full" onchange="updateClientName('${client.uuid}', this.value)"></td>
+                        <td class="p-3"><center><label class="ios-switch"><input type="checkbox" ${client.show_info ? 'checked' : ''} onchange="updateClientShowInfo('${client.uuid}', this.checked)"><span class="slider"></span></label></center></td>
+                        <td class="p-3"><center>
+                            <button class="text-red-500 hover:text-red-400" onclick="deleteClient('${client.uuid}')"><i class="fas fa-trash"></i></button>
+                        </center></td>
+                    `;
+                    const optionIndex = existingOptions.findIndex(opt => opt.value === client.uuid);
+                    let option;
+                    if (optionIndex !== -1) {
+                        option = existingOptions[optionIndex];
+                        existingOptions.splice(optionIndex, 1);
+                    } else {
+                        option = document.createElement('option');
+                        option.value = client.uuid;
+                        clientSelect.appendChild(option);
+                    }
                     option.textContent = client.name;
-                    select.appendChild(option);
                 });
-
-                // Удаляем устаревшие строки и опции
-                existingRows.forEach(row => {
-                    if (!clients.some(client => client.uuid === row.getAttribute('data-uuid'))) {
-                        row.remove();
-                    }
-                });
-                existingOptions.forEach(opt => {
-                    if (!clients.some(client => client.uuid === opt.value)) {
-                        opt.remove();
-                    }
-                });
-
-                // Восстановление выбранного значения
-                if (currentValue && clients.some(client => client.uuid === currentValue)) {
-                    select.value = currentValue;
-                } else {
-                    select.value = '';
-                    document.getElementById('playlistTable').innerHTML = '';
-                }
-
-                // Обновление плейлиста, если выбрано устройство
-                if (select.value) {
-                    loadPlaylist();
-                }
+                existingRows.forEach(row => row.remove());
+                existingOptions.forEach(opt => opt.remove());
             } catch (err) {
                 console.error('Ошибка загрузки клиентов:', err);
             }
@@ -441,23 +415,18 @@
             try {
                 const response = await fetch('api.php?action=list_clients');
                 const clients = await response.json();
-                console.log('Обновление статусов, клиенты:', clients); // Отладка
-                const tbody = document.getElementById('clientTable');
-                const rows = tbody.querySelectorAll('tr');
-
-                // Обновление только статусов в таблице
+                const rows = document.querySelectorAll('#clientTable tr');
                 rows.forEach(row => {
                     const uuid = row.getAttribute('data-uuid');
                     const client = clients.find(c => c.uuid === uuid);
                     if (client) {
                         const statusDot = row.querySelector('.status-dot');
-                        if (statusDot) {
-                            statusDot.className = `status-dot status-${client.status}`;
-                        }
+                        statusDot.classList.remove('status-online', 'status-offline');
+                        statusDot.classList.add(client.status === 'online' ? 'status-online' : 'status-offline');
                     }
                 });
             } catch (err) {
-                console.error('Ошибка обновления статусов клиентов:', err);
+                console.error('Ошибка обновления статусов:', err);
             }
         }
 
@@ -469,28 +438,29 @@
                 return;
             }
             try {
-                const response = await fetch('api.php?action=list_files');
+                const response = await fetch(`api.php?action=list_files`);
                 const files = await response.json();
                 const contentResponse = await fetch(`api.php?action=list_client_content&uuid=${uuid}`);
-                const content = await contentResponse.json();
-                console.log('Загружен плейлист для UUID:', uuid, 'Файлы:', files, 'Контент:', content); // Отладка
+                const content = await response.json();
                 const tbody = document.getElementById('playlistTable');
                 const existingRows = Array.from(tbody.querySelectorAll('tr'));
                 files.forEach(file => {
-                    const isUsed = content.some(c => c.id === file.id && c.type === file.type);
                     const rowIndex = existingRows.findIndex(row => row.getAttribute('data-id') === String(file.id));
-                    const row = rowIndex !== -1 ? existingRows[rowIndex] : document.createElement('tr');
-                    row.setAttribute('data-id', file.id);
+                    let row;
+                    if (rowIndex !== -1) {
+                        row = existingRows[rowIndex];
+                        existingRows.splice(rowIndex, 1);
+                    } else {
+                        row = document.createElement('tr');
+                        row.setAttribute('data-id', file.id);
+                        tbody.appendChild(row);
+                    }
+                    const isChecked = content.some(c => c.id === file.id && c.type === file.type);
                     row.innerHTML = `
                         <td class="p-3">${file.id}</td>
                         <td class="p-3">${file.name}</td>
-                        <td class="p-3"><center>${file.type}</center></td>
-                        <td class="p-3"><center>
-                            <label class="ios-switch">
-                                <input type="checkbox" ${isUsed ? 'checked' : ''} onchange="updateClientContent('${uuid}', ${file.id}, '${file.type}', this.checked)">
-                                <span class="slider"></span>
-                            </label>
-                        </center></td>
+                        <td class="p-3"><center>${file.type === 'video' ? 'Видео' : 'PDF'}</center></td>
+                        <td class="p-3"><center><label class="ios-switch"><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="updateClientContent('${uuid}', ${file.id}, '${file.type}', this.checked)"><span class="slider"></span></label></center></td>
                         <td class="p-3"><center>
                             <input type="number" value="${file.order_num}" class="w-20 p-1 bg-gray-700 border border-gray-600 rounded" onchange="updateOrder('file', ${file.id}, this.value)">
                         </center></td>
@@ -615,6 +585,28 @@
                 spinner.classList.add('hidden');
                 console.error('Ошибка загрузки:', err);
                 showNotification('Ошибка загрузки файла', 'bg-red-500');
+            }
+        });
+
+        // Сканирование файлов
+        document.getElementById('scanFilesBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'scan_files' })
+                });
+                const result = await response.json();
+                if (result.error) {
+                    console.error(result.error);
+                    showNotification(result.error, 'bg-red-500');
+                } else {
+                    showNotification(result.message);
+                    loadFiles();
+                }
+            } catch (err) {
+                console.error('Ошибка сканирования файлов:', err);
+                showNotification('Ошибка сканирования файлов', 'bg-red-500');
             }
         });
 
