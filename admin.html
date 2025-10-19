@@ -63,6 +63,17 @@
         .overflow-x-auto::-webkit-scrollbar-track {
             background: #1f2937;
         }
+        .message-settings-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .message-settings-controls > div {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
         @media (max-width: 640px) {
             .tab-button {
                 padding: 0.5rem 1rem;
@@ -76,7 +87,7 @@
             }
             .message-settings-controls {
                 flex-direction: column;
-                align-items: stretch;
+                align-items: flex-start;
             }
             .message-settings-controls > div {
                 margin-bottom: 1rem;
@@ -219,24 +230,24 @@
                         </label>
                         <span class="ml-2 text-gray-200">Включить бегущую строку</span>
                     </div>
-                    <div class="flex flex-wrap items-center message-settings-controls space-x-4 space-y-4 sm:space-y-0 mb-4">
-                        <div class="flex items-center">
+                    <div class="message-settings-controls mb-4">
+                        <div>
+                            <span class="text-gray-200 text-sm">Жирный:</span>
                             <label class="ios-switch">
                                 <input type="checkbox" id="messageBold" onchange="updateMessageSettings()">
                                 <span class="slider"></span>
                             </label>
-                            <span class="ml-2 text-gray-200">Жирный</span>
                         </div>
                         <div>
-                            <label class="block mb-1 text-gray-200 text-sm">Цвет:</label>
+                            <span class="text-gray-200 text-sm">Цвет:</span>
                             <input type="color" id="messageColor" value="#ffffff" class="p-1 bg-gray-700 border border-gray-600 rounded-lg h-8" onchange="updateMessageSettings()">
                         </div>
                         <div>
-                            <label class="block mb-1 text-gray-200 text-sm">Размер (px):</label>
+                            <span class="text-gray-200 text-sm">Размер (px):</span>
                             <input type="number" id="messageFontSize" value="24" min="10" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-20 text-gray-200 focus:ring-2 focus:ring-blue-500" onchange="updateMessageSettings()">
                         </div>
                         <div>
-                            <label class="block mb-1 text-gray-200 text-sm">Скорость (px/s):</label>
+                            <span class="text-gray-200 text-sm">Скорость (px/s):</span>
                             <input type="number" id="messageSpeed" value="100" min="10" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-20 text-gray-200 focus:ring-2 focus:ring-blue-500" onchange="updateMessageSettings()">
                         </div>
                     </div>
@@ -250,7 +261,7 @@
 
         <!-- Футер -->
         <footer class="mt-8 bg-gray-800 text-gray-400 text-center py-4 text-sm rounded-t-lg">
-            2025 © Болгов Иван | Версия: v1.2.2
+            2025 © Болгов Иван | Версия: v1.3.0
         </footer>
     </div>
 
