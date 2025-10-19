@@ -323,6 +323,7 @@
             try {
                 const response = await fetch('api.php?action=list_files');
                 const files = await response.json();
+                console.log('Загруженные файлы:', files); // Отладка
                 const tbody = document.getElementById('fileTable');
                 const existingRows = Array.from(tbody.querySelectorAll('tr'));
                 files.forEach(file => {
@@ -359,12 +360,14 @@
             try {
                 const response = await fetch('api.php?action=list_clients');
                 const clients = await response.json();
+                console.log('Загруженные клиенты:', clients); // Отладка
                 const tbody = document.getElementById('clientTable');
                 const select = document.getElementById('clientSelect');
                 const existingRows = Array.from(tbody.querySelectorAll('tr'));
                 const existingOptions = Array.from(select.querySelectorAll('option:not([value=""])'));
                 const currentValue = select.value;
 
+                // Очищаем и заполняем <select>
                 select.innerHTML = '<option value="">-- Выберите устройство --</option>';
                 clients.forEach(client => {
                     const rowIndex = existingRows.findIndex(row => row.getAttribute('data-uuid') === client.uuid);
@@ -389,16 +392,13 @@
                     if (rowIndex === -1) {
                         tbody.appendChild(row);
                     }
-                    const optionIndex = existingOptions.findIndex(opt => opt.value === client.uuid);
-                    if (optionIndex === -1) {
-                        const option = document.createElement('option');
-                        option.value = client.uuid;
-                        option.textContent = client.name;
-                        select.appendChild(option);
-                    } else {
-                        existingOptions[optionIndex].textContent = client.name;
-                    }
+                    const option = document.createElement('option');
+                    option.value = client.uuid;
+                    option.textContent = client.name;
+                    select.appendChild(option);
                 });
+
+                // Удаляем устаревшие строки и опции
                 existingRows.forEach(row => {
                     if (!clients.some(client => client.uuid === row.getAttribute('data-uuid'))) {
                         row.remove();
@@ -418,6 +418,7 @@
                     document.getElementById('playlistTable').innerHTML = '';
                 }
 
+                // Обновление плейлиста, если выбрано устройство
                 if (select.value) {
                     loadPlaylist();
                 }
@@ -431,6 +432,7 @@
             try {
                 const response = await fetch('api.php?action=list_clients');
                 const clients = await response.json();
+                console.log('Обновление статусов, клиенты:', clients); // Отладка
                 const tbody = document.getElementById('clientTable');
                 const rows = tbody.querySelectorAll('tr');
 
@@ -462,6 +464,7 @@
                 const files = await response.json();
                 const contentResponse = await fetch(`api.php?action=list_client_content&uuid=${uuid}`);
                 const content = await contentResponse.json();
+                console.log('Загружен плейлист для UUID:', uuid, 'Файлы:', files, 'Контент:', content); // Отладка
                 const tbody = document.getElementById('playlistTable');
                 const existingRows = Array.from(tbody.querySelectorAll('tr'));
                 files.forEach(file => {
@@ -507,6 +510,7 @@
             try {
                 const response = await fetch('api.php?action=get_message_settings');
                 const settings = await response.json();
+                console.log('Загружены настройки сообщения:', settings); // Отладка
                 document.getElementById('messageEnabled').checked = settings.enabled === 1;
                 document.getElementById('messageText').value = settings.text || '';
                 document.getElementById('messageColor').value = settings.color || '#ffffff';
@@ -562,6 +566,7 @@
             try {
                 const response = await fetch('api.php?action=count_clients');
                 const result = await response.json();
+                console.log('Проверка количества клиентов:', result.count, 'Текущее:', clientCount); // Отладка
                 if (result.count !== clientCount) {
                     clientCount = result.count;
                     loadClients();
