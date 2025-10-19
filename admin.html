@@ -415,6 +415,28 @@
             }
         }
 
+        // Обновление статусов клиентов
+        async function updateClientStatuses() {
+            try {
+                const response = await fetch('api.php?action=list_clients');
+                const clients = await response.json();
+                const tbody = document.getElementById('clientTable');
+                const rows = tbody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const uuid = row.getAttribute('data-uuid');
+                    const client = clients.find(c => c.uuid === uuid);
+                    if (client) {
+                        const statusDot = row.querySelector('.status-dot');
+                        if (statusDot) {
+                            statusDot.className = `status-dot status-${client.status}`;
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error('Ошибка обновления статусов клиентов:', err);
+            }
+        }
+
         // Загрузка плейлиста
         async function loadPlaylist() {
             const uuid = document.getElementById('clientSelect').value;
@@ -525,12 +547,13 @@
         let clientCount = 0;
         async function checkNewClients() {
             try {
-                const response = await fetch('api.php?action=list_clients');
-                const clients = await response.json();
-                const newCount = clients.length;
-                if (newCount !== clientCount || document.getElementById('clientTab').classList.contains('hidden') === false) {
-                    clientCount = newCount;
+                const response = await fetch('api.php?action=count_clients');
+                const result = await response.json();
+                if (result.count !== clientCount) {
+                    clientCount = result.count;
                     loadClients();
+                } else if (document.getElementById('clientTab').classList.contains('hidden') === false) {
+                    updateClientStatuses();
                 }
             } catch (err) {
                 console.error('Ошибка проверки новых устройств:', err);

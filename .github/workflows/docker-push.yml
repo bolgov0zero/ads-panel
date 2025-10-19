@@ -38,5 +38,5 @@ jobs:
           TELEGRAM_TEMPLATE_CONTENT: |
             🐳 Публикация образа Ads Panel завершёна!
             Статус: ${{ needs.build-and-push.result == 'success' && '✅ Успех' || needs.build-and-push.result == 'failure' && '❌ Ошибка' || '⚠️ Отмена' }}
-            Версия: ${{ github.ref_name == 'main' && 'latest' || 'dev' }}
             Коммит: ${{ github.event.head_commit.message }}
+            Версия: ${{ github.ref_name == 'main' && 'latest' || 'dev' }}
