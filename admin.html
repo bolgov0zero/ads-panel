@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ads Panel</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="tailwind.min.css" rel="stylesheet">
+    <link href="all.min.css" rel="stylesheet">
     <style>
         #notification {
             transition: opacity 0.3s ease, transform 0.3s ease;
@@ -82,11 +82,11 @@
             margin-right: 8px;
         }
         .status-online {
-            background-color: #22c55e;
+            background-color: #22c55e; /* Зеленый */
+            animation: blink 1.5s ease-in-out infinite; /* Анимация моргания */
         }
         .status-offline {
-            background-color: #ef4444;
-            animation: blink 1s ease-in-out infinite;
+            background-color: #ef4444; /* Красный */
         }
         @keyframes blink {
             0%, 100% {
@@ -164,8 +164,11 @@
                                 <i class="fas fa-spinner fa-spin text-blue-500"></i>
                             </div>
                         </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200 flex items-center">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200 flex items-center h-10">
                             <i class="fas fa-upload mr-2"></i>Загрузить
+                        </button>
+                        <button type="button" id="scanFilesBtn" class="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg transition-all duration-200 flex items-center h-10" onclick="scanFiles()">
+                            <i class="fas fa-search"></i>
                         </button>
                     </div>
                 </form>
@@ -200,7 +203,7 @@
                     <table class="w-full bg-gray-800 rounded-xl shadow-lg">
                         <thead>
                             <tr class="bg-gray-700 text-gray-200">
-                                <th class="p-4 text-left rounded-tl-lg"><center>Статус</center></th>
+                                <th class="p-4 text-left rounded-tl-lg">Статус</th>
                                 <th class="p-4 text-left">UUID</th>
                                 <th class="p-4 text-left">Имя устройства</th>
                                 <th class="p-4 text-left"><center>UUID/Имя</center></th>
@@ -288,7 +291,7 @@
 
         <!-- Футер -->
         <footer class="mt-8 bg-gray-800 text-gray-400 text-center py-4 text-sm rounded-t-lg rounded-b-lg">
-            2025 © Болгов Иван | Версия: v1.5.0
+            2025 © Болгов Иван | Версия: v1.5.2
         </footer>
     </div>
 
@@ -325,6 +328,30 @@
                 const name = row.querySelector('td:nth-child(2) input').value.toLowerCase();
                 row.style.display = name.includes(search) ? '' : 'none';
             });
+        }
+
+        // Сканирование файлов в папке
+        async function scanFiles() {
+            const btn = document.getElementById('scanFilesBtn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+            try {
+                const response = await fetch('api.php?action=scan_files');
+                const result = await response.json();
+                if (result.error) {
+                    console.error(result.error);
+                    showNotification(result.error, 'bg-red-500');
+                } else {
+                    showNotification(result.message);
+                    loadFiles();
+                }
+            } catch (err) {
+                console.error('Ошибка сканирования файлов:', err);
+                showNotification('Ошибка сканирования файлов', 'bg-red-500');
+            } finally {
+                btn.innerHTML = '<i class="fas fa-search"></i>';
+                btn.disabled = false;
+            }
         }
 
         // Загрузка файлов
@@ -376,14 +403,13 @@
                 const existingOptions = Array.from(select.querySelectorAll('option:not([value=""])'));
                 const currentValue = select.value;
 
-                // Очищаем и заполняем <select>
                 select.innerHTML = '<option value="">-- Выберите устройство --</option>';
                 clients.forEach(client => {
                     const rowIndex = existingRows.findIndex(row => row.getAttribute('data-uuid') === client.uuid);
                     const row = rowIndex !== -1 ? existingRows[rowIndex] : document.createElement('tr');
                     row.setAttribute('data-uuid', client.uuid);
                     row.innerHTML = `
-                        <td class="p-3"><center><span class="status-dot status-${client.status}"></center></span></td>
+                        <td class="p-3"><span class="status-dot status-${client.status}"></span></td>
                         <td class="p-3">${client.uuid}</td>
                         <td class="p-3"><input type="text" value="${client.name}" class="p-1 bg-gray-700 border border-gray-600 rounded w-full" onchange="updateClientName('${client.uuid}', this.value)"></td>
                         <td class="p-3"><center>
@@ -407,7 +433,6 @@
                     select.appendChild(option);
                 });
 
-                // Удаляем устаревшие строки и опции
                 existingRows.forEach(row => {
                     if (!clients.some(client => client.uuid === row.getAttribute('data-uuid'))) {
                         row.remove();
@@ -419,7 +444,6 @@
                     }
                 });
 
-                // Восстановление выбранного значения
                 if (currentValue && clients.some(client => client.uuid === currentValue)) {
                     select.value = currentValue;
                 } else {
@@ -427,7 +451,6 @@
                     document.getElementById('playlistTable').innerHTML = '';
                 }
 
-                // Обновление плейлиста, если выбрано устройство
                 if (select.value) {
                     loadPlaylist();
                 }
@@ -445,7 +468,6 @@
                 const tbody = document.getElementById('clientTable');
                 const rows = tbody.querySelectorAll('tr');
 
-                // Обновление только статусов в таблице
                 rows.forEach(row => {
                     const uuid = row.getAttribute('data-uuid');
                     const client = clients.find(c => c.uuid === uuid);
@@ -733,7 +755,7 @@
                             document.querySelector('#playlistTable').innerHTML = '';
                         }
                     }
-                } catch (err) {
+                } Rai (err) {
                     console.error('Ошибка:', err);
                 }
             }
@@ -812,6 +834,7 @@
 
         // Инициализация
         document.getElementById('fileSearch').addEventListener('input', filterFiles);
+        document.getElementById('scanFilesBtn').addEventListener('click', scanFiles);
         loadFiles();
         loadClients();
         loadMessageSettings();
