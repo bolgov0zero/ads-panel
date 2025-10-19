@@ -59,12 +59,14 @@ canvas#pdfCanvas {
     display: none;
     z-index: 10;
     transform: translateY(-50%);
+    text-align: right; /* Начальная точка текста у правого края */
 }
 #marquee span {
     display: inline-block;
     white-space: nowrap;
     position: absolute;
     right: 0;
+    animation: marquee linear infinite;
 }
 @keyframes marquee {
     0% { transform: translateX(0); }
@@ -130,20 +132,24 @@ function stopCurrentContent(force = false) {
 
 // Рендеринг PDF
 async function renderPDF(url) {
-    const pdfDoc = await pdfjsLib.getDocument(url).promise;
-    const page = await pdfDoc.getPage(1);
-    const viewport = page.getViewport({ scale: 1.0 });
-    const ctx = pdfCanvas.getContext('2d');
-    const scale = window.innerHeight / viewport.height;
-    const scaledWidth = viewport.width * scale;
-    pdfCanvas.width = scaledWidth;
-    pdfCanvas.height = window.innerHeight;
-    const scaledViewport = page.getViewport({ scale });
-    await page.render({
-        canvasContext: ctx,
-        viewport: scaledViewport
-    }).promise;
-    pdfCanvas.style.display = 'block';
+    try {
+        const pdfDoc = await pdfjsLib.getDocument(url).promise;
+        const page = await pdfDoc.getPage(1);
+        const viewport = page.getViewport({ scale: 1.0 });
+        const ctx = pdfCanvas.getContext('2d');
+        const scale = window.innerHeight / viewport.height;
+        const scaledWidth = viewport.width * scale;
+        pdfCanvas.width = scaledWidth;
+        pdfCanvas.height = window.innerHeight;
+        const scaledViewport = page.getViewport({ scale });
+        await page.render({
+            canvasContext: ctx,
+            viewport: scaledViewport
+        }).promise;
+        pdfCanvas.style.display = 'block';
+    } catch (err) {
+        console.error('Ошибка рендеринга PDF:', err);
+    }
 }
 
 // Показ PDF
@@ -219,14 +225,19 @@ async function loadMessageSettings() {
                 marqueeText.style.color = messageSettings.color;
                 marqueeText.style.fontSize = `${messageSettings.font_size}px`;
                 marqueeText.style.fontWeight = messageSettings.bold ? 'bold' : 'normal';
-                const textWidth = marqueeText.offsetWidth;
-                const duration = textWidth / messageSettings.speed;
+                // Рассчитываем ширину текста и длительность анимации
+                marqueeText.style.transform = 'translateX(0)'; // Сбрасываем позицию
+                const textWidth = marqueeText.offsetWidth || window.innerWidth; // Запасной вариант, если offsetWidth не определен
+                const containerWidth = window.innerWidth;
+                const totalWidth = textWidth + containerWidth;
+                const duration = totalWidth / messageSettings.speed;
                 marqueeText.style.animation = `marquee ${duration}s linear infinite`;
                 clientInfo.style.display = 'none';
                 fullscreenBtn.style.display = 'none';
             } else {
                 marquee.style.display = 'none';
                 marqueeText.style.animation = 'none';
+                marqueeText.textContent = '';
                 showContent(currentIndex, currentTime);
                 loadClientInfo();
                 if (!document.fullscreenElement) {
