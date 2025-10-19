@@ -48,7 +48,8 @@ try {
 			text TEXT DEFAULT '',
 			color TEXT DEFAULT '#ffffff',
 			font_size INTEGER DEFAULT 24,
-			speed INTEGER DEFAULT 100
+			speed INTEGER DEFAULT 100,
+			bold INTEGER DEFAULT 0 -- 1 для жирного текста, 0 для обычного
 		);
 	");
 
@@ -67,7 +68,7 @@ try {
 	// Инициализация записи для настроек сообщения
 	$result = $db->querySingle("SELECT COUNT(*) FROM message_settings");
 	if ($result == 0) {
-		$db->exec("INSERT INTO message_settings (id, enabled, text, color, font_size, speed) VALUES (1, 0, '', '#ffffff', 24, 100)");
+		$db->exec("INSERT INTO message_settings (id, enabled, text, color, font_size, speed, bold) VALUES (1, 0, '', '#ffffff', 24, 100, 0)");
 	}
 
 	// Закрытие соединения
