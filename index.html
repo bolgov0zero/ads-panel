@@ -223,7 +223,7 @@ async function loadMessageSettings() {
             if (messageSettings.enabled && messageSettings.text) {
                 stopCurrentContent(true);
                 marquee.style.display = 'block';
-                marquee.style.backgroundColor = messageSettings.background_color;
+                document.body.style.backgroundColor = messageSettings.background_color;
                 marqueeText.textContent = messageSettings.text;
                 marqueeText.style.color = messageSettings.color;
                 marqueeText.style.fontSize = `${messageSettings.font_size}px`;
@@ -247,7 +247,7 @@ async function loadMessageSettings() {
                 marqueeText.style.animation = 'none';
                 marqueeText.textContent = '';
                 marquee.style.height = '100px'; // Сбрасываем высоту
-                marquee.style.backgroundColor = 'transparent'; // Сбрасываем цвет фона
+                document.body.style.backgroundColor = 'white'; // Сбрасываем цвет фона
                 showContent(currentIndex, currentTime);
                 loadClientInfo();
                 if (!document.fullscreenElement) {
