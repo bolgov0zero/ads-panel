@@ -70,7 +70,7 @@ canvas#pdfCanvas {
 }
 @keyframes marquee {
     0% { transform: translateX(0); }
-    100% { transform: translateX(-200%); } /* Учитываем ширину текста + окна */
+    100% { transform: translateX(calc(-100% - 100vw)); } /* Полное скрытие за левым краем */
 }
 </style>
 </head>
@@ -236,7 +236,7 @@ async function loadMessageSettings() {
                 const totalWidth = textWidth + containerWidth;
                 const duration = totalWidth / (messageSettings.speed || 100);
                 marqueeText.style.animation = `marquee ${duration}s linear infinite`;
-                console.log(`Ширина текста: ${textWidth}, Длительность анимации: ${duration}s`); // Отладка
+                console.log(`Ширина текста: ${textWidth}, Ширина окна: ${containerWidth}, Длительность анимации: ${duration}s`); // Отладка
                 clientInfo.style.display = 'none';
                 fullscreenBtn.style.display = 'none';
             } else {
