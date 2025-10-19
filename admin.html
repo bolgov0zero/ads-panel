@@ -262,10 +262,12 @@
                 const response = await fetch('api.php?action=list_files');
                 const files = await response.json();
                 const tbody = document.querySelector('#fileTable');
+                const currentSearch = document.getElementById('fileSearch').value.toLowerCase();
                 tbody.innerHTML = '';
                 files.forEach(file => {
                     const row = document.createElement('tr');
                     row.className = 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
+                    row.setAttribute('data-id', file.id);
                     row.innerHTML = `
                         <td class="p-4">${file.id}</td>
                         <td class="p-4">
@@ -281,6 +283,9 @@
                             </button>
                         </td>
                     `;
+                    if (currentSearch && !file.name.toLowerCase().includes(currentSearch)) {
+                        row.style.display = 'none';
+                    }
                     tbody.appendChild(row);
                 });
             } catch (err) {
@@ -301,6 +306,7 @@
                 clients.forEach(client => {
                     const row = document.createElement('tr');
                     row.className = 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
+                    row.setAttribute('data-uuid', client.uuid);
                     row.innerHTML = `
                         <td class="p-4" style="text-transform: uppercase;">${client.uuid}</td>
                         <td class="p-4">
@@ -354,6 +360,7 @@
                     const isUsed = content.some(c => c.id === file.id && c.type === file.type);
                     const row = document.createElement('tr');
                     row.className = 'border-t border-gray-700 hover:bg-gray-600 transition-colors duration-150';
+                    row.setAttribute('data-id', file.id);
                     row.innerHTML = `
                         <td class="p-4">${file.id}</td>
                         <td class="p-4">${file.name}</td>
@@ -394,7 +401,7 @@
                 const result = await response.json();
                 if (result.count !== clientCount) {
                     clientCount = result.count;
-                    refreshAll();
+                    loadClients(); // Обновляем только устройства
                 }
             } catch (err) {
                 console.error('Ошибка проверки новых устройств:', err);
@@ -423,7 +430,7 @@
                     showNotification('Ошибка при загрузке файла', 'bg-red-500');
                 } else {
                     showNotification('Файл успешно загружен!');
-                    refreshAll();
+                    loadFiles(); // Обновляем только таблицу файлов
                 }
             } catch (err) {
                 spinner.classList.add('hidden');
@@ -443,8 +450,9 @@
                 const result = await response.json();
                 if (result.error) {
                     console.error(result.error);
+                } else {
+                    loadFiles(); // Обновляем только таблицу файлов
                 }
-                refreshAll();
             } catch (err) {
                 console.error('Ошибка:', err);
             }
@@ -461,8 +469,10 @@
                 const result = await response.json();
                 if (result.error) {
                     console.error(result.error);
+                } else {
+                    loadFiles(); // Обновляем только таблицу файлов
+                    loadPlaylist(); // Обновляем плейлист, так как продолжительность может влиять на него
                 }
-                refreshAll();
             } catch (err) {
                 console.error('Ошибка:', err);
             }
@@ -479,8 +489,10 @@
                 const result = await response.json();
                 if (result.error) {
                     console.error(result.error);
+                } else {
+                    loadFiles(); // Обновляем только таблицу файлов
+                    loadPlaylist(); // Обновляем плейлист, так как порядок может влиять на него
                 }
-                refreshAll();
             } catch (err) {
                 console.error('Ошибка:', err);
             }
@@ -498,8 +510,10 @@
                     const result = await response.json();
                     if (result.error) {
                         console.error(result.error);
+                    } else {
+                        loadFiles(); // Обновляем только таблицу файлов
+                        loadPlaylist(); // Обновляем плейлист, так как файл мог быть в нем
                     }
-                    refreshAll();
                 } catch (err) {
                     console.error('Ошибка:', err);
                 }
@@ -518,8 +532,10 @@
                     const result = await response.json();
                     if (result.error) {
                         console.error(result.error);
+                    } else {
+                        loadClients(); // Обновляем только таблицу устройств
+                        loadPlaylist(); // Обновляем плейлист, так как устройство могло быть выбрано
                     }
-                    refreshAll();
                 } catch (err) {
                     console.error('Ошибка:', err);
                 }
@@ -537,8 +553,9 @@
                 const result = await response.json();
                 if (result.error) {
                     console.error(result.error);
+                } else {
+                    loadClients(); // Обновляем только таблицу устройств
                 }
-                refreshAll();
             } catch (err) {
                 console.error('Ошибка:', err);
             }
@@ -557,8 +574,8 @@
                     console.error(result.error);
                 } else {
                     showNotification('Настройка отображения обновлена');
+                    loadClients(); // Обновляем только таблицу устройств
                 }
-                refreshAll();
             } catch (err) {
                 console.error('Ошибка:', err);
             }
@@ -575,8 +592,9 @@
                 const result = await response.json();
                 if (result.error) {
                     console.error(result.error);
+                } else {
+                    loadPlaylist(); // Обновляем только плейлист
                 }
-                refreshAll();
             } catch (err) {
                 console.error('Ошибка:', err);
             }
