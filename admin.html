@@ -74,13 +74,12 @@
             th, td {
                 padding: 0.5rem;
             }
-            .message-settings {
+            .message-settings-controls {
                 flex-direction: column;
                 align-items: stretch;
             }
-            .message-settings > div {
+            .message-settings-controls > div {
                 margin-bottom: 1rem;
-                flex: none;
             }
         }
     </style>
@@ -213,17 +212,20 @@
             <div class="mb-8">
                 <h3 class="text-xl font-semibold mb-4 text-gray-100">Настройка сообщения</h3>
                 <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
-                    <div class="flex flex-wrap items-center message-settings space-x-4 space-y-4 sm:space-y-0">
+                    <div class="mb-4">
+                        <label class="ios-switch">
+                            <input type="checkbox" id="messageEnabled" onchange="updateMessageSettings()">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="ml-2 text-gray-200">Включить бегущую строку</span>
+                    </div>
+                    <div class="flex flex-wrap items-center message-settings-controls space-x-4 space-y-4 sm:space-y-0 mb-4">
                         <div class="flex items-center">
                             <label class="ios-switch">
-                                <input type="checkbox" id="messageEnabled" onchange="updateMessageSettings()">
+                                <input type="checkbox" id="messageBold" onchange="updateMessageSettings()">
                                 <span class="slider"></span>
                             </label>
-                            <span class="ml-2 text-gray-200">Включить</span>
-                        </div>
-                        <div class="flex-1 min-w-[200px]">
-                            <label class="block mb-1 text-gray-200 text-sm">Текст:</label>
-                            <input type="text" id="messageText" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500" onchange="updateMessageSettings()">
+                            <span class="ml-2 text-gray-200">Жирный</span>
                         </div>
                         <div>
                             <label class="block mb-1 text-gray-200 text-sm">Цвет:</label>
@@ -237,13 +239,10 @@
                             <label class="block mb-1 text-gray-200 text-sm">Скорость (px/s):</label>
                             <input type="number" id="messageSpeed" value="100" min="10" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-20 text-gray-200 focus:ring-2 focus:ring-blue-500" onchange="updateMessageSettings()">
                         </div>
-                        <div class="flex items-center">
-                            <label class="ios-switch">
-                                <input type="checkbox" id="messageBold" onchange="updateMessageSettings()">
-                                <span class="slider"></span>
-                            </label>
-                            <span class="ml-2 text-gray-200">Жирный</span>
-                        </div>
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-gray-200 text-sm">Текст сообщения:</label>
+                        <textarea id="messageText" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500" rows="4" onchange="updateMessageSettings()"></textarea>
                     </div>
                 </div>
             </div>
@@ -251,7 +250,7 @@
 
         <!-- Футер -->
         <footer class="mt-8 bg-gray-800 text-gray-400 text-center py-4 text-sm rounded-t-lg">
-            2025 © Болгов Иван | Версия: v1.2.1
+            2025 © Болгов Иван | Версия: v1.2.2
         </footer>
     </div>
 
