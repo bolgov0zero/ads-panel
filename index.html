@@ -52,16 +52,23 @@ canvas#pdfCanvas {
 }
 #marquee {
     position: absolute;
-    bottom: 50px;
+    top: 50%;
     left: 0;
     width: 100%;
     overflow: hidden;
     display: none;
     z-index: 10;
+    transform: translateY(-50%);
 }
 #marquee span {
     display: inline-block;
     white-space: nowrap;
+    position: absolute;
+    right: 0;
+}
+@keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
 }
 </style>
 </head>
@@ -104,7 +111,7 @@ let currentTime = 0;
 let pdfTimer = null;
 let currentContentUrl = null;
 const DEFAULT_PDF_DURATION = 5000;
-let messageSettings = { enabled: 0, text: '', color: '#ffffff', font_size: 24, speed: 100 };
+let messageSettings = { enabled: 0, text: '', color: '#ffffff', font_size: 24, speed: 100, bold: 0 };
 
 // Остановка текущего контента
 function stopCurrentContent(force = false) {
@@ -211,6 +218,7 @@ async function loadMessageSettings() {
                 marqueeText.textContent = messageSettings.text;
                 marqueeText.style.color = messageSettings.color;
                 marqueeText.style.fontSize = `${messageSettings.font_size}px`;
+                marqueeText.style.fontWeight = messageSettings.bold ? 'bold' : 'normal';
                 const textWidth = marqueeText.offsetWidth;
                 const duration = textWidth / messageSettings.speed;
                 marqueeText.style.animation = `marquee ${duration}s linear infinite`;
@@ -230,16 +238,6 @@ async function loadMessageSettings() {
         console.error('Ошибка загрузки настроек сообщения:', err);
     }
 }
-
-// CSS для бегущей строки
-const styleSheet = document.createElement('style');
-styleSheet.innerHTML = `
-    @keyframes marquee {
-        0% { transform: translateX(100%); }
-        100% { transform: translateX(-100%); }
-    }
-`;
-document.head.appendChild(styleSheet);
 
 // Функция для входа в полноэкранный режим
 function enterFullscreen() {
