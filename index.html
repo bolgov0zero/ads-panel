@@ -121,6 +121,7 @@ let currentIndex = 0;
 let currentTime = 0;
 let pdfTimer = null;
 let currentContentUrl = null;
+let isRendering = false; // Флаг для отслеживания рендеринга
 const DEFAULT_PDF_DURATION = 5000;
 let messageSettings = { enabled: 0, text: '', color: '#ffffff', font_size: 24, speed: 100, bold: 0, background_color: '#000000' };
 
@@ -159,7 +160,13 @@ function stopCurrentContent(force = false) {
 
 // Рендеринг PDF
 async function renderPDF(url) {
+    if (isRendering) {
+        console.log('Рендеринг уже выполняется, пропускаем:', url);
+        return;
+    }
+    isRendering = true;
     try {
+        console.log('Начало рендеринга PDF:', url);
         const pdfDoc = await pdfjsLib.getDocument(url).promise;
         const page = await pdfDoc.getPage(1);
         const viewport = page.getViewport({ scale: 1.0 });
@@ -177,11 +184,15 @@ async function renderPDF(url) {
         const scaledViewport = page.getViewport({ scale });
         await page.render({
             canvasContext: ctx,
-            viewport: scaledViewport
+            viewport: scaledViewport,
+            transform: [1, 0, 0, 1, 0, 0] // Явная нормальная трансформация
         }).promise;
         pdfCanvas.style.display = 'block';
+        console.log('Рендеринг PDF завершён:', url);
     } catch (err) {
         console.error('Ошибка рендеринга PDF:', err);
+    } finally {
+        isRendering = false;
     }
 }
 
@@ -194,6 +205,10 @@ async function showPDF(url, duration) {
             currentIndex = 0;
             showContent(currentIndex);
         }, displayDuration);
+        return;
+    }
+    if (isRendering) {
+        console.log('Рендеринг PDF уже выполняется, пропускаем вызов showPDF:', url);
         return;
     }
     stopCurrentContent();
@@ -322,7 +337,7 @@ document.addEventListener('fullscreenchange', () => {
 document.addEventListener('webkitfullscreenchange', () => {
     if (!document.webkitFullscreenElement) {
         fullscreenBtn.style.display = messageSettings.enabled ? 'none' : 'block';
-        reconnectBtn.style.display = messageSettings.enabled ? 'none' : 'block';
+        reconnectBtn.style.display = 'none';
         loadClientInfo();
     }
 });
@@ -351,6 +366,10 @@ async function showContent(index, restoreTime = 0) {
         index = 0;
     }
     if (contentList.length === 0) {
+        if (currentContentUrl === '/ads.pdf' && !isRendering) {
+            console.log('ads.pdf уже отображается, пропускаем повторный вызов');
+            return;
+        }
         stopCurrentContent(true);
         showPDF('/ads.pdf', 5);
         return;
@@ -427,7 +446,7 @@ async function checkContent() {
                 stopCurrentContent(true);
                 if (contentList.length > 0) {
                     showContent(currentIndex, restoreTime);
-                } else {
+                } else if (currentContentUrl !== '/ads.pdf' || !isRendering) {
                     showPDF('/ads.pdf', 5);
                 }
             }
