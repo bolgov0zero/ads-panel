@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>Реклама</title>
 <script src="pdf.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 <style>
 body {
     margin: 0;
@@ -23,7 +24,7 @@ canvas#pdfCanvas {
     display: none;
     margin: 0 auto; /* Центрирование по горизонтали */
 }
-#fullscreenBtn {
+#fullscreenBtn, #reconnectBtn {
     position: absolute;
     bottom: 30px;
     right: 20px;
@@ -35,7 +36,10 @@ canvas#pdfCanvas {
     cursor: pointer;
     z-index: 10;
 }
-#fullscreenBtn:hover {
+#reconnectBtn {
+    right: 140px; /* Смещаем левее кнопки "Во весь экран" */
+}
+#fullscreenBtn:hover, #reconnectBtn:hover {
     background-color: rgba(0, 0, 0, 0.9);
 }
 #clientInfo {
@@ -80,6 +84,7 @@ canvas#pdfCanvas {
 </video>
 <canvas id="pdfCanvas"></canvas>
 <button id="fullscreenBtn">Во весь экран</button>
+<button id="reconnectBtn"><i class="fas fa-sync-alt"></i></button>
 <div id="clientInfo"></div>
 <div id="marquee"><span></span></div>
 <script>
@@ -90,6 +95,7 @@ function generateUUID() {
         return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
     });
 }
+
 // Получение или создания UUID
 let uuid = localStorage.getItem('client_uuid');
 if (!uuid) {
@@ -101,9 +107,11 @@ if (!uuid) {
         body: JSON.stringify({ action: 'add_client', uuid })
     }).then(() => loadClientInfo()).catch(err => console.error('Ошибка регистрации клиента:', err));
 }
+
 const video = document.getElementById('adVideo');
 const pdfCanvas = document.getElementById('pdfCanvas');
 const fullscreenBtn = document.getElementById('fullscreenBtn');
+const reconnectBtn = document.getElementById('reconnectBtn');
 const clientInfo = document.getElementById('clientInfo');
 const marquee = document.getElementById('marquee');
 const marqueeText = marquee.querySelector('span');
@@ -114,6 +122,20 @@ let pdfTimer = null;
 let currentContentUrl = null;
 const DEFAULT_PDF_DURATION = 5000;
 let messageSettings = { enabled: 0, text: '', color: '#ffffff', font_size: 24, speed: 100, bold: 0, background_color: '#000000' };
+
+// Функция переподключения
+function reconnectClient() {
+    uuid = generateUUID();
+    localStorage.setItem('client_uuid', uuid);
+    fetch('api.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add_client', uuid })
+    }).then(() => {
+        console.log('Клиент переподключен с новым UUID:', uuid);
+        loadClientInfo();
+    }).catch(err => console.error('Ошибка переподключения клиента:', err));
+}
 
 // Остановка текущего контента
 function stopCurrentContent(force = false) {
@@ -242,6 +264,7 @@ async function loadMessageSettings() {
                 console.log(`Ширина текста: ${textWidth}, Ширина окна: ${containerWidth}, Длительность анимации: ${duration}s`); // Отладка
                 clientInfo.style.display = 'none';
                 fullscreenBtn.style.display = 'none';
+                reconnectBtn.style.display = 'none';
             } else {
                 marquee.style.display = 'none';
                 marqueeText.style.animation = 'none';
@@ -252,6 +275,7 @@ async function loadMessageSettings() {
                 loadClientInfo();
                 if (!document.fullscreenElement) {
                     fullscreenBtn.style.display = 'block';
+                    reconnectBtn.style.display = 'block';
                 }
             }
         }
@@ -273,6 +297,7 @@ function enterFullscreen() {
         element.msRequestFullscreen();
     }
     fullscreenBtn.style.display = 'none';
+    reconnectBtn.style.display = 'none';
     clientInfo.style.display = 'none';
 }
 
@@ -280,29 +305,34 @@ function enterFullscreen() {
 document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement) {
         fullscreenBtn.style.display = messageSettings.enabled ? 'none' : 'block';
+        reconnectBtn.style.display = messageSettings.enabled ? 'none' : 'block';
         loadClientInfo();
     }
 });
 document.addEventListener('webkitfullscreenchange', () => {
     if (!document.webkitFullscreenElement) {
         fullscreenBtn.style.display = messageSettings.enabled ? 'none' : 'block';
+        reconnectBtn.style.display = messageSettings.enabled ? 'none' : 'block';
         loadClientInfo();
     }
 });
 document.addEventListener('mozfullscreenchange', () => {
     if (!document.mozFullScreenElement) {
         fullscreenBtn.style.display = messageSettings.enabled ? 'none' : 'block';
+        reconnectBtn.style.display = messageSettings.enabled ? 'none' : 'block';
         loadClientInfo();
     }
 });
 document.addEventListener('msfullscreenchange', () => {
     if (!document.msFullscreenElement) {
         fullscreenBtn.style.display = messageSettings.enabled ? 'none' : 'block';
+        reconnectBtn.style.display = messageSettings.enabled ? 'none' : 'block';
         loadClientInfo();
     }
 });
 
 fullscreenBtn.addEventListener('click', enterFullscreen);
+reconnectBtn.addEventListener('click', reconnectClient);
 
 // Показ контента
 async function showContent(index, restoreTime = 0) {
