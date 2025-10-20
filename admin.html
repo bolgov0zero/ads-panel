@@ -474,7 +474,7 @@
                 document.getElementById('appVersion').textContent = 'Неизвестно';
             }
         }
-        
+
         // Markdown контент для вкладки Справка
         const helpMarkdown = `
 - Поддерживается загрузка файлов до 500мб.
@@ -730,6 +730,7 @@
             loadMessageSettings();
             startClientCheck();
             openTab('fileTab');
+            loadVersion(); // Загружаем версию при инициализации
         }
 
         // Управление вкладками
