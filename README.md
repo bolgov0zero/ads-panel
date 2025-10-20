@@ -23,25 +23,25 @@ Ads Panel — это веб-панель для управления транс�
    Вставляем код
    ```bash
    services:
-  web:
-    image: bolgov0zero/ads-panel:latest
-    container_name: ads-panel
-    ports:
-      - "80:80"
-      - "443:443"
-      - "8443:443"
+      web:
+        image: bolgov0zero/ads-panel:latest
+        container_name: ads-panel
+        ports:
+          - "80:80"
+          - "443:443"
+          - "8443:443"
+        volumes:
+          - file_storage:/opt/ads
+          - db_data:/data
+          - ssl:/etc/apache2/ssl
+        environment:
+          - PHP_UPLOAD_MAX_FILESIZE=500M
+          - PHP_POST_MAX_SIZE=500M
+    
     volumes:
-      - file_storage:/opt/ads
-      - db_data:/data
-      - ssl:/etc/apache2/ssl
-    environment:
-      - PHP_UPLOAD_MAX_FILESIZE=500M
-      - PHP_POST_MAX_SIZE=500M
-
-volumes:
-  file_storage:
-  db_data:
-  ssl:
+      file_storage:
+      db_data:
+      ssl:
     ```
 
     Запускаем
