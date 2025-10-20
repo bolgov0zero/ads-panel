@@ -88,6 +88,12 @@
             background-color: #ef4444;
             animation: blink 1.5s ease-in-out infinite;
         }
+        .status-text {
+            font-size: 0.75rem; /* Мелкий шрифт */
+            color: #9ca3af; /* Серый цвет */
+            display: block; /* Чтобы текст был под точкой */
+            text-align: center;
+        }
         @keyframes blink {
             0%, 100% {
                 opacity: 1;
@@ -736,6 +742,21 @@
             }
         }
 
+        // Форматирование времени последнего посещения
+        function formatLastSeen(last_seen) {
+            const now = Math.floor(Date.now() / 1000); // Текущее время в секундах
+            const diff = now - last_seen; // Разница в секундах
+            if (diff <= 5) {
+                return 'в сети';
+            } else if (diff < 3600) {
+                const minutes = Math.floor(diff / 60);
+                return `${minutes} минут${minutes % 10 === 1 && minutes !== 11 ? 'а' : minutes % 10 >= 2 && minutes % 10 <= 4 && (minutes < 10 || minutes > 20) ? 'ы' : ''} назад`;
+            } else {
+                const hours = Math.floor(diff / 3600);
+                return `${hours} час${hours % 10 === 1 && hours !== 11 ? '' : hours % 10 >= 2 && hours % 10 <= 4 && (hours < 10 || hours > 20) ? 'а' : 'ов'} назад`;
+            }
+        }
+
         // Загрузка списка клиентов
         async function loadClients() {
             try {
@@ -744,7 +765,7 @@
                 const tbody = document.getElementById('clientTable');
                 const clientSelect = document.getElementById('clientSelect');
                 const existingRows = Array.from(tbody.querySelectorAll('tr'));
-                const existingOptions = Array.from(clientSelect.querySelectorAll('option:not([value=""])'));
+                const existingOptions = Array.from(clientSelect.querySelectorAll('option:not(:first-child)'));
                 clients.forEach(client => {
                     const rowIndex = existingRows.findIndex(row => row.getAttribute('data-uuid') === client.uuid);
                     let row;
@@ -757,9 +778,14 @@
                         tbody.appendChild(row);
                     }
                     row.innerHTML = `
-                        <td class="p-3"><center><span class="status-dot ${client.status === 'online' ? 'status-online' : 'status-offline'}"></span></center></td>
-                        <td class="p-3">${client.uuid.toUpperCase()}</td>
-                        <td class="p-3"><input type="text" value="${client.name}" class="p-1 bg-gray-700 border border-gray-600 rounded w-full" onchange="updateClientName('${client.uuid}', this.value)"></td>
+                        <td class="p-3"><center>
+                            <div class="status-dot ${client.status === 'online' ? 'status-online' : 'status-offline'}"></div>
+                            <span class="status-text">${formatLastSeen(client.last_seen)}</span>
+                        </center></td>
+                        <td class="p-3">${client.uuid}</td>
+                        <td class="p-3">
+                            <input type="text" value="${client.name}" class="p-1 bg-gray-700 border border-gray-600 rounded w-full" onchange="updateClientName('${client.uuid}', this.value)">
+                        </td>
                         <td class="p-3"><center><label class="ios-switch"><input type="checkbox" ${client.show_info ? 'checked' : ''} onchange="updateClientShowInfo('${client.uuid}', this.checked)"><span class="slider"></span></label></center></td>
                         <td class="p-3"><center>
                             <button class="text-red-500 hover:text-red-400" onclick="deleteClient('${client.uuid}')"><i class="fas fa-trash"></i></button>
@@ -795,8 +821,10 @@
                     const client = clients.find(c => c.uuid === uuid);
                     if (client) {
                         const statusDot = row.querySelector('.status-dot');
+                        const statusText = row.querySelector('.status-text');
                         statusDot.classList.remove('status-online', 'status-offline');
                         statusDot.classList.add(client.status === 'online' ? 'status-online' : 'status-offline');
+                        statusText.textContent = formatLastSeen(client.last_seen);
                     }
                 });
             } catch (err) {
