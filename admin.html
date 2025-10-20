@@ -457,11 +457,24 @@
 
         <!-- Футер -->
         <footer class="mt-8 bg-gray-800 text-gray-400 text-center py-4 text-sm rounded-t-lg rounded-b-lg">
-            2025 © Болгов Иван | Версия: v4.1.2
+            2025 © Болгов Иван | Версия: <span id="appVersion">Загрузка...</span>
         </footer>
     </div>
 
     <script>
+        // Загрузка версии из файла
+        async function loadVersion() {
+            try {
+                const response = await fetch('version');
+                if (!response.ok) throw new Error('Не удалось загрузить версию');
+                const version = await response.text();
+                document.getElementById('appVersion').textContent = version.trim();
+            } catch (err) {
+                console.error('Ошибка загрузки версии:', err);
+                document.getElementById('appVersion').textContent = 'Неизвестно';
+            }
+        }
+        
         // Markdown контент для вкладки Справка
         const helpMarkdown = `
 - Поддерживается загрузка файлов до 500мб.
@@ -1081,6 +1094,7 @@
                 if (result.error) {
                     console.error(result.error);
                 } else {
+                    showNotification('Имя изменено');
                     const row = document.querySelector(`#fileTable tr[data-id="${id}"]`);
                     if (row) {
                         row.querySelector('td:nth-child(2) input').value = name;
