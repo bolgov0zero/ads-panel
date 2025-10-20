@@ -134,32 +134,34 @@ try {
 		    break;
 
 		case 'update_client_name':
-			$uuid = $input['uuid'] ?? '';
-			$name = $input['name'] ?? 'Без имени';
-			if (empty($uuid)) {
-				echo json_encode(['error' => 'UUID не указан']);
-				break;
-			}
-			$stmt = $db->prepare("UPDATE clients SET name = :name, last_seen = :last_seen WHERE uuid = :uuid");
-			$stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
-			$stmt->bindValue(':name', $name, SQLITE3_TEXT);
-			$stmt->execute();
-			echo json_encode(['message' => 'Имя клиента обновлено']);
-			break;
+		    $uuid = $input['uuid'] ?? '';
+		    $name = $input['name'] ?? 'Без имени';
+		    if (empty($uuid)) {
+		        echo json_encode(['error' => 'UUID не указан']);
+		        break;
+		    }
+		    $stmt = $db->prepare("UPDATE clients SET name = :name WHERE uuid = :uuid");
+		    $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+		    $stmt->bindValue(':name', $name, SQLITE3_TEXT);
+		    $stmt->execute();
+		    error_log("update_client_name: uuid=$uuid, name=$name"); // Отладка
+		    echo json_encode(['message' => 'Имя клиента обновлено']);
+		    break;
 
 		case 'update_client_show_info':
-			$uuid = $input['uuid'] ?? '';
-			$show_info = isset($input['show_info']) ? (int)$input['show_info'] : 0;
-			if (empty($uuid)) {
-				echo json_encode(['error' => 'UUID не указан']);
-				break;
-			}
-			$stmt = $db->prepare("UPDATE clients SET show_info = :show_info, last_seen = :last_seen WHERE uuid = :uuid");
-			$stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
-			$stmt->bindValue(':show_info', $show_info, SQLITE3_INTEGER);
-			$stmt->execute();
-			echo json_encode(['message' => 'Настройка отображения обновлена']);
-			break;
+		    $uuid = $input['uuid'] ?? '';
+		    $show_info = isset($input['show_info']) ? (int)$input['show_info'] : 0;
+		    if (empty($uuid)) {
+		        echo json_encode(['error' => 'UUID не указан']);
+		        break;
+		    }
+		    $stmt = $db->prepare("UPDATE clients SET show_info = :show_info WHERE uuid = :uuid");
+		    $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+		    $stmt->bindValue(':show_info', $show_info, SQLITE3_INTEGER);
+		    $stmt->execute();
+		    error_log("update_client_show_info: uuid=$uuid, show_info=$show_info"); // Отладка
+		    echo json_encode(['message' => 'Настройка отображения обновлена']);
+		    break;
 
 		case 'update_file_name':
 			$id = $input['id'] ?? 0;
