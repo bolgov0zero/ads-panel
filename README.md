@@ -46,9 +46,8 @@ Ads Panel — это веб-панель для управления транс�
       ssl:
     ```
 
-
-    Запускаем
-    ```bash
-    docker-compose up -d
-    ```
+   Запускаем
+   ```bash
+   mkdir ads && cd ads && nano docker-compose.yml
+   ```
 
