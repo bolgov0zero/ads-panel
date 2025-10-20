@@ -6,6 +6,7 @@
     <title>Ads Panel - Панель управления</title>
     <link href="tailwind.min.css" rel="stylesheet">
     <link href="all.min.css" rel="stylesheet">
+    <script src="marked.min.js"></script>
     <style>
         #notification {
             transition: opacity 0.3s ease, transform 0.3s ease;
@@ -186,6 +187,25 @@
                 margin: 1rem;
             }
         }
+        .help-content {
+            background-color: #1f2937;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            color: #e5e7eb;
+        }
+        .help-content h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .help-content ul {
+            list-style-type: decimal;
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .help-content li {
+            margin-bottom: 0.5rem;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen p-4 md:p-6">
@@ -251,6 +271,9 @@
                 </button>
                 <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('messageTab')">
                     <i class="fas fa-comment mr-2"></i>Сообщение
+                </button>
+                <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('helpTab')">
+                    <i class="fas fa-question-circle mr-2"></i>Справка
                 </button>
                 <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('settingsTab')">
                     <i class="fas fa-cog mr-2"></i>Настройки
@@ -404,6 +427,14 @@
             </div>
         </div>
 
+        <!-- Вкладка Справка -->
+        <div id="helpTab" class="tab-content hidden">
+            <div class="mb-8">
+                <h3 class="text-xl font-semibold mb-4 text-gray-100">Справка</h3>
+                <div class="help-content" id="helpContent"></div>
+            </div>
+        </div>
+
         <!-- Вкладка Настройки -->
         <div id="settingsTab" class="tab-content hidden">
             <div class="mb-8">
@@ -431,6 +462,21 @@
     </div>
 
     <script>
+        // Markdown контент для вкладки Справка
+        const helpMarkdown = `
+# Файлы
+1. Пункт
+2. Пункт
+
+# Устройства
+`;
+
+        // Рендеринг Markdown при открытии вкладки Справка
+        function renderHelpContent() {
+            const helpContent = document.getElementById('helpContent');
+            helpContent.innerHTML = marked.parse(helpMarkdown);
+        }
+
         // Проверка существования учетной записи
         async function checkUserExists() {
             try {
@@ -684,6 +730,9 @@
             });
             document.getElementById(tabId).classList.remove('hidden');
             document.querySelector(`button[onclick="openTab('${tabId}')"]`).classList.add('bg-blue-600', 'text-white');
+            if (tabId === 'helpTab') {
+                renderHelpContent();
+            }
         }
 
         // Показ уведомления
