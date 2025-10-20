@@ -146,6 +146,15 @@
             justify-content: flex-start;
             width: 100%;
             margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        .modal-content .remember-label input {
+            width: auto;
+            margin-right: 0.5rem;
+        }
+        .modal-content .remember-label span {
+            flex-shrink: 0;
+            white-space: nowrap;
         }
         @media (max-width: 640px) {
             .tab-button {
@@ -184,7 +193,6 @@
                 <span>Запомнить</span>
             </div>
             <button onclick="login()">Войти</button>
-            <button onclick="showRegisterModal()">Создать учетную запись</button>
         </div>
     </div>
 
@@ -197,7 +205,19 @@
             <input type="password" id="registerPassword" placeholder="Пароль" required>
             <input type="password" id="registerConfirmPassword" placeholder="Повторите пароль" required>
             <button onclick="register()">Создать</button>
-            <button onclick="showLoginModal()">Вернуться ко входу</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно смены пароля -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-semibold mb-4">Смена пароля</h2>
+            <p id="changePasswordError" class="error"></p>
+            <input type="password" id="currentPassword" placeholder="Текущий пароль" required>
+            <input type="password" id="newPassword" placeholder="Новый пароль" required>
+            <input type="password" id="confirmNewPassword" placeholder="Повторите новый пароль" required>
+            <button onclick="changePassword()">Сменить пароль</button>
+            <button onclick="closeChangePasswordModal()">Отмена</button>
         </div>
     </div>
 
@@ -381,16 +401,24 @@
             <div class="mb-8">
                 <h3 class="text-xl font-semibold mb-4 text-gray-100">Настройки</h3>
                 <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
-                    <button onclick="logout()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-all duration-200">
-                        <i class="fas fa-sign-out-alt mr-2"></i>Выйти
-                    </button>
+                    <div class="flex flex-col space-y-4">
+                        <button onclick="showChangePasswordModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200">
+                            <i class="fas fa-key mr-2"></i>Сменить пароль
+                        </button>
+                        <button onclick="deleteAccount()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-all duration-200">
+                            <i class="fas fa-trash-alt mr-2"></i>Удалить учетную запись
+                        </button>
+                        <button onclick="logout()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-all duration-200">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Выйти
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Футер -->
         <footer class="mt-8 bg-gray-800 text-gray-400 text-center py-4 text-sm rounded-t-lg rounded-b-lg">
-            2025 © Болгов Иван | Версия: v4.0.2
+            2025 © Болгов Иван | Версия: v4.0.3
         </footer>
     </div>
 
@@ -420,6 +448,7 @@
             console.log('Открытие окна входа'); // Отладка
             document.getElementById('loginModal').style.display = 'flex';
             document.getElementById('registerModal').style.display = 'none';
+            document.getElementById('changePasswordModal').style.display = 'none';
             document.getElementById('mainContent').classList.add('hidden');
             document.getElementById('loginError').style.display = 'none';
         }
@@ -429,8 +458,25 @@
             console.log('Открытие окна регистрации'); // Отладка
             document.getElementById('registerModal').style.display = 'flex';
             document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('changePasswordModal').style.display = 'none';
             document.getElementById('mainContent').classList.add('hidden');
             document.getElementById('registerError').style.display = 'none';
+        }
+
+        // Показать модальное окно смены пароля
+        function showChangePasswordModal() {
+            document.getElementById('changePasswordModal').style.display = 'flex';
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('registerModal').style.display = 'none';
+            document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('changePasswordError').style.display = 'none';
+        }
+
+        // Закрыть модальное окно смены пароля
+        function closeChangePasswordModal() {
+            document.getElementById('changePasswordModal').style.display = 'none';
+            document.getElementById('mainContent').classList.remove('hidden');
+            document.getElementById('changePasswordError').style.display = 'none';
         }
 
         // Вход
@@ -496,6 +542,66 @@
             } catch (err) {
                 console.error('Ошибка регистрации:', err);
                 showNotification('Ошибка регистрации', 'bg-red-500');
+            }
+        }
+
+        // Смена пароля
+        async function changePassword() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+            const errorElement = document.getElementById('changePasswordError');
+
+            if (newPassword !== confirmNewPassword) {
+                errorElement.textContent = 'Новые пароли не совпадают';
+                errorElement.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'change_password', currentPassword, newPassword })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('changePasswordModal').style.display = 'none';
+                    document.getElementById('mainContent').classList.remove('hidden');
+                    showNotification('Пароль успешно изменен');
+                } else {
+                    errorElement.textContent = result.error || 'Ошибка смены пароля';
+                    errorElement.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Ошибка смены пароля:', err);
+                showNotification('Ошибка смены пароля', 'bg-red-500');
+            }
+        }
+
+        // Удаление учетной записи
+        async function deleteAccount() {
+            if (!confirm('Вы уверены, что хотите удалить учетную запись? Это действие необратимо.')) {
+                return;
+            }
+            try {
+                const response = await fetch('auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'delete_account' })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    localStorage.removeItem('authToken');
+                    document.getElementById('mainContent').classList.add('hidden');
+                    showNotification('Учетная запись удалена');
+                    checkUserExists();
+                } else {
+                    showNotification(result.error || 'Ошибка удаления учетной записи', 'bg-red-500');
+                }
+            } catch (err) {
+                console.error('Ошибка удаления учетной записи:', err);
+                showNotification('Ошибка удаления учетной записи', 'bg-red-500');
             }
         }
 

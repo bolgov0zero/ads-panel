@@ -72,6 +72,48 @@ try {
         } else {
             echo json_encode(['success' => false]);
         }
+    } elseif ($action === 'change_password') {
+        $currentPassword = $input['currentPassword'] ?? '';
+        $newPassword = $input['newPassword'] ?? '';
+        $username = $_SESSION['user'] ?? '';
+
+        if (empty($username)) {
+            echo json_encode(['success' => false, 'error' => 'Пользователь не авторизован']);
+            exit;
+        }
+
+        if (empty($currentPassword) || empty($newPassword)) {
+            echo json_encode(['success' => false, 'error' => 'Пароли не могут быть пустыми']);
+            exit;
+        }
+
+        $stmt = $db->prepare("SELECT password FROM users WHERE username = :username");
+        $stmt->bindValue(':username', $username, SQLITE3_TEXT);
+        $result = $stmt->execute()->fetchArray(SQLITE3_ASSOC);
+
+        if ($result && password_verify($currentPassword, $result['password'])) {
+            $hashed_new_password = password_hash($newPassword, PASSWORD_BCRYPT);
+            $stmt = $db->prepare("UPDATE users SET password = :password WHERE username = :username");
+            $stmt->bindValue(':password', $hashed_new_password, SQLITE3_TEXT);
+            $stmt->bindValue(':username', $username, SQLITE3_TEXT);
+            $stmt->execute();
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Неверный текущий пароль']);
+        }
+    } elseif ($action === 'delete_account') {
+        $username = $_SESSION['user'] ?? '';
+        if (empty($username)) {
+            echo json_encode(['success' => false, 'error' => 'Пользователь не авторизован']);
+            exit;
+        }
+
+        $stmt = $db->prepare("DELETE FROM users WHERE username = :username");
+        $stmt->bindValue(':username', $username, SQLITE3_TEXT);
+        $stmt->execute();
+        session_unset();
+        session_destroy();
+        echo json_encode(['success' => true]);
     } elseif ($action === 'logout') {
         session_unset();
         session_destroy();
