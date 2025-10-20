@@ -121,7 +121,7 @@ try {
 				echo json_encode(['error' => 'UUID не указан']);
 				break;
 			}
-			$stmt = $db->prepare("SELECT uuid, name, show_info, last_seen FROM clients WHERE uuid = :uuid");
+			$stmt = $db->prepare("SELECT uuid, name, show_info, COALESCE(last_seen, 0) AS last_seen FROM clients WHERE uuid = :uuid");
 			$stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
 			$result = $stmt->execute();
 			if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
@@ -203,6 +203,7 @@ try {
 			$result = $db->query("SELECT uuid, name, show_info, last_seen FROM clients");
 			$clients = [];
 			while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+				$row['last_seen'] = $row['last_seen'] ?? 0; // PHP-fallback на 0
 				$stmt = $db->prepare("SELECT content_id, content_type FROM client_content WHERE uuid = :uuid");
 				$stmt->bindValue(':uuid', $row['uuid'], SQLITE3_TEXT);
 				$contentResult = $stmt->execute();

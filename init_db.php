@@ -88,13 +88,13 @@ try {
                     uuid TEXT PRIMARY KEY,
                     name TEXT NOT NULL DEFAULT 'Без имени',
                     show_info INTEGER DEFAULT 1,
-                    last_seen INTEGER
+                    last_seen INTEGER DEFAULT 0
                 )",
             'columns' => [
                 ['name' => 'uuid', 'type' => 'TEXT', 'constraints' => 'PRIMARY KEY'],
                 ['name' => 'name', 'type' => 'TEXT', 'constraints' => 'NOT NULL DEFAULT \'Без имени\''],
                 ['name' => 'show_info', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 1'],
-                ['name' => 'last_seen', 'type' => 'INTEGER'],
+                ['name' => 'last_seen', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 0'],
             ],
             'initial_data' => null
         ],

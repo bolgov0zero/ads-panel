@@ -744,19 +744,22 @@
 
         // Форматирование времени последнего посещения
         function formatLastSeen(last_seen) {
-            if (!last_seen || isNaN(last_seen) || last_seen === null) {
-                return 'давно не в сети';
+            if (last_seen === null || last_seen === undefined || isNaN(last_seen)) {
+                return 'никогда не подключался';
             }
-            const now = Math.floor(Date.now() / 1000); // Текущее время в секундах
-            const diff = now - last_seen; // Разница в секундах
+            const now = Math.floor(Date.now() / 1000); // Текущее время в секундах (JS)
+            const diff = now - parseInt(last_seen, 10); // Парсим как int, чтобы избежать NaN
+            console.log(`last_seen: ${last_seen}, diff: ${diff}`); // Отладка — удалите после теста
             if (diff <= 5) {
                 return 'в сети';
             } else if (diff < 3600) {
                 const minutes = Math.floor(diff / 60);
-                return `${minutes} минут${minutes % 10 === 1 && minutes !== 11 ? 'а' : minutes % 10 >= 2 && minutes % 10 <= 4 && (minutes < 10 || minutes > 20) ? 'ы' : ''} назад`;
+                const minSuffix = minutes % 10 === 1 && minutes !== 11 ? 'а' : (minutes % 10 >= 2 && minutes % 10 <= 4 && (minutes < 10 || minutes > 20) ? 'ы' : '');
+                return `${minutes} минут${minSuffix} назад`;
             } else {
                 const hours = Math.floor(diff / 3600);
-                return `${hours} час${hours % 10 === 1 && hours !== 11 ? '' : hours % 10 >= 2 && hours % 10 <= 4 && (hours < 10 || hours > 20) ? 'а' : 'ов'} назад`;
+                const hourSuffix = hours % 10 === 1 && hours !== 11 ? '' : (hours % 10 >= 2 && hours % 10 <= 4 && (hours < 10 || hours > 20) ? 'а' : 'ов');
+                return `${hours} час${hourSuffix} назад`;
             }
         }
 
