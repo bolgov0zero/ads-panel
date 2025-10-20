@@ -37,6 +37,19 @@ try {
 
     // Определение структуры таблиц
     $tables = [
+        'users' => [
+            'create' => "
+                CREATE TABLE users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT NOT NULL UNIQUE,
+                    password TEXT NOT NULL
+                )",
+            'columns' => [
+                ['name' => 'username', 'type' => 'TEXT', 'constraints' => 'NOT NULL UNIQUE'],
+                ['name' => 'password', 'type' => 'TEXT', 'constraints' => 'NOT NULL'],
+            ],
+            'initial_data' => null
+        ],
         'files' => [
             'create' => "
                 CREATE TABLE files (
