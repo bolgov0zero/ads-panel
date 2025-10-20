@@ -744,6 +744,9 @@
 
         // Форматирование времени последнего посещения
         function formatLastSeen(last_seen) {
+            if (!last_seen || isNaN(last_seen) || last_seen === null) {
+                return 'давно не в сети';
+            }
             const now = Math.floor(Date.now() / 1000); // Текущее время в секундах
             const diff = now - last_seen; // Разница в секундах
             if (diff <= 5) {
@@ -762,11 +765,13 @@
             try {
                 const response = await fetch('api.php?action=list_clients');
                 const clients = await response.json();
+                console.log('Клиенты:', clients); // Отладка: выводим данные клиентов
                 const tbody = document.getElementById('clientTable');
                 const clientSelect = document.getElementById('clientSelect');
                 const existingRows = Array.from(tbody.querySelectorAll('tr'));
                 const existingOptions = Array.from(clientSelect.querySelectorAll('option:not(:first-child)'));
                 clients.forEach(client => {
+                    console.log(`Клиент ${client.uuid}: last_seen = ${client.last_seen}`); // Отладка
                     const rowIndex = existingRows.findIndex(row => row.getAttribute('data-uuid') === client.uuid);
                     let row;
                     if (rowIndex !== -1) {
@@ -815,11 +820,13 @@
             try {
                 const response = await fetch('api.php?action=list_clients');
                 const clients = await response.json();
+                console.log('Обновление статусов, клиенты:', clients); // Отладка
                 const rows = document.querySelectorAll('#clientTable tr');
                 rows.forEach(row => {
                     const uuid = row.getAttribute('data-uuid');
                     const client = clients.find(c => c.uuid === uuid);
                     if (client) {
+                        console.log(`Обновление статуса для ${uuid}: last_seen = ${client.last_seen}`); // Отладка
                         const statusDot = row.querySelector('.status-dot');
                         const statusText = row.querySelector('.status-text');
                         statusDot.classList.remove('status-online', 'status-offline');
