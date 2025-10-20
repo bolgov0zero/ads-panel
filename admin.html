@@ -744,12 +744,13 @@
 
         // Форматирование времени последнего посещения
         function formatLastSeen(last_seen) {
-            if (last_seen === null || last_seen === undefined || isNaN(last_seen)) {
+            const parsedLastSeen = parseInt(last_seen, 10); // Преобразуем в число
+            if (isNaN(parsedLastSeen) || parsedLastSeen <= 0) {
                 return 'никогда не подключался';
             }
             const now = Math.floor(Date.now() / 1000); // Текущее время в секундах (JS)
-            const diff = now - parseInt(last_seen, 10); // Парсим как int, чтобы избежать NaN
-            console.log(`last_seen: ${last_seen}, diff: ${diff}`); // Отладка — удалите после теста
+            const diff = now - parsedLastSeen; // Разница в секундах
+            console.log(`last_seen: ${parsedLastSeen}, now: ${now}, diff: ${diff}`); // Отладка
             if (diff <= 5) {
                 return 'в сети';
             } else if (diff < 3600) {

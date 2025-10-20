@@ -425,10 +425,12 @@ async function loadContent() {
 // Проверка обновлений
 async function checkContent() {
     try {
+        console.log(`Отправка запроса list_client_content с UUID: ${uuid}`); // Отладка
         const response = await fetch(`api.php?action=list_client_content&uuid=${uuid}`, {
             headers: { 'Cache-Control': 'no-cache' }
         });
         const newList = await response.json();
+        console.log('Получен ответ list_client_content:', newList); // Отладка
         if (JSON.stringify(newList) !== JSON.stringify(contentList)) {
             const wasEmpty = contentList.length === 0;
             const isEmpty = newList.length === 0;
