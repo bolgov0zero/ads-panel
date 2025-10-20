@@ -17,13 +17,13 @@ Ads Panel — это веб-панель для управления транс�
 
 ## 2. Ручная установка:
 
- Создаем файл docker-compose.yml
+ - Создаем файл docker-compose.yml
  ```bash
  mkdir ads && cd ads && nano docker-compose.yml
 ```
 
 
-Вставляем код
+- Вставляем код
 ```bash
 services:
   web:
@@ -47,7 +47,7 @@ db_data:
 ssl:
 ```
 
-Запускаем
+- Запускаем
 ```bash
 mkdir ads && cd ads && nano docker-compose.yml
 ```
