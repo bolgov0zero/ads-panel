@@ -56,7 +56,7 @@ mkdir ads && cd ads && nano docker-compose.yml
 
 # Скриншоты
 
-<img src="screenshots/screenshot1.png" alt="" width="600" height="381">
+<img src="screenshots/screenshot1.png" alt="" width="800" height="508">
 
 <img src="screenshots/screenshot2.png" alt="" width="600" height="215">
 
