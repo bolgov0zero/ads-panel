@@ -1202,6 +1202,7 @@
                 if (result.error) {
                     console.error(result.error);
                 } else {
+                    showNotification('Имя изменено');
                     const row = document.querySelector(`#clientTable tr[data-uuid="${uuid}"]`);
                     if (row) {
                         row.querySelector('td:nth-child(3) input').value = name;
