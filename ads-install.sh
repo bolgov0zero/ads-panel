@@ -101,9 +101,9 @@ cd "$ADS_DIR" || {
 }
 
 clear
-echo -e "\e[33m===============\e[0m"
-echo -e "\e[33mМеню Ads Panel:\e[0m"
-echo -e "\e[33m===============\e[0m"
+echo -e "\e[33m================\e[0m"
+echo -e "\e[33mСкрипт Ads Panel\e[0m"
+echo -e "\e[33m================\e[0m"
 echo ""
 if docker ps | grep -q "Up"; then > /dev/null 2>&1
     echo -e "Статус: \e[32m[✓] работает\e[0m"
@@ -117,10 +117,10 @@ else
     echo -e "Версия: \e[32m[✓] актуальна\e[0m"
 fi
 echo ""
-echo "1. Запустить"
-echo "2. Перезапустить"
-echo "3. Обновить"
-echo -e "4. \e[31mЗавершить\e[0m"
+echo "1. Запустить Ads Panel"
+echo "2. Перезапустить Ads Panel"
+echo "3. Обновить Ads Panel"
+echo -e "4. \e[31mЗавершить Ads Panel\e[0m"
 echo ""
 echo -e "\e[33mИли нажмите любую клавишу чтобы выйти.\e[0m"
 read -p "Выберите опцию: " choice
