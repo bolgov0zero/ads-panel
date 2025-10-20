@@ -143,7 +143,6 @@ try {
 			$stmt = $db->prepare("UPDATE clients SET name = :name, last_seen = :last_seen WHERE uuid = :uuid");
 			$stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
 			$stmt->bindValue(':name', $name, SQLITE3_TEXT);
-			$stmt->bindValue(':last_seen', time(), SQLITE3_INTEGER);
 			$stmt->execute();
 			echo json_encode(['message' => 'Имя клиента обновлено']);
 			break;
@@ -158,7 +157,6 @@ try {
 			$stmt = $db->prepare("UPDATE clients SET show_info = :show_info, last_seen = :last_seen WHERE uuid = :uuid");
 			$stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
 			$stmt->bindValue(':show_info', $show_info, SQLITE3_INTEGER);
-			$stmt->bindValue(':last_seen', time(), SQLITE3_INTEGER);
 			$stmt->execute();
 			echo json_encode(['message' => 'Настройка отображения обновлена']);
 			break;
