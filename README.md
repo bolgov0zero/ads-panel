@@ -15,7 +15,7 @@ Ads Panel — это веб-панель для управления транс�
  ```
 Скрипт установит Docker/Docker compose, установит саму панель и службу ads, для удобного управление панелью(запуск, перезапуск, обновление, завершение).
 
-<img src="screenshots/script.png" alt="Script" width="300" height="200"><img src="screenshots/ads.png" alt="Ads" width="300" height="200">
+<img src="screenshots/script.png" alt="Script" width="300" height="200">  <img src="screenshots/ads.png" alt="Ads" width="300" height="200">
 
 ## 2. Ручная установка:
 
