@@ -23,7 +23,7 @@ RUN openssl req -x509 -nodes -days 7300 -newkey rsa:2048 \
     chmod 644 /etc/apache2/ssl/server.crt
 
 # Копируем файлы приложения и entrypoint
-COPY . /var/www/html
+COPY ./panel_files /var/www/html
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
