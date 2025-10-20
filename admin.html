@@ -140,6 +140,13 @@
             margin-bottom: 1rem;
             display: none;
         }
+        .modal-content .remember-label {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
         @media (max-width: 640px) {
             .tab-button {
                 padding: 0.5rem 1rem;
@@ -172,10 +179,10 @@
             <p id="loginError" class="error">Неверный логин или пароль</p>
             <input type="text" id="loginUsername" placeholder="Логин" required>
             <input type="password" id="loginPassword" placeholder="Пароль" required>
-            <label class="flex items-center mb-4">
+            <div class="remember-label">
                 <input type="checkbox" id="rememberMe" class="mr-2">
                 <span>Запомнить</span>
-            </label>
+            </div>
             <button onclick="login()">Войти</button>
             <button onclick="showRegisterModal()">Создать учетную запись</button>
         </div>
@@ -216,6 +223,9 @@
                 </button>
                 <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('messageTab')">
                     <i class="fas fa-comment mr-2"></i>Сообщение
+                </button>
+                <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('settingsTab')">
+                    <i class="fas fa-cog mr-2"></i>Настройки
                 </button>
             </div>
         </div>
@@ -366,9 +376,21 @@
             </div>
         </div>
 
+        <!-- Вкладка Настройки -->
+        <div id="settingsTab" class="tab-content hidden">
+            <div class="mb-8">
+                <h3 class="text-xl font-semibold mb-4 text-gray-100">Настройки</h3>
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <button onclick="logout()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-all duration-200">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Выйти
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Футер -->
         <footer class="mt-8 bg-gray-800 text-gray-400 text-center py-4 text-sm rounded-t-lg rounded-b-lg">
-            2025 © Болгов Иван | Версия: v4.0.1
+            2025 © Болгов Иван | Версия: v4.0.2
         </footer>
     </div>
 
@@ -376,8 +398,12 @@
         // Проверка существования учетной записи
         async function checkUserExists() {
             try {
-                const response = await fetch('auth.php?action=check_user_exists');
+                const response = await fetch('auth.php?action=check_user_exists', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
                 const result = await response.json();
+                console.log('Проверка существования пользователя:', result); // Отладка
                 if (result.exists) {
                     showLoginModal();
                 } else {
@@ -391,6 +417,7 @@
 
         // Показать модальное окно входа
         function showLoginModal() {
+            console.log('Открытие окна входа'); // Отладка
             document.getElementById('loginModal').style.display = 'flex';
             document.getElementById('registerModal').style.display = 'none';
             document.getElementById('mainContent').classList.add('hidden');
@@ -399,6 +426,7 @@
 
         // Показать модальное окно регистрации
         function showRegisterModal() {
+            console.log('Открытие окна регистрации'); // Отладка
             document.getElementById('registerModal').style.display = 'flex';
             document.getElementById('loginModal').style.display = 'none';
             document.getElementById('mainContent').classList.add('hidden');
@@ -418,6 +446,7 @@
                     body: JSON.stringify({ action: 'login', username, password })
                 });
                 const result = await response.json();
+                console.log('Результат входа:', result); // Отладка
                 if (result.success) {
                     if (remember) {
                         localStorage.setItem('authToken', result.token);
@@ -454,6 +483,7 @@
                     body: JSON.stringify({ action: 'register', username, password })
                 });
                 const result = await response.json();
+                console.log('Результат регистрации:', result); // Отладка
                 if (result.success) {
                     localStorage.setItem('authToken', result.token);
                     document.getElementById('registerModal').style.display = 'none';
@@ -469,6 +499,29 @@
             }
         }
 
+        // Выход
+        async function logout() {
+            try {
+                const response = await fetch('auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'logout' })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    localStorage.removeItem('authToken');
+                    document.getElementById('mainContent').classList.add('hidden');
+                    checkUserExists();
+                    showNotification('Вы успешно вышли');
+                } else {
+                    showNotification('Ошибка выхода', 'bg-red-500');
+                }
+            } catch (err) {
+                console.error('Ошибка выхода:', err);
+                showNotification('Ошибка выхода', 'bg-red-500');
+            }
+        }
+
         // Проверка авторизации при загрузке
         async function checkAuth() {
             const token = localStorage.getItem('authToken');
@@ -480,6 +533,7 @@
                         body: JSON.stringify({ action: 'verify_token', token })
                     });
                     const result = await response.json();
+                    console.log('Результат проверки токена:', result); // Отладка
                     if (result.success) {
                         document.getElementById('mainContent').classList.remove('hidden');
                         initializeApp();
@@ -489,6 +543,7 @@
                     }
                 } catch (err) {
                     console.error('Ошибка проверки токена:', err);
+                    localStorage.removeItem('authToken');
                     checkUserExists();
                 }
             } else {

@@ -10,7 +10,7 @@ try {
 
     // Получение данных из запроса
     $input = json_decode(file_get_contents('php://input'), true);
-    $action = $input['action'] ?? $_POST['action'] ?? '';
+    $action = $input['action'] ?? $_GET['action'] ?? $_POST['action'] ?? '';
 
     if ($action === 'check_user_exists') {
         $result = $db->querySingle("SELECT COUNT(*) FROM users");
@@ -72,6 +72,10 @@ try {
         } else {
             echo json_encode(['success' => false]);
         }
+    } elseif ($action === 'logout') {
+        session_unset();
+        session_destroy();
+        echo json_encode(['success' => true]);
     } else {
         echo json_encode(['success' => false, 'error' => 'Неверное действие']);
     }
