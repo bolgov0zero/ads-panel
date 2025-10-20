@@ -51,7 +51,7 @@ ssl:
 
 - Запускаем
 ```bash
-mkdir ads && cd ads && nano docker-compose.yml
+docker-compose up -d
 ```
 
 # Скриншоты
