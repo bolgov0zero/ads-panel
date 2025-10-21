@@ -131,7 +131,7 @@ echo "2. Перезапустить Ads Panel"
 echo "3. Обновить Ads Panel"
 echo -e "4. \e[31mЗавершить Ads Panel\e[0m"
 echo ""
-echo -e "\e[33mИли нажмите любую клавишу чтобы выйти.\e[0m"
+echo -e "\e[33mИли нажмите любую клавишу проверить обновление.\e[0m"
 read -p "Выберите опцию: " choice
 
 case $choice in
