@@ -16,7 +16,7 @@ async function loadFiles() {
                 tbody.appendChild(row);
             }
             row.innerHTML = `
-                <td class="p-3">${file.id}</td>
+                <td class="p-3"><center>${file.id}</center></td>
                 <td class="p-3"><input type="text" value="${file.name}" class="p-1 bg-gray-700 border border-gray-600 rounded w-full" onchange="updateFileName(${file.id}, this.value)"></td>
                 <td class="p-3"><center>${file.type === 'video' ? 'Видео' : 'PDF'}</center></td>
                 <td class="p-3"><center>
