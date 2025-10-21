@@ -24,7 +24,7 @@ async function loadPlaylist() {
             }
             const isChecked = content.some(c => c.id === file.id && c.type === file.type);
             row.innerHTML = `
-                <td class="p-3">${file.id}</td>
+                <td class="p-3"><center>${file.id}</center></td>
                 <td class="p-3">${file.name}</td>
                 <td class="p-3"><center>${file.type === 'video' ? 'Видео' : 'PDF'}</center></td>
                 <td class="p-3"><center><label class="ios-switch"><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="updateClientContent('${uuid}', ${file.id}, '${file.type}', this.checked)"><span class="slider"></span></label></center></td>
