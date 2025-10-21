@@ -24,7 +24,7 @@ async function loadClients() {
                     <div class="status-dot ${client.status === 'online' ? 'status-online' : 'status-offline'}"></div>
                     <span class="status-text">${formatLastSeen(client.last_seen)}</span>
                 </center></td>
-                <td class="p-3">${client.uuid}</td>
+                <td class="p-3"><center>${client.uuid}</center></td>
                 <td class="p-3">
                     <input type="text" value="${client.name}" class="p-1 bg-gray-700 border border-gray-600 rounded w-full" onchange="updateClientName('${client.uuid}', this.value)">
                 </td>
