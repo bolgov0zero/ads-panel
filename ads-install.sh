@@ -120,7 +120,7 @@ if [ -n "$REMOTE_VERSION" ] && [ -n "$LOCAL_VERSION" ]; then
     if [ "$LOCAL_VERSION" = "$REMOTE_VERSION" ]; then
         echo -e "Версия: \e[32m[✓] актуальна ($LOCAL_VERSION)\e[0m"
     else
-        echo -e "Версия: \e[33m[!] доступно обновление ($REMOTE_VERSION, текущая: $LOCAL_VERSION)\e[0m"
+        echo -e "Версия: \e[33m[!] доступно обновление ($REMOTE_VERSION)\e[0m"
     fi
 else
     echo -e "Версия: \e[31m[✗] не удалось проверить версию\e[0m"
