@@ -110,11 +110,20 @@ if docker ps | grep -q "Up"; then > /dev/null 2>&1
 else
     echo -e "Статус: \e[31m[✗] не работает\e[0m"
 fi
-IMAGE="bolgov0zero/ads-panel:latest"
-if docker pull $IMAGE | grep -q "Downloaded newer image"; then
-    echo -e "Версия: \e[33m[!] доступно обновление\e[0m"
+# Получаем IP хоста
+HOST_IP=$(hostname -I | awk '{print $1}')
+# Получаем удалённую версию
+REMOTE_VERSION=$(curl -s https://raw.githubusercontent.com/bolgov0zero/ads-panel/refs/heads/main/version)
+# Получаем локальную версию, игнорируя ошибки сертификата
+LOCAL_VERSION=$(curl -s -k https://${HOST_IP}/version)
+if [ -n "$REMOTE_VERSION" ] && [ -n "$LOCAL_VERSION" ]; then
+    if [ "$LOCAL_VERSION" = "$REMOTE_VERSION" ]; then
+        echo -e "Версия: \e[32m[✓] актуальна ($LOCAL_VERSION)\e[0m"
+    else
+        echo -e "Версия: \e[33m[!] доступно обновление ($REMOTE_VERSION, текущая: $LOCAL_VERSION)\e[0m"
+    fi
 else
-    echo -e "Версия: \e[32m[✓] актуальна\e[0m"
+    echo -e "Версия: \e[31m[✗] не удалось проверить версию\e[0m"
 fi
 echo ""
 echo "1. Запустить Ads Panel"
