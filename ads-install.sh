@@ -136,6 +136,7 @@ read -p "Выберите опцию: " choice
 
 case $choice in
     1)
+        clear
         echo "Запуск Ads Panel..."
         docker-compose up -d > /dev/null 2>&1
         echo "Запуск завершён!"
@@ -144,6 +145,7 @@ case $choice in
         ads
         ;;
     2)
+        clear
         echo "Перезапуск Ads Panel..."
         docker-compose restart > /dev/null 2>&1
         echo "Перезапуск завершён!"
@@ -152,6 +154,7 @@ case $choice in
         ads
         ;;
     3)
+        clear
         echo "Обновление Ads Panel..."
         docker-compose pull > /dev/null 2>&1
         docker-compose up -d > /dev/null 2>&1
@@ -162,6 +165,7 @@ case $choice in
         ads
         ;;
     4)
+        clear
         echo "Завершение Ads Panel..."
         docker-compose down > /dev/null 2>&1
         sleep 2
@@ -170,9 +174,7 @@ case $choice in
         ;;
     *)
         clear
-        echo "Выход."
-        sleep 2
-        clear
+        ads
         ;;
 esac
 EOF
