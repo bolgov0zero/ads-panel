@@ -5,7 +5,6 @@ async function loadClients() {
         const grid = document.getElementById('clientsGrid');
         const clientSelect = document.getElementById('clientSelect');
 
-        // Очищаем старые карточки и опции
         const existingCards = grid.querySelectorAll('.client-card');
         const existingOptions = Array.from(clientSelect.querySelectorAll('option:not(:first-child)'));
 
@@ -22,9 +21,9 @@ async function loadClients() {
                 <div class="flex justify-between items-start mb-3">
                     <div class="flex items-center gap-2">
                         <div class="status-dot ${client.status === 'online' ? 'status-online' : 'status-offline'}"></div>
-                        <span class="text-sm text-gray-400">${formatLastSeen(client.last_seen)}</span>
+                        <span class="text-sm text-gray-400 status-text">${formatLastSeen(client.last_seen)}</span>
                     </div>
-                    <button onclick="toggleShowInfo('${client.uuid}', ${!client.show_info})" class="text-lg">
+                    <button onclick="toggleShowInfo('${client.uuid}')" class="text-lg eye-toggle">
                         <i class="fas fa-eye${client.show_info ? '' : '-slash'} ${client.show_info ? 'text-green-400' : 'text-gray-500'}"></i>
                     </button>
                 </div>
@@ -40,7 +39,7 @@ async function loadClients() {
                 </div>
             `;
 
-            // Обновляем select для плейлистов
+            // Обновляем select
             let option = clientSelect.querySelector(`option[value="${client.uuid}"]`);
             if (!option) {
                 option = document.createElement('option');
@@ -50,7 +49,7 @@ async function loadClients() {
             option.textContent = client.name;
         });
 
-        // Удаляем старые карточки и опции
+        // Удаляем старые карточки
         existingCards.forEach(card => {
             if (!clients.some(c => c.uuid === card.getAttribute('data-uuid'))) {
                 card.remove();
@@ -64,6 +63,41 @@ async function loadClients() {
 
     } catch (err) {
         console.error('Ошибка загрузки клиентов:', err);
+    }
+}
+
+// Переключение show_info
+async function toggleShowInfo(uuid) {
+    const card = document.querySelector(`.client-card[data-uuid="${uuid}"]`);
+    if (!card) return;
+
+    const eyeBtn = card.querySelector('.eye-toggle');
+    const icon = eyeBtn.querySelector('i');
+    const isCurrentlyOn = icon.classList.contains('fa-eye');
+
+    try {
+        const response = await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'update_client_show_info',
+                uuid,
+                show_info: isCurrentlyOn ? 0 : 1
+            })
+        });
+        const result = await response.json();
+        if (!result.error) {
+            // Обновляем только иконку
+            if (isCurrentlyOn) {
+                icon.classList.remove('fa-eye', 'text-green-400');
+                icon.classList.add('fa-eye-slash', 'text-gray-500');
+            } else {
+                icon.classList.remove('fa-eye-slash', 'text-gray-500');
+                icon.classList.add('fa-eye', 'text-green-400');
+            }
+        }
+    } catch (err) {
+        console.error('Ошибка переключения:', err);
     }
 }
 
@@ -93,20 +127,6 @@ async function saveName(input, uuid) {
         if (option) option.textContent = newName;
     } catch (err) {
         console.error('Ошибка сохранения имени:', err);
-    }
-}
-
-async function toggleShowInfo(uuid, current) {
-    const newValue = !current;
-    try {
-        await fetch('api.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'update_client_show_info', uuid, show_info: newValue ? 1 : 0 })
-        });
-        loadClients(); // Перезагружаем карточки
-    } catch (err) {
-        console.error('Ошибка переключения show_info:', err);
     }
 }
 
@@ -140,7 +160,7 @@ async function updateClientStatuses() {
             const client = clients.find(c => c.uuid === uuid);
             if (client) {
                 const dot = card.querySelector('.status-dot');
-                const text = card.querySelector('.text-sm.text-gray-400');
+                const text = card.querySelector('.status-text');
                 dot.classList.remove('status-online', 'status-offline');
                 dot.classList.add(client.status === 'online' ? 'status-online' : 'status-offline');
                 text.textContent = formatLastSeen(client.last_seen);

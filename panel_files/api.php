@@ -64,6 +64,20 @@ try {
 			}
 			break;
 
+        case 'update_client_show_info':
+            $uuid = $input['uuid'] ?? '';
+            $show_info = isset($input['show_info']) ? (int)$input['show_info'] : 0;
+            if (empty($uuid)) {
+                echo json_encode(['error' => 'UUID не указан']);
+                break;
+            }
+            $stmt = $db->prepare("UPDATE clients SET show_info = :show_info WHERE uuid = :uuid");
+            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $stmt->bindValue(':show_info', $show_info, SQLITE3_INTEGER);
+            $stmt->execute();
+            echo json_encode(['message' => 'Отображение UUID обновлено']);
+            break;
+
 		case 'scan_files':
 			$uploadDir = '/opt/ads/';
 			if (!is_dir($uploadDir)) {
