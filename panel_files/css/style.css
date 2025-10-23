@@ -343,3 +343,12 @@ canvas#pdfCanvas {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
 }
+
+.rem-button {
+    bottom: 1.15rem;
+    right: 1.4rem;
+}
+
+.view-button {
+    font-size: 1rem;
+}

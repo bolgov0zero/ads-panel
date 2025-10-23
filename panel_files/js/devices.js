@@ -23,7 +23,7 @@ async function loadClients() {
                         <div class="status-dot ${client.status === 'online' ? 'status-online' : 'status-offline'}"></div>
                         <span class="text-sm text-gray-400 status-text">${formatLastSeen(client.last_seen)}</span>
                     </div>
-                    <button onclick="toggleShowInfo('${client.uuid}')" class="text-lg eye-toggle">
+                    <button onclick="toggleShowInfo('${client.uuid}')" class="view-button eye-toggle">
                         <i class="fas fa-eye${client.show_info ? '' : '-slash'} ${client.show_info ? 'text-green-400' : 'text-gray-500'}"></i>
                     </button>
                 </div>
@@ -32,7 +32,7 @@ async function loadClients() {
                     <input type="text" class="hidden name-input w-full p-1 bg-gray-700 border border-gray-600 rounded text-gray-100" value="${client.name}" onblur="saveName(this, '${client.uuid}')" onkeydown="if(event.key==='Enter') this.blur()">
                 </div>
                 <div class="text-xs text-gray-500 font-mono break-all">${client.uuid}</div>
-                <div class="absolute bottom-3 right-3">
+                <div class="absolute rem-button">
                     <button onclick="deleteClient('${client.uuid}')" class="text-red-500 hover:text-red-400 text-sm">
                         <i class="fas fa-trash"></i>
                     </button>
