@@ -251,8 +251,13 @@ function openTab(tabId) {
         btn.classList.remove('bg-blue-600', 'text-white');
         btn.classList.add('bg-gray-800', 'text-gray-100');
     });
-    document.getElementById(tabId).classList.remove('hidden');
-    document.querySelector(`button[onclick="openTab('${tabId}')"]`).classList.add('bg-blue-600', 'text-white');
+    const tabElement = document.getElementById(tabId);
+    if (tabElement) tabElement.classList.remove('hidden');
+    const button = document.querySelector(`button[onclick="openTab('${tabId}')"]`);
+    if (button) {
+        button.classList.add('bg-blue-600', 'text-white');
+        button.classList.remove('bg-gray-800', 'text-gray-100');
+    }
     if (tabId === 'helpTab') {
         renderHelpContent();
     }
@@ -261,6 +266,7 @@ function openTab(tabId) {
 function showNotification(message, bgClass = 'bg-green-500') {
     const notification = document.getElementById('notification');
     const notificationMessage = document.getElementById('notificationMessage');
+    if (!notification || !notificationMessage) return;
     notificationMessage.textContent = message;
     notification.classList.remove('bg-green-500', 'bg-red-500');
     notification.classList.add(bgClass);
@@ -272,14 +278,20 @@ async function loadMessageSettings() {
     try {
         const response = await fetch('api.php?action=get_message_settings');
         const settings = await response.json();
-        console.log('Загружены настройки сообщения:', settings);
-        document.getElementById('messageEnabled').checked = settings.enabled === 1;
-        document.getElementById('messageText').value = settings.text || '';
-        document.getElementById('messageColor').value = settings.color || '#ffffff';
-        document.getElementById('messageBackgroundColor').value = settings.background_color || '#000000';
-        document.getElementById('messageFontSize').value = settings.font_size || 24;
-        document.getElementById('messageSpeed').value = settings.speed || 100;
-        document.getElementById('messageBold').checked = settings.bold === 1;
+        const enabledEl = document.getElementById('messageEnabled');
+        const textEl = document.getElementById('messageText');
+        const colorEl = document.getElementById('messageColor');
+        const bgEl = document.getElementById('messageBackgroundColor');
+        const sizeEl = document.getElementById('messageFontSize');
+        const speedEl = document.getElementById('messageSpeed');
+        const boldEl = document.getElementById('messageBold');
+        if (enabledEl) enabledEl.checked = settings.enabled === 1;
+        if (textEl) textEl.value = settings.text || '';
+        if (colorEl) colorEl.value = settings.color || '#ffffff';
+        if (bgEl) bgEl.value = settings.background_color || '#000000';
+        if (sizeEl) sizeEl.value = settings.font_size || 24;
+        if (speedEl) speedEl.value = settings.speed || 100;
+        if (boldEl) boldEl.checked = settings.bold === 1;
     } catch (err) {
         console.error('Ошибка загрузки настроек сообщения:', err);
     }
@@ -299,18 +311,11 @@ async function updateMessageSettings() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 action: 'update_message_settings',
-                enabled,
-                text,
-                color,
-                background_color,
-                font_size,
-                speed,
-                bold
+                enabled, text, color, background_color, font_size, speed, bold
             })
         });
         const result = await response.json();
         if (result.error) {
-            console.error(result.error);
             showNotification('Ошибка сохранения настроек сообщения', 'bg-red-500');
         } else {
             showNotification('Настройки сообщения сохранены');
@@ -326,12 +331,18 @@ async function checkNewClients() {
     try {
         const response = await fetch('api.php?action=count_clients');
         const result = await response.json();
-        console.log('Проверка количества клиентов:', result.count, 'Текущее:', clientCount);
         if (result.count !== clientCount) {
             clientCount = result.count;
             loadClients();
-        } else if (document.getElementById('clientTab').classList.contains('hidden') === false || document.getElementById('playlistTab').classList.contains('hidden') === false) {
-            updateClientStatuses();
+            loadStatusCards();
+        } else {
+            const activeTab = document.querySelector('.tab-content:not(.hidden)');
+            if (activeTab && (activeTab.id === 'clientTab' || activeTab.id === 'playlistTab' || activeTab.id === 'statusTab')) {
+                updateClientStatuses();
+                if (activeTab.id === 'statusTab') {
+                    loadStatusCards();
+                }
+            }
         }
     } catch (err) {
         console.error('Ошибка проверки новых устройств:', err);
@@ -344,36 +355,18 @@ function startClientCheck() {
 }
 
 function initializeApp() {
-    document.getElementById('fileSearch').addEventListener('input', filterFiles);
+    const fileSearch = document.getElementById('fileSearch');
+    if (fileSearch) fileSearch.addEventListener('input', filterFiles);
     loadFiles();
     loadClients();
     loadMessageSettings();
-    loadStatusCards(); // Добавлено
+    loadStatusCards();
     startClientCheck();
     openTab('fileTab');
     loadVersion();
 }
 
-async function checkNewClients() {
-    try {
-        const response = await fetch('api.php?action=count_clients');
-        const result = await response.json();
-        if (result.count !== clientCount) {
-            clientCount = result.count;
-            loadClients();
-            loadStatusCards(); // Добавлено
-        } else {
-            const activeTab = document.querySelector('.tab-content:not(.hidden)');
-            if (activeTab && (activeTab.id === 'clientTab' || activeTab.id === 'playlistTab' || activeTab.id === 'statusTab')) {
-                updateClientStatuses();
-                if (activeTab.id === 'statusTab') {
-                    loadStatusCards(); // Полное обновление при активной вкладке
-                }
-            }
-        }
-    } catch (err) {
-        console.error('Ошибка проверки новых устройств:', err);
-    }
-}
-
-checkAuth();
+// === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Ждём загрузки DOM ===
+document.addEventListener('DOMContentLoaded', function () {
+    checkAuth();
+});
