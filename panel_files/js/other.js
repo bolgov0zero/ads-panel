@@ -10,16 +10,20 @@ async function loadVersion() {
         const response = await fetch('version');
         if (!response.ok) throw new Error('Не удалось загрузить версию');
         const version = await response.text();
-        document.getElementById('appVersion').textContent = version.trim();
+        const el = document.getElementById('appVersion');
+        if (el) el.textContent = version.trim();
     } catch (err) {
         console.error('Ошибка загрузки версии:', err);
-        document.getElementById('appVersion').textContent = 'Неизвестно';
+        const el = document.getElementById('appVersion');
+        if (el) el.textContent = 'Неизвестно';
     }
 }
 
 function renderHelpContent() {
     const helpContent = document.getElementById('helpContent');
-    helpContent.innerHTML = marked.parse(helpMarkdown);
+    if (helpContent) {
+        helpContent.innerHTML = marked.parse(helpMarkdown);
+    }
 }
 
 async function checkUserExists() {
@@ -29,7 +33,6 @@ async function checkUserExists() {
             headers: { 'Content-Type': 'application/json' }
         });
         const result = await response.json();
-        console.log('Проверка существования пользователя:', result);
         if (result.exists) {
             showLoginModal();
         } else {
@@ -42,35 +45,42 @@ async function checkUserExists() {
 }
 
 function showLoginModal() {
-    console.log('Открытие окна входа');
-    document.getElementById('loginModal').style.display = 'flex';
-    document.getElementById('registerModal').style.display = 'none';
-    document.getElementById('changePasswordModal').style.display = 'none';
-    document.getElementById('mainContent').classList.add('hidden');
-    document.getElementById('loginError').style.display = 'none';
+    const modal = document.getElementById('loginModal');
+    const main = document.getElementById('mainContent');
+    if (modal && main) {
+        modal.style.display = 'flex';
+        main.classList.add('hidden');
+        document.getElementById('loginError').style.display = 'none';
+    }
 }
 
 function showRegisterModal() {
-    console.log('Открытие окна регистрации');
-    document.getElementById('registerModal').style.display = 'flex';
-    document.getElementById('loginModal').style.display = 'none';
-    document.getElementById('changePasswordModal').style.display = 'none';
-    document.getElementById('mainContent').classList.add('hidden');
-    document.getElementById('registerError').style.display = 'none';
+    const modal = document.getElementById('registerModal');
+    const main = document.getElementById('mainContent');
+    if (modal && main) {
+        modal.style.display = 'flex';
+        main.classList.add('hidden');
+        document.getElementById('registerError').style.display = 'none';
+    }
 }
 
 function showChangePasswordModal() {
-    document.getElementById('changePasswordModal').style.display = 'flex';
-    document.getElementById('loginModal').style.display = 'none';
-    document.getElementById('registerModal').style.display = 'none';
-    document.getElementById('mainContent').classList.add('hidden');
-    document.getElementById('changePasswordError').style.display = 'none';
+    const modal = document.getElementById('changePasswordModal');
+    const main = document.getElementById('mainContent');
+    if (modal && main) {
+        modal.style.display = 'flex';
+        main.classList.add('hidden');
+        document.getElementById('changePasswordError').style.display = 'none';
+    }
 }
 
 function closeChangePasswordModal() {
-    document.getElementById('changePasswordModal').style.display = 'none';
-    document.getElementById('mainContent').classList.remove('hidden');
-    document.getElementById('changePasswordError').style.display = 'none';
+    const modal = document.getElementById('changePasswordModal');
+    const main = document.getElementById('mainContent');
+    if (modal && main) {
+        modal.style.display = 'none';
+        main.classList.remove('hidden');
+    }
 }
 
 async function login() {
@@ -85,7 +95,6 @@ async function login() {
             body: JSON.stringify({ action: 'login', username, password })
         });
         const result = await response.json();
-        console.log('Результат входа:', result);
         if (result.success) {
             if (remember) {
                 localStorage.setItem('authToken', result.token);
@@ -121,7 +130,6 @@ async function register() {
             body: JSON.stringify({ action: 'register', username, password })
         });
         const result = await response.json();
-        console.log('Результат регистрации:', result);
         if (result.success) {
             localStorage.setItem('authToken', result.token);
             document.getElementById('registerModal').style.display = 'none';
@@ -157,9 +165,8 @@ async function changePassword() {
         });
         const result = await response.json();
         if (result.success) {
-            document.getElementById('changePasswordModal').style.display = 'none';
-            document.getElementById('mainContent').classList.remove('hidden');
-            showNotification('Пароль успешно изменен');
+            showNotification('Пароль успешно изменён');
+            closeChangePasswordModal();
         } else {
             errorElement.textContent = result.error || 'Ошибка смены пароля';
             errorElement.style.display = 'block';
@@ -171,9 +178,8 @@ async function changePassword() {
 }
 
 async function deleteAccount() {
-    if (!confirm('Вы уверены, что хотите удалить учетную запись? Это действие необратимо.')) {
-        return;
-    }
+    if (!confirm('Вы уверены, что что хотите удалить учетную запись? Это действие нельзя отменить.')) return;
+
     try {
         const response = await fetch('auth.php', {
             method: 'POST',
@@ -183,15 +189,14 @@ async function deleteAccount() {
         const result = await response.json();
         if (result.success) {
             localStorage.removeItem('authToken');
-            document.getElementById('mainContent').classList.add('hidden');
             showNotification('Учетная запись удалена');
-            checkUserExists();
+            setTimeout(() => location.reload(), 1000);
         } else {
-            showNotification(result.error || 'Ошибка удаления учетной записи', 'bg-red-500');
+            showNotification(result.error || 'Ошибка удаления', 'bg-red-500');
         }
     } catch (err) {
-        console.error('Ошибка удаления учетной записи:', err);
-        showNotification('Ошибка удаления учетной записи', 'bg-red-500');
+        console.error('Ошибка удаления:', err);
+        showNotification('Ошибка удаления', 'bg-red-500');
     }
 }
 
@@ -227,7 +232,6 @@ async function checkAuth() {
                 body: JSON.stringify({ action: 'verify_token', token })
             });
             const result = await response.json();
-            console.log('Результат проверки токена:', result);
             if (result.success) {
                 document.getElementById('mainContent').classList.remove('hidden');
                 initializeApp();
@@ -278,20 +282,14 @@ async function loadMessageSettings() {
     try {
         const response = await fetch('api.php?action=get_message_settings');
         const settings = await response.json();
-        const enabledEl = document.getElementById('messageEnabled');
-        const textEl = document.getElementById('messageText');
-        const colorEl = document.getElementById('messageColor');
-        const bgEl = document.getElementById('messageBackgroundColor');
-        const sizeEl = document.getElementById('messageFontSize');
-        const speedEl = document.getElementById('messageSpeed');
-        const boldEl = document.getElementById('messageBold');
-        if (enabledEl) enabledEl.checked = settings.enabled === 1;
-        if (textEl) textEl.value = settings.text || '';
-        if (colorEl) colorEl.value = settings.color || '#ffffff';
-        if (bgEl) bgEl.value = settings.background_color || '#000000';
-        if (sizeEl) sizeEl.value = settings.font_size || 24;
-        if (speedEl) speedEl.value = settings.speed || 100;
-        if (boldEl) boldEl.checked = settings.bold === 1;
+        const el = id => document.getElementById(id);
+        if (el('messageEnabled')) el('messageEnabled').checked = settings.enabled === 1;
+        if (el('messageText')) el('messageText').value = settings.text || '';
+        if (el('messageColor')) el('messageColor').value = settings.color || '#ffffff';
+        if (el('messageBackgroundColor')) el('messageBackgroundColor').value = settings.background_color || '#000000';
+        if (el('messageFontSize')) el('messageFontSize').value = settings.font_size || 24;
+        if (el('messageSpeed')) el('messageSpeed').value = settings.speed || 100;
+        if (el('messageBold')) el('messageBold').checked = settings.bold === 1;
     } catch (err) {
         console.error('Ошибка загрузки настроек сообщения:', err);
     }
@@ -299,13 +297,15 @@ async function loadMessageSettings() {
 
 async function updateMessageSettings() {
     try {
-        const enabled = document.getElementById('messageEnabled').checked ? 1 : 0;
-        const text = document.getElementById('messageText').value;
-        const color = document.getElementById('messageColor').value;
-        const background_color = document.getElementById('messageBackgroundColor').value;
-        const font_size = parseInt(document.getElementById('messageFontSize').value) || 24;
-        const speed = parseInt(document.getElementById('messageSpeed').value) || 100;
-        const bold = document.getElementById('messageBold').checked ? 1 : 0;
+        const el = id => document.getElementById(id);
+        const enabled = el('messageEnabled').checked ? 1 : 0;
+        const text = el('messageText').value;
+        const color = el('messageColor').value;
+        const background_color = el('messageBackgroundColor').value;
+        const font_size = parseInt(el('messageFontSize').value) || 24;
+        const speed = parseInt(el('messageSpeed').value) || 100;
+        const bold = el('messageBold').checked ? 1 : 0;
+
         const response = await fetch('api.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -366,7 +366,7 @@ function initializeApp() {
     loadVersion();
 }
 
-// === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Ждём загрузки DOM ===
-document.addEventListener('DOMContentLoaded', function () {
+// ГЛАВНОЕ: Запуск только после загрузки DOM
+document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
 });

@@ -10,6 +10,45 @@
     <script src="js/marked.min.js"></script>
 </head>
 <body class="bg-gray-900 text-<div class="flex items-center justify-center mb-6">
+<!-- Модальное окно входа -->
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <h2 class="text-xl font-semibold mb-4">Вход</h2>
+        <p id="loginError" class="error">Неверный логин или пароль</p>
+        <input type="text" id="loginUsername" placeholder="Логин" required>
+        <input type="password" id="loginPassword" placeholder="Пароль" required>
+        <div class="remember-label">
+            <input type="checkbox" id="rememberMe" class="mr-2">
+            <span>Запомнить</span>
+        </div>
+        <button onclick="login()">Войти</button>
+    </div>
+</div>
+
+<!-- Модальное окно регистрации -->
+<div id="registerModal" class="modal">
+    <div class="modal-content">
+        <h2 class="text-xl font-semibold mb-4">Создание учетной записи</h2>
+        <p id="registerError" class="error"></p>
+        <input type="text" id="registerUsername" placeholder="Логин" required>
+        <input type="password" id="registerPassword" placeholder="Пароль" required>
+        <input type="password" id="registerConfirmPassword" placeholder="Повторите пароль" required>
+        <button onclick="register()">Создать</button>
+    </div>
+</div>
+
+<!-- Модальное окно смены пароля -->
+<div id="changePasswordModal" class="modal">
+    <div class="modal-content">
+        <h2 class="text-xl font-semibold mb-4">Смена пароля</h2>
+        <p id="changePasswordError" class="error"></p>
+        <input type="password" id="currentPassword" placeholder="Текущий пароль" required>
+        <input type="password" id="newPassword" placeholder="Новый пароль" required>
+        <input type="password" id="confirmNewPassword" placeholder="Повторите новый пароль" required>
+        <button onclick="changePassword()">Сменить пароль</button>
+        <button onclick="closeChangePasswordModal()">Отмена</button>
+    </div>
+</div>
 <img src="/logo.png" alt="Logo" class="h-8 mr-3">
 <h2 class="text-3xl font-bold text-gray-100">Панель управления</h2>
 </div>
