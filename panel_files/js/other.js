@@ -6,38 +6,27 @@ const helpMarkdown = `
 `;
 
 async function loadVersion() {
+    const el = document.getElementById('appVersion');
+    if (!el) return;
     try {
         const response = await fetch('version');
-        if (!response.ok) throw new Error('Не удалось загрузить версию');
-        const version = await response.text();
-        const el = document.getElementById('appVersion');
-        if (el) el.textContent = version.trim();
-    } catch (err) {
-        console.error('Ошибка загрузки версии:', err);
-        const el = document.getElementById('appVersion');
-        if (el) el.textContent = 'Неизвестно';
+        if (!response.ok) throw new Error();
+        el.textContent = (await response.text()).trim();
+    } catch {
+        el.textContent = 'Неизвестно';
     }
 }
 
 function renderHelpContent() {
-    const helpContent = document.getElementById('helpContent');
-    if (helpContent) {
-        helpContent.innerHTML = marked.parse(helpMarkdown);
-    }
+    const el = document.getElementById('helpContent');
+    if (el) el.innerHTML = marked.parse(helpMarkdown);
 }
 
 async function checkUserExists() {
     try {
-        const response = await fetch('auth.php?action=check_user_exists', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-        });
+        const response = await fetch('auth.php?action=check_user_exists');
         const result = await response.json();
-        if (result.exists) {
-            showLoginModal();
-        } else {
-            showRegisterModal();
-        }
+        result.exists ? showLoginModal() : showRegisterModal();
     } catch (err) {
         console.error('Ошибка проверки учетной записи:', err);
         showNotification('Ошибка проверки учетной записи', 'bg-red-500');
@@ -47,46 +36,43 @@ async function checkUserExists() {
 function showLoginModal() {
     const modal = document.getElementById('loginModal');
     const main = document.getElementById('mainContent');
-    if (modal && main) {
-        modal.style.display = 'flex';
-        main.classList.add('hidden');
-        document.getElementById('loginError').style.display = 'none';
-    }
+    if (modal) modal.style.display = 'flex';
+    if (main) main.classList.add('hidden');
+    const err = document.getElementById('loginError');
+    if (err) err.style.display = 'none';
 }
 
 function showRegisterModal() {
     const modal = document.getElementById('registerModal');
     const main = document.getElementById('mainContent');
-    if (modal && main) {
-        modal.style.display = 'flex';
-        main.classList.add('hidden');
-        document.getElementById('registerError').style.display = 'none';
-    }
+    if (modal) modal.style.display = 'flex';
+    if (main) main.classList.add('hidden');
+    const err = document.getElementById('registerError');
+    if (err) err.style.display = 'none';
 }
 
 function showChangePasswordModal() {
     const modal = document.getElementById('changePasswordModal');
     const main = document.getElementById('mainContent');
-    if (modal && main) {
-        modal.style.display = 'flex';
-        main.classList.add('hidden');
-        document.getElementById('changePasswordError').style.display = 'none';
-    }
+    if (modal) modal.style.display = 'flex';
+    if (main) main.classList.add('hidden');
+    const err = document.getElementById('changePasswordError');
+    if (err) err.style.display = 'none';
 }
 
 function closeChangePasswordModal() {
     const modal = document.getElementById('changePasswordModal');
     const main = document.getElementById('mainContent');
-    if (modal && main) {
-        modal.style.display = 'none';
-        main.classList.remove('hidden');
-    }
+    if (modal) modal.style.display = 'none';
+    if (main) main.classList.remove('hidden');
 }
 
 async function login() {
-    const username = document.getElementById('loginUsername').value;
-    const password = document.getElementById('loginPassword').value;
-    const remember = document.getElementById('rememberMe').checked;
+    const username = document.getElementById('loginUsername')?.value;
+    const password = document.getElementById('loginPassword')?.value;
+    const remember = document.getElementById('rememberMe')?.checked;
+
+    if (!username || !password) return;
 
     try {
         const response = await fetch('auth.php', {
@@ -96,30 +82,27 @@ async function login() {
         });
         const result = await response.json();
         if (result.success) {
-            if (remember) {
-                localStorage.setItem('authToken', result.token);
-            }
-            document.getElementById('loginModal').style.display = 'none';
-            document.getElementById('mainContent').classList.remove('hidden');
+            if (remember) localStorage.setItem('authToken', result.token);
+            document.getElementById('loginModal')?.style.setProperty('display', 'none');
+            document.getElementById('mainContent')?.classList.remove('hidden');
             initializeApp();
         } else {
-            document.getElementById('loginError').style.display = 'block';
+            const err = document.getElementById('loginError');
+            if (err) err.style.display = 'block';
         }
     } catch (err) {
-        console.error('Ошибка входа:', err);
         showNotification('Ошибка входа', 'bg-red-500');
     }
 }
 
 async function register() {
-    const username = document.getElementById('registerUsername').value;
-    const password = document.getElementById('registerPassword').value;
-    const confirmPassword = document.getElementById('registerConfirmPassword').value;
-    const errorElement = document.getElementById('registerError');
+    const username = document.getElementById('registerUsername')?.value;
+    const password = document.getElementById('registerPassword')?.value;
+    const confirm = document.getElementById('registerConfirmPassword')?.value;
+    const err = document.getElementById('registerError');
 
-    if (password !== confirmPassword) {
-        errorElement.textContent = 'Пароли не совпадают';
-        errorElement.style.display = 'block';
+    if (password !== confirm) {
+        if (err) err.textContent = 'Пароли не совпадают', err.style.display = 'block';
         return;
     }
 
@@ -132,28 +115,25 @@ async function register() {
         const result = await response.json();
         if (result.success) {
             localStorage.setItem('authToken', result.token);
-            document.getElementById('registerModal').style.display = 'none';
-            document.getElementById('mainContent').classList.remove('hidden');
+            document.getElementById('registerModal')?.style.setProperty('display', 'none');
+            document.getElementById('mainContent')?.classList.remove('hidden');
             initializeApp();
         } else {
-            errorElement.textContent = result.error || 'Ошибка регистрации';
-            errorElement.style.display = 'block';
+            if (err) err.textContent = result.error || 'Ошибка', err.style.display = 'block';
         }
-    } catch (err) {
-        console.error('Ошибка регистрации:', err);
+    } catch {
         showNotification('Ошибка регистрации', 'bg-red-500');
     }
 }
 
 async function changePassword() {
-    const currentPassword = document.getElementById('currentPassword').value;
-    const newPassword = document.getElementById('newPassword').value;
-    const confirmNewPassword = document.getElementById('confirmNewPassword').value;
-    const errorElement = document.getElementById('changePasswordError');
+    const current = document.getElementById('currentPassword')?.value;
+    const newPass = document.getElementById('newPassword')?.value;
+    const confirm = document.getElementById('confirmNewPassword')?.value;
+    const err = document.getElementById('changePasswordError');
 
-    if (newPassword !== confirmNewPassword) {
-        errorElement.textContent = 'Новые пароли не совпадают';
-        errorElement.style.display = 'block';
+    if (newPass !== confirm) {
+        if (err) err.textContent = 'Пароли не совпадают', err.style.display = 'block';
         return;
     }
 
@@ -161,25 +141,22 @@ async function changePassword() {
         const response = await fetch('auth.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'change_password', currentPassword, newPassword })
+            body: JSON.stringify({ action: 'change_password', currentPassword: current, newPassword: newPass })
         });
         const result = await response.json();
         if (result.success) {
-            showNotification('Пароль успешно изменён');
+            showNotification('Пароль изменён');
             closeChangePasswordModal();
         } else {
-            errorElement.textContent = result.error || 'Ошибка смены пароля';
-            errorElement.style.display = 'block';
+            if (err) err.textContent = result.error || 'Ошибка', err.style.display = 'block';
         }
-    } catch (err) {
-        console.error('Ошибка смены пароля:', err);
+    } catch {
         showNotification('Ошибка смены пароля', 'bg-red-500');
     }
 }
 
 async function deleteAccount() {
-    if (!confirm('Вы уверены, что что хотите удалить учетную запись? Это действие нельзя отменить.')) return;
-
+    if (!confirm('Удалить учетную запись? Это нельзя отменить.')) return;
     try {
         const response = await fetch('auth.php', {
             method: 'POST',
@@ -192,10 +169,9 @@ async function deleteAccount() {
             showNotification('Учетная запись удалена');
             setTimeout(() => location.reload(), 1000);
         } else {
-            showNotification(result.error || 'Ошибка удаления', 'bg-red-500');
+            showNotification(result.error || 'Ошибка', 'bg-red-500');
         }
-    } catch (err) {
-        console.error('Ошибка удаления:', err);
+    } catch {
         showNotification('Ошибка удаления', 'bg-red-500');
     }
 }
@@ -210,9 +186,11 @@ async function logout() {
         const result = await response.json();
         if (result.success) {
             localStorage.removeItem('authToken');
-            document.getElementById('mainContent').classList.add('hidden');
+            // Безопасно скрываем mainContent
+            const main = document.getElementById('mainContent');
+            if (main) main.classList.add('hidden');
             checkUserExists();
-            showNotification('Вы успешно вышли');
+            showNotification('Вы вышли');
         } else {
             showNotification('Ошибка выхода', 'bg-red-500');
         }
@@ -224,128 +202,120 @@ async function logout() {
 
 async function checkAuth() {
     const token = localStorage.getItem('authToken');
-    if (token) {
-        try {
-            const response = await fetch('auth.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'verify_token', token })
-            });
-            const result = await response.json();
-            if (result.success) {
-                document.getElementById('mainContent').classList.remove('hidden');
-                initializeApp();
-            } else {
-                localStorage.removeItem('authToken');
-                checkUserExists();
-            }
-        } catch (err) {
-            console.error('Ошибка проверки токена:', err);
+    if (!token) {
+        checkUserExists();
+        return;
+    }
+
+    try {
+        const response = await fetch('auth.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'verify_token', token })
+        });
+        const result = await response.json();
+        if (result.success) {
+            const main = document.getElementById('mainContent');
+            if (main) main.classList.remove('hidden');
+            initializeApp();
+        } else {
             localStorage.removeItem('authToken');
             checkUserExists();
         }
-    } else {
+    } catch {
+        localStorage.removeItem('authToken');
         checkUserExists();
     }
 }
 
 function openTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-    document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('bg-blue-600', 'text-white');
-        btn.classList.add('bg-gray-800', 'text-gray-100');
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+    document.querySelectorAll('.tab-button').forEach(b => {
+        b.classList.remove('bg-blue-600', 'text-white');
+        b.classList.add('bg-gray-800', 'text-gray-100');
     });
-    const tabElement = document.getElementById(tabId);
-    if (tabElement) tabElement.classList.remove('hidden');
-    const button = document.querySelector(`button[onclick="openTab('${tabId}')"]`);
-    if (button) {
-        button.classList.add('bg-blue-600', 'text-white');
-        button.classList.remove('bg-gray-800', 'text-gray-100');
+    const tab = document.getElementById(tabId);
+    if (tab) tab.classList.remove('hidden');
+    const btn = document.querySelector(`button[onclick="openTab('${tabId}')"]`);
+    if (btn) {
+        btn.classList.add('bg-blue-600', 'text-white');
+        btn.classList.remove('bg-gray-800', 'text-gray-100');
     }
-    if (tabId === 'helpTab') {
-        renderHelpContent();
-    }
+    if (tabId === 'helpTab') renderHelpContent();
 }
 
-function showNotification(message, bgClass = 'bg-green-500') {
-    const notification = document.getElementById('notification');
-    const notificationMessage = document.getElementById('notificationMessage');
-    if (!notification || !notificationMessage) return;
-    notificationMessage.textContent = message;
-    notification.classList.remove('bg-green-500', 'bg-red-500');
-    notification.classList.add(bgClass);
-    notification.classList.remove('hidden');
-    setTimeout(() => notification.classList.add('hidden'), 3000);
+function showNotification(message, bg = 'bg-green-500') {
+    const n = document.getElementById('notification');
+    const m = document.getElementById('notificationMessage');
+    if (!n || !m) return;
+    m.textContent = message;
+    n.classList.remove('bg-green-500', 'bg-red-500');
+    n.classList.add(bg);
+    n.classList.remove('hidden');
+    setTimeout(() => n.classList.add('hidden'), 3000);
 }
 
 async function loadMessageSettings() {
     try {
-        const response = await fetch('api.php?action=get_message_settings');
-        const settings = await response.json();
+        const res = await fetch('api.php?action=get_message_settings');
+        const s = await res.json();
         const el = id => document.getElementById(id);
-        if (el('messageEnabled')) el('messageEnabled').checked = settings.enabled === 1;
-        if (el('messageText')) el('messageText').value = settings.text || '';
-        if (el('messageColor')) el('messageColor').value = settings.color || '#ffffff';
-        if (el('messageBackgroundColor')) el('messageBackgroundColor').value = settings.background_color || '#000000';
-        if (el('messageFontSize')) el('messageFontSize').value = settings.font_size || 24;
-        if (el('messageSpeed')) el('messageSpeed').value = settings.speed || 100;
-        if (el('messageBold')) el('messageBold').checked = settings.bold === 1;
+        if (el('messageEnabled')) el('messageEnabled').checked = s.enabled === 1;
+        if (el('messageText')) el('messageText').value = s.text || '';
+        if (el('messageColor')) el('messageColor').value = s.color || '#ffffff';
+        if (el('messageBackgroundColor')) el('messageBackgroundColor').value = s.background_color || '#000000';
+        if (el('messageFontSize')) el('messageFontSize').value = s.font_size || 24;
+        if (el('messageSpeed')) el('messageSpeed').value = s.speed || 100;
+        if (el('messageBold')) el('messageBold').checked = s.bold === 1;
     } catch (err) {
-        console.error('Ошибка загрузки настроек сообщения:', err);
+        console.error('Ошибка загрузки настроек:', err);
     }
 }
 
 async function updateMessageSettings() {
-    try {
-        const el = id => document.getElementById(id);
-        const enabled = el('messageEnabled').checked ? 1 : 0;
-        const text = el('messageText').value;
-        const color = el('messageColor').value;
-        const background_color = el('messageBackgroundColor').value;
-        const font_size = parseInt(el('messageFontSize').value) || 24;
-        const speed = parseInt(el('messageSpeed').value) || 100;
-        const bold = el('messageBold').checked ? 1 : 0;
+    const el = id => document.getElementById(id);
+    const data = {
+        action: 'update_message_settings',
+        enabled: el('messageEnabled')?.checked ? 1 : 0,
+        text: el('messageText')?.value || '',
+        color: el('messageColor')?.value || '#ffffff',
+        background_color: el('messageBackgroundColor')?.value || '#000000',
+        font_size: parseInt(el('messageFontSize')?.value) || 24,
+        speed: parseInt(el('messageSpeed')?.value) || 100,
+        bold: el('messageBold')?.checked ? 1 : 0
+    };
 
-        const response = await fetch('api.php', {
+    try {
+        const res = await fetch('api.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'update_message_settings',
-                enabled, text, color, background_color, font_size, speed, bold
-            })
+            body: JSON.stringify(data)
         });
-        const result = await response.json();
-        if (result.error) {
-            showNotification('Ошибка сохранения настроек сообщения', 'bg-red-500');
-        } else {
-            showNotification('Настройки сообщения сохранены');
-        }
-    } catch (err) {
-        console.error('Ошибка:', err);
-        showNotification('Ошибка сохранения настроек сообщения', 'bg-red-500');
+        const result = await res.json();
+        showNotification(result.error ? 'Ошибка' : 'Сохранено', result.error ? 'bg-red-500' : 'bg-green-500');
+    } catch {
+        showNotification('Ошибка', 'bg-red-500');
     }
 }
 
 let clientCount = 0;
 async function checkNewClients() {
     try {
-        const response = await fetch('api.php?action=count_clients');
-        const result = await response.json();
-        if (result.count !== clientCount) {
-            clientCount = result.count;
+        const res = await fetch('api.php?action=count_clients');
+        const { count } = await res.json();
+        if (count !== clientCount) {
+            clientCount = count;
             loadClients();
             loadStatusCards();
         } else {
-            const activeTab = document.querySelector('.tab-content:not(.hidden)');
-            if (activeTab && (activeTab.id === 'clientTab' || activeTab.id === 'playlistTab' || activeTab.id === 'statusTab')) {
+            const active = document.querySelector('.tab-content:not(.hidden)');
+            if (active && ['clientTab', 'playlistTab', 'statusTab'].includes(active.id)) {
                 updateClientStatuses();
-                if (activeTab.id === 'statusTab') {
-                    loadStatusCards();
-                }
+                if (active.id === 'statusTab') loadStatusCards();
             }
         }
     } catch (err) {
-        console.error('Ошибка проверки новых устройств:', err);
+        console.error('Ошибка проверки клиентов:', err);
     }
 }
 
@@ -355,8 +325,8 @@ function startClientCheck() {
 }
 
 function initializeApp() {
-    const fileSearch = document.getElementById('fileSearch');
-    if (fileSearch) fileSearch.addEventListener('input', filterFiles);
+    const search = document.getElementById('fileSearch');
+    if (search) search.addEventListener('input', filterFiles);
     loadFiles();
     loadClients();
     loadMessageSettings();
@@ -369,4 +339,5 @@ function initializeApp() {
 // ГЛАВНОЕ: Запуск только после загрузки DOM
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
+});
 });
