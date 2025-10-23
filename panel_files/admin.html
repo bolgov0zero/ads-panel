@@ -9,262 +9,270 @@
     <link href="css/style.css" rel="stylesheet">
     <script src="js/marked.min.js"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen p-4 md:p-6">
-    <!-- Модальное окно входа -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <h2 class="text-xl font-semibold mb-4">Вход</h2>
-            <p id="loginError" class="error">Неверный логин или пароль</p>
-            <input type="text" id="loginUsername" placeholder="Логин" required>
-            <input type="password" id="loginPassword" placeholder="Пароль" required>
-            <div class="remember-label">
-                <input type="checkbox" id="rememberMe" class="mr-2">
-                <span>Запомнить</span>
-            </div>
-            <button onclick="login()">Войти</button>
+<body class="bg-gray-900 text-gray -100 min-h-screen p-4 md:p-6">
+<!-- Модальное окно входа -->
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <h2 class="text-xl font-semibold mb-4">Вход</h2>
+        <p id="loginError" class="error">Неверный логин или пароль</p>
+        <input type="text" id="loginUsername" placeholder="Логин" required>
+        <input type="password" id="loginPassword" placeholder="Пароль" required>
+        <div class="remember-label">
+            <input type="checkbox" id="remember renovated" class="mr-2">
+            <span>Запомнить</span>
+        </div>
+        <button onclick="login()">Войти</button>
+    </div>
+</div>
+
+<!-- Модальное окно регистрации -->
+<div id="registerModal" class="modal">
+    <div class="modal-content">
+        <h2 class="text-xl font-semibold mb-4">Создание учетной записи</h2>
+        <p id="registerError" class="error"></p>
+        <input type="text" id="registerUsername" placeholder="Логин" required>
+        <input type="password" id="registerPassword" placeholder="Пароль" required>
+        <input type="password" id="registerConfirmPassword" placeholder="Повторите пароль" required>
+        <button onclick="register()">Создать</button>
+    </div>
+</div>
+
+<!-- Модальное окно смены пароля -->
+<div id="changePasswordModal" class="modal">
+    <div class="modal-content">
+        <h2 class="text-xl font-semibold mb-4">Смена пароля</h2>
+        <p id="changePasswordError" class="error"></p>
+        <input type="password" id="currentPassword" placeholder="Текущий пароль" required>
+        <input type="password" id="newPassword" placeholder="Новый пароль" required>
+        <input type="password" id="confirmNewPassword" placeholder="Повторите новый пароль" required>
+        <button onclick="changePassword()">Сменить пароль</button>
+        <button onclick="closeChangePasswordModal()">Отмена</button>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования устройства -->
+<div id="editClientModal" class="modal">
+    <div class="modal-content">
+        <h2 class="text-xl font-semibold mb-4">Редактировать устройство</h2>
+        <p id="editClientError" class="error"></p>
+        <label class="block mb-2 text-gray-200">Имя устройства</label>
+        <input type="text" id="editClientName" class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded text-gray-200">
+        <div class="flex items-center mb-4">
+            <label class="ios-switch">
+                <input type="checkbox" id="editClientShowInfo">
+                <span class="slider"></span>
+            </label>
+            <span class="ml-2 text-gray-200">Показывать UUID на экране</span>
+        </div>
+        <div class="flex space-x-2">
+            <button onclick="saveClientEdit()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Сохранить</button>
+            <button onclick="closeEditClientModal()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded">Отмена</button>
         </div>
     </div>
+</div>
 
-    <!-- Модальное окно регистрации -->
-    <div id="registerModal" class="modal">
-        <div class="modal-content">
-            <h2 class="text-xl font-semibold mb-4">Создание учетной записи</h2>
-            <p id="registerError" class="error"></p>
-            <input type="text" id="registerUsername" placeholder="Логин" required>
-            <input type="password" id="registerPassword" placeholder="Пароль" required>
-            <input type="password" id="registerConfirmPassword" placeholder="Повторите пароль" required>
-            <button onclick="register()">Создать</button>
-        </div>
+<!-- Основной контент -->
+<div id="mainContent" class="max-w-7xl mx-auto hidden">
+    <!-- Заголовок -->
+    <div class="flex items-center justify-center mb-6">
+        <img src="/logo.png" alt="Logo" class="h-8 mr-3">
+        <h2 class="text-3xl font-bold text-gray-100">Панель управления</h2>
     </div>
 
-    <!-- Модальное окно смены пароля -->
-    <div id="changePasswordModal" class="modal">
-        <div class="modal-content">
-            <h2 class="text-xl font-semibold mb-4">Смена пароля</h2>
-            <p id="changePasswordError" class="error"></p>
-            <input type="password" id="currentPassword" placeholder="Текущий пароль" required>
-            <input type="password" id="newPassword" placeholder="Новый пароль" required>
-            <input type="password" id="confirmNewPassword" placeholder="Повторите новый пароль" required>
-            <button onclick="changePassword()">Сменить пароль</button>
-            <button onclick="closeChangePasswordModal()">Отмена</button>
-        </div>
-    </div>
-
-    <!-- Основной контент -->
-    <div id="mainContent" class="max-w-5xl mx-auto hidden">
-        <!-- Заголовок -->
-        <div class="flex items-center justify-center mb-6">
-            <img src="/logo.png" alt="Logo" class="h-8 mr-3">
-            <h2 class="text-3xl font-bold text-gray-100">Панель управления</h2>
-        </div>
-
-        <!-- Вкладки -->
-        <div class="mb-8">
-            <div class="flex border-b border-gray-600 space-x-1 sm:space-x-2">
-                <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('fileTab')">
-                    <i class="fas fa-file mr-2"></i>Файлы
-                </button>
-                <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('clientTab')">
-                    <i class="fas fa-desktop mr-2"></i>Устройства
-                </button>
-                <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('playlistTab')">
-                    <i class="fas fa-list mr-2"></i>Плейлисты
-                </button>
-                <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('messageTab')">
-                    <i class="fas fa-comment mr-2"></i>Сообщение
-                </button>
-                <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('helpTab')">
-                    <i class="fas fa-question-circle mr-2"></i>Справка
-                </button>
-                <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('settingsTab')">
-                    <i class="fas fa-cog mr-2"></i>Настройки
-                </button>
-            </div>
-        </div>
-
-        <!-- Уведомление -->
-        <div id="notification" class="hidden fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg transform transition-all duration-300 ease-in-out">
-            <span id="notificationMessage">Файл успешно загружен!</span>
-            <button onclick="document.getElementById('notification').classList.add('hidden')" class="ml-4 text-white hover:text-gray-200">
-                <i class="fas fa-times"></i>
+    <!-- Вкладки -->
+    <div class="mb-8">
+        <div class="flex border-b border-gray-600 space-x-1 sm:space-x-2">
+            <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('fileTab')">
+                <i class="fas fa-file mr-2"></i>Файлы
+            </button>
+            <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('clientTab')">
+                <i class="fas fa-desktop mr-2"></i>Устройства
+            </button>
+            <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('playlistTab')">
+                <i class="fas fa-list mr-2"></i>Плейлисты
+            </button>
+            <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('messageTab')">
+                <i class="fas fa-comment mr-2"></i>Сообщение
+            </button>
+            <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('helpTab')">
+                <i class="fas fa-question-circle mr-2"></i>Справка
+            </button>
+            <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('settingsTab')">
+                <i class="fas fa-cog mr-2"></i>Настройки
             </button>
         </div>
-
-        <!-- Вкладка Файлы -->
-        <div id="fileTab" class="tab-content">
-            <div class="mb-8">
-                <h3 class="text-xl font-semibold mb-4 text-gray-100">Загрузка файла</h3>
-                <form id="uploadForm" enctype="multipart/form-data" class="bg-gray-800 p-6 rounded-xl shadow-lg">
-                    <label class="block mb-2 text-gray-200">Файл (MP4 или PDF):</label>
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                        <div class="relative flex-1">
-                            <input type="file" name="file" accept="video/mp4,application/pdf" required class="p-3 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:hover:bg-blue-700 transition-all">
-                            <div id="uploadSpinner" class="hidden absolute right-4 top-1/2 transform -translate-y-1/2">
-                                <i class="fas fa-spinner fa-spin text-blue-500"></i>
-                            </div>
-                        </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 h-10 rounded-lg transition-all duration-200 flex items-center">
-                            <i class="fas fa-upload mr-2"></i>Загрузить
-                        </button>
-                        <button type="button" id="scanFilesBtn" class="bg-yellow-600 hover:bg-yellow-700 h-10 text-white px-6 py-2 rounded-lg transition-all duration-200 flex items-center">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <div class="mb-8">
-                <h3 class="text-xl font-semibold mb-4 text-gray-100">Список файлов</h3>
-                <div class="mb-4">
-                    <input type="text" id="fileSearch" placeholder="Поиск по имени файла..." class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full bg-gray-800 rounded-xl shadow-lg">
-                        <thead>
-                            <tr class="bg-gray-700 text-gray-200">
-                                <th class="p-4 text-left rounded-tl-lg" style="width: 50px;"><center>ID</center></th>
-                                <th class="p-4 text-left">Имя файла</th>
-                                <th class="p-4 text-left" style="width: 100px;"><center>Тип</center></th>
-                                <th class="p-4 text-left rounded-tr-lg" style="width: 100px;"><center>Действия</center></th>
-                            </tr>
-                        </thead>
-                        <tbody id="fileTable" class="divide-y divide-gray-700"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Вкладка Устройства -->
-        <div id="clientTab" class="tab-content hidden">
-            <div class="mb-8">
-                <h3 class="text-xl font-semibold mb-4 text-gray-100">Управление устройствами</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full bg-gray-800 rounded-xl shadow-lg">
-                        <thead>
-                            <tr class="bg-gray-700 text-gray-200">
-                                <th class="p-4 text-left rounded-tl-lg" style="width: 120px;"><center>Статус</center></th>
-                                <th class="p-4 text-left" style="width: 200px;"><center>UUID</center></th>
-                                <th class="p-4 text-left">Имя устройства</th>
-                                <th class="p-4 text-left" style="width: 120px;"><center>UUID/Имя</center></th>
-                                <th class="p-4 text-left rounded-tr-lg" style="width: 100px;"><center>Действия</center></th>
-                            </tr>
-                        </thead>
-                        <tbody id="clientTable" class="divide-y divide-gray-700"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Вкладка Плейлисты -->
-        <div id="playlistTab" class="tab-content hidden">
-            <div class="mb-8">
-                <h3 class="text-xl font-semibold mb-4 text-gray-100">Плейлисты</h3>
-                <div class="mb-4">
-                    <label class="block mb-2 text-gray-200">Выберите устройство:</label>
-                    <select id="clientSelect" class="p-3 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500" onchange="loadPlaylist()">
-                        <option value="">-- Выберите устройство --</option>
-                    </select>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full bg-gray-800 rounded-xl shadow-lg">
-                        <thead>
-                            <tr class="bg-gray-700 text-gray-200">
-                                <th class="p-4 text-left rounded-tl-lg" style="width: 50px;"><center>ID</center></th>
-                                <th class="p-4 text-left">Имя файла</th>
-                                <th class="p-4 text-left" style="width: 50px;"><center>Тип</center></th>
-                                <th class="p-4 text-left" style="width: 100px;"><center>Использовать</center></th>
-                                <th class="p-4 text-left" style="width: 100px;"><center>Очередность</center></th>
-                                <th class="p-4 text-left rounded-tr-lg" style="width: 150px;"><center>Продолжительность</center></th>
-                            </tr>
-                        </thead>
-                        <tbody id="playlistTable" class="divide-y divide-gray-700"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Вкладка Сообщение -->
-        <div id="messageTab" class="tab-content hidden">
-            <div class="mb-8">
-                <h3 class="text-xl font-semibold mb-4 text-gray-100">Настройка сообщения</h3>
-                <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
-                    <div class="mb-4">
-                        <label class="ios-switch">
-                            <input type="checkbox" id="messageEnabled" onchange="updateMessageSettings()">
-                            <span class="slider"></span>
-                        </label>
-                        <span class="ml-2 text-gray-200">Включить бегущую строку</span>
-                    </div>
-                    <div class="message-settings-controls mb-4">
-                        <div>
-                            <span class="text-gray-200 text-sm">Жирный:</span>
-                            <label class="ios-switch">
-                                <input type="checkbox" id="messageBold" onchange="updateMessageSettings()">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div>
-                            <span class="text-gray-200 text-sm">Цвет:</span>
-                            <input type="color" id="messageColor" value="#ffffff" class="p-1 bg-gray-700 border border-gray-600 rounded-lg h-8" onchange="updateMessageSettings()">
-                        </div>
-                        <div>
-                            <span class="text-gray-200 text-sm">Фон окна:</span>
-                            <input type="color" id="messageBackgroundColor" value="#000000" class="p-1 bg-gray-700 border border-gray-600 rounded-lg h-8" onchange="updateMessageSettings()">
-                        </div>
-                        <div>
-                            <span class="text-gray-200 text-sm">Размер (px):</span>
-                            <input type="number" id="messageFontSize" value="24" min="10" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-20 text-gray-200 focus:ring-2 focus:ring-blue-500" onchange="updateMessageSettings()">
-                        </div>
-                        <div>
-                            <span class="text-gray-200 text-sm">Скорость (px/s):</span>
-                            <input type="number" id="messageSpeed" value="100" min="10" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-20 text-gray-200 focus:ring-2 focus:ring-blue-500" onchange="updateMessageSettings()">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block mb-1 text-gray-200 text-sm">Текст сообщения:</label>
-                        <textarea id="messageText" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500" rows="4" onchange="updateMessageSettings()"></textarea>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Вкладка Справка -->
-        <div id="helpTab" class="tab-content hidden">
-            <div class="mb-8">
-                <h3 class="text-xl font-semibold mb-4 text-gray-100">Справка</h3>
-                <div class="help-content" id="helpContent"></div>
-            </div>
-        </div>
-
-        <!-- Вкладка Настройки -->
-        <div id="settingsTab" class="tab-content hidden">
-            <div class="mb-8">
-                <h3 class="text-xl font-semibold mb-4 text-gray-100">Настройки</h3>
-                <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
-                    <div class="flex flex-col space-y-4">
-                        <button onclick="showChangePasswordModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200">
-                            <i class="fas fa-key mr-2"></i>Сменить пароль
-                        </button>
-                        <button onclick="deleteAccount()" class="bg-red-700 hover:bg-red-800 text-white px-6 py-2 rounded-lg transition-all duration-200">
-                            <i class="fas fa-trash-alt mr-2"></i>Удалить учетную запись
-                        </button>
-                        <button onclick="logout()" class="bg-red-700 hover:bg-red-800 text-white px-6 py-2 rounded-lg transition-all duration-200">
-                            <i class="fas fa-sign-out-alt mr-2"></i>Выйти
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Футер -->
-        <footer class="mt-8 bg-gray-800 text-gray-400 text-center py-4 text-sm rounded-t-lg rounded-b-lg">
-            2025 © bolgov0zero | Версия: <span id="appVersion">Загрузка...</span>
-        </footer>
     </div>
 
-    <script src="js/files.js"></script>
-    <script src="js/devices.js"></script>
-    <script src="js/playlist.js"></script>
-    <script src="js/other.js"></script>
+    <!-- Уведомление -->
+    <div id="notification" class="hidden fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg transform transition-all duration-300 ease-in-out">
+        <span id="notificationMessage">Файл успешно загружен!</span>
+        <button onclick="document.getElementById('notification').classList.add('hidden')" class="ml-4 text-white hover:text-gray-200">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <!-- Вкладка Файлы -->
+    <div id="fileTab" class="tab-content">
+        <div class="mb-8">
+            <h3 class="text-xl font-semibold mb-4 text-gray-100">Загрузка файла</h3>
+            <form id="uploadForm" enctype="multipart/form-data" class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                <label class="block mb-2 text-gray-200">Файл (MP4 или PDF):</ immunomod>
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                    <div class="relative flex-1">
+                        <input type="file" name="file" accept="video/mp4,application/pdf" required class="p-3 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:hover:bg-blue-700 transition-all">
+                        <div id="uploadSpinner" class="hidden absolute right-4 top-1/2 transform -translate-y-1/2">
+                            <i class="fas fa-spinner fa-spin text-blue-500"></i>
+                        </div>
+                    </div>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 h-10 rounded-lg transition-all duration-200 flex items-center">
+                        <i class="fas fa-upload mr-2"></i>Загрузить
+                    </button>
+                    <button type="button" id="scanFilesBtn" class="bg-yellow-600 hover:bg-yellow-700 h-10 text-white px-6 py-2 rounded-lg transition-all duration-200 flex items-center">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="mb-8">
+            <h3 class="text-xl font-semibold mb-4 text-gray-100">Список файлов</h3>
+            <input type="text" id="fileSearch" placeholder="Поиск по имени..." class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-blue-500">
+            <div class="overflow-x-auto">
+                <table class="w-full bg-gray-800 rounded-xl shadow-lg">
+                    <thead>
+                    <tr class="bg-gray-700 text-gray-200">
+                        <th class="p-4 text-left rounded-tl-lg"><center>ID</center></th>
+                        <th class="p-4 text-left">Имя файла</th>
+                        <th class="p-4 text-left"><center>Тип</center></th>
+                        <th class="p-4 text-left"><center>Порядок</center></th>
+                        <th class="p-4 text-left rounded-tr-lg"><center>Действия</center></th>
+                    </tr>
+                    </thead>
+                    <tbody id="fileTable" class="divide-y divide-gray-700"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Вкладка Устройства (КАРТОЧКИ) -->
+    <div id="clientTab" class="tab-content hidden">
+        <div class="mb-8">
+            <h3 class="text-xl font-semibold mb-4 text-gray-100">Устройства</h3>
+            <div id="clientCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Карточки будут добавлены через JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Вкладка Плейлисты -->
+    <div id="playlistTab" class="tab-content hidden">
+        <div class="mb-8">
+            <h3 class="text-xl font-semibold mb-4 text-gray-100">Плейлисты</h3>
+            <div class="mb-4">
+                <label class="block mb-2 text-gray-200">Выберите устройство:</label>
+                <select id="clientSelect" class="p-3 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500" onchange="loadPlaylist()">
+                    <option value="">-- Выберите устройство --</option>
+                </select>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full bg-gray-800 rounded-xl shadow-lg">
+                    <thead>
+                    <tr class="bg-gray-700 text-gray-200">
+                        <th class="p-4 text-left rounded-tl-lg" style="width: 50px;"><center>ID</center></th>
+                        <th class="p-4 text-left">Имя файла</th>
+                        <th class="p-4 text-left" style="width: 50px;"><center>Тип</center></th>
+                        <th class="p-4 text-left" style="width: 100px;"><center>Использовать</center></th>
+                        <th class="p-4 text-left" style="width: 100px;"><center>Очередность</center></th>
+                        <th class="p-4 text-left rounded-tr-lg" style="width: 150px;"><center>Продолжительность</center></th>
+                    </tr>
+                    </thead>
+                    <tbody id="playlistTable" class="divide-y divide-gray-700"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Вкладка Сообщение -->
+    <div id="messageTab" class="tab-content hidden">
+        <div class="mb-8">
+            <h3 class="text-xl font-semibold mb-4 text-gray-100">Настройка сообщения</h3>
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                <div class="mb-4">
+                    <label class="ios-switch">
+                        <input type="checkbox" id="messageEnabled" onchange="updateMessageSettings()">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="ml-2 text-gray-200">Включить бегущую строку</span>
+                </div>
+                <div class="message-settings-controls mb-4">
+                    <div>
+                        <span class="text-gray-200 text-sm">Жирный:</span>
+                        <label class="ios-switch">
+                            <input type="checkbox" id="messageBold" onchange="updateMessageSettings()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div>
+                        <span class="text-gray-200 text-sm">Цвет:</span>
+                        <input type="color" id="messageColor" value="#ffffff" class="p-1 bg-gray-700 border border-gray-600 rounded-lg h-8" onchange="updateMessageSettings()">
+                    </div>
+                    < recib>
+                    <span class="text-gray-200 text-sm">Фон окна:</span>
+                    <input type="color" id="messageBackgroundColor" value="#000000" class="p-1 bg-gray-700 border border-gray-600 rounded-lg h-8" onchange="updateMessageSettings()">
+                </div>
+                <div>
+                    <span class="text-gray-200 text-sm">Размер (px):</span>
+                    <input type="number" id="messageFontSize" value="24" min="10" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-20 text-gray-200 focus:ring-2 focus:ring-blue-500" onchange="updateMessageSettings()">
+                </div>
+                <div>
+                    <span class="text-gray-200 text-sm">Скорость (px/s):</span>
+                    <input type="number" id="messageSpeed" value="100" min="10" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-20 text-gray-200 focus:ring-2 focus:ring-blue-500" onchange="updateMessageSettings()">
+                </div>
+            </div>
+            <div>
+                <label class="block mb-1 text-gray-200 text-sm">Текст сообщения:</label>
+                <textarea id="messageText" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500" rows="4" onchange="updateMessageSettings()"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Вкладка Справка -->
+<div id="helpTab" class="tab-content hidden">
+    <div class="mb-8">
+        <h3 class="text-xl font-semibold mb-4 text-gray-100">Справка</h3>
+        <div class="help-content" id="helpContent"></div>
+    </div>
+</div>
+
+<!-- Вкладка Настройки -->
+<div id="settingsTab" class="tab-content hidden">
+    <div class="mb-8">
+        <h3 class="text-xl font-semibold mb-4 text-gray-100">Настройки</h3>
+        <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+            <div class="flex flex-col space-y-4">
+                <button onclick="showChangePasswordModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200">
+                    <i class="fas fa-key mr-2"></i>Сменить пароль
+                </button>
+                <button onclick="deleteAccount()" class="bg-red-700 hover:bg-red-800 text-white px-6 py-2 rounded-lg transition-all duration-200">
+                    <i class="fas fa-trash-alt mr-2"></i>Удалить учетную запись
+                </button>
+                <button onclick="logout()" class="bg-red-700 hover:bg-red-800 text-white px-6 py-2 rounded-lg transition-all duration-200">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Выйти
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Футер -->
+<footer class="mt-8 bg-gray-800 text-gray-400 text-center py-4 text-sm rounded-t-lg rounded-b-lg">
+    2025 © bolgov0zero | Версия: <span id="appVersion">Загрузка...</span>
+</footer>
+</div>
+
+<script src="js/files.js"></script>
+<script src="js/devices.js"></script>
+<script src="js/playlist.js"></script>
+<script src="js/other.js"></script>
 </body>
 </html>
