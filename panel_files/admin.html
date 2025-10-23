@@ -94,42 +94,42 @@
     <!-- Вкладка Файлы -->
     <div id="fileTab" class="tab-content">
         <div class="mb-8">
-            <h3 class="text-xl font-semibold mb-4 text-gray-100">Загрузка файла</h3>
-            <form id="uploadForm" enctype="multipart/form-data" class="bg-gray-800 p-6 rounded-xl shadow-lg">
-                <label class="block mb-2 text-gray-200">Файл (MP4 или PDF):</label>
-                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                    <div class="relative flex-1">
-                        <input type="file" name="file" accept="video/mp4,application/pdf" required class="p-3 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:hover:bg-blue-700 transition-all">
-                        <div id="uploadSpinner" class="hidden absolute right-4 top-1/2 transform -translate-y-1/2">
-                            <i class="fas fa-spinner fa-spin text-blue-500"></i>
-                        </div>
+            <h3 class="text-xl font-semibold mb-4 text-gray-100">Управление файлами</h3>
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                <form id="uploadForm" class="mb-6">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <input type="file" name="file" accept=".mp4,.pdf" required class="flex-1 p-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-200">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200">
+                            <i class="fas fa-upload mr-2"></i>Загрузить
+                        </button>
+                        <button type="button" id="scanFilesBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-all duration-200">
+                            <i class="fas fa-search mr-2"></i>Сканировать
+                        </button>
                     </div>
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 h-10 rounded-lg transition-all duration-200 flex items-center">
-                        <i class="fas fa-upload mr-2"></i>Загрузить
-                    </button>
-                    <button type="button" id="scanFilesBtn" class="bg-yellow-600 hover:bg-yellow-700 h-10 text-white px-6 py-2 rounded-lg transition-all duration-200 flex items-center">
-                        <i class="fas fa-search"></i>
-                    </button>
+                    <div class="mt-2 flex items-center">
+                        <div id="uploadSpinner" class="hidden mr-2">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                        <span class="text-sm text-gray-400">Поддерживаются MP4 и PDF (макс. 500 МБ)</span>
+                    </div>
+                </form>
+                <div class="mb-4">
+                    <input type="text" id="fileSearch" placeholder="Поиск по имени..." class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500">
                 </div>
-            </form>
-        </div>
-
-        <div class="mb-4">
-            <input type="text" id="fileSearch" placeholder="Поиск по имени..." class="p-3 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500">
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="w-full bg-gray-800 rounded-xl shadow-lg">
-                <thead>
-                <tr class="bg-gray-700 text-gray-200">
-                    <th class="p-4 text-left rounded-tl-lg" style="width: 50px;"><center>ID</center></th>
-                    <th class="p-4 text-left">Имя файла</th>
-                    <th class="p-4 text-left" style="width: 100px;"><center>Тип</center></th>
-                    <th class="p-4 text-left rounded-tr-lg" style="width: 100px;"><center>Действия</center></th>
-                </tr>
-                </thead>
-                <tbody id="fileTable" class="divide-y divide-gray-700"></tbody>
-            </table>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-700">
+                        <thead class="bg-gray-900">
+                        <tr>
+                            <th class="p-4 text-left" style="width: 60px;"><center>ID</center></th>
+                            <th class="p-4 text-left">Имя файла</th>
+                            <th class="p-4 text-left" style="width: 100px;"><center>Тип</center></th>
+                            <th class="p-4 text-left rounded-tr-lg" style="width: 80px;"><center>Действия</center></th>
+                        </tr>
+                        </thead>
+                        <tbody id="fileTable" class="divide-y divide-gray-700"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
