@@ -348,9 +348,32 @@ function initializeApp() {
     loadFiles();
     loadClients();
     loadMessageSettings();
+    loadStatusCards(); // Добавлено
     startClientCheck();
     openTab('fileTab');
     loadVersion();
+}
+
+async function checkNewClients() {
+    try {
+        const response = await fetch('api.php?action=count_clients');
+        const result = await response.json();
+        if (result.count !== clientCount) {
+            clientCount = result.count;
+            loadClients();
+            loadStatusCards(); // Добавлено
+        } else {
+            const activeTab = document.querySelector('.tab-content:not(.hidden)');
+            if (activeTab && (activeTab.id === 'clientTab' || activeTab.id === 'playlistTab' || activeTab.id === 'statusTab')) {
+                updateClientStatuses();
+                if (activeTab.id === 'statusTab') {
+                    loadStatusCards(); // Полное обновление при активной вкладке
+                }
+            }
+        }
+    } catch (err) {
+        console.error('Ошибка проверки новых устройств:', err);
+    }
 }
 
 checkAuth();
