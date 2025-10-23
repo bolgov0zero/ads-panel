@@ -2,53 +2,132 @@ async function loadClients() {
     try {
         const response = await fetch('api.php?action=list_clients');
         const clients = await response.json();
-        console.log('Клиенты:', clients);
-        const tbody = document.getElementById('clientTable');
+        const grid = document.getElementById('clientsGrid');
         const clientSelect = document.getElementById('clientSelect');
-        const existingRows = Array.from(tbody.querySelectorAll('tr'));
+
+        // Очищаем старые карточки и опции
+        const existingCards = grid.querySelectorAll('.client-card');
         const existingOptions = Array.from(clientSelect.querySelectorAll('option:not(:first-child)'));
+
         clients.forEach(client => {
-            console.log(`Клиент ${client.uuid}: last_seen = ${client.last_seen}`);
-            const rowIndex = existingRows.findIndex(row => row.getAttribute('data-uuid') === client.uuid);
-            let row;
-            if (rowIndex !== -1) {
-                row = existingRows[rowIndex];
-                existingRows.splice(rowIndex, 1);
-            } else {
-                row = document.createElement('tr');
-                row.setAttribute('data-uuid', client.uuid);
-                tbody.appendChild(row);
+            let card = grid.querySelector(`.client-card[data-uuid="${client.uuid}"]`);
+            if (!card) {
+                card = document.createElement('div');
+                card.className = 'client-card bg-gray-800 rounded-xl p-5 shadow-lg relative';
+                card.setAttribute('data-uuid', client.uuid);
+                grid.appendChild(card);
             }
-            row.innerHTML = `
-                <td class="p-3"><center>
-                    <div class="status-dot ${client.status === 'online' ? 'status-online' : 'status-offline'}"></div>
-                    <span class="status-text">${formatLastSeen(client.last_seen)}</span>
-                </center></td>
-                <td class="p-3"><center>${client.uuid}</center></td>
-                <td class="p-3">
-                    <input type="text" value="${client.name}" class="p-1 bg-gray-700 border border-gray-600 rounded w-full" onchange="updateClientName('${client.uuid}', this.value)">
-                </td>
-                <td class="p-3"><center><label class="ios-switch"><input type="checkbox" ${client.show_info ? 'checked' : ''} onchange="updateClientShowInfo('${client.uuid}', this.checked)"><span class="slider"></span></label></center></td>
-                <td class="p-3"><center>
-                    <button class="text-red-500 hover:text-red-400" onclick="deleteClient('${client.uuid}')"><i class="fas fa-trash"></i></button>
-                </center></td>
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="status-dot ${client.status === 'online' ? 'status-online' : 'status-offline'}"></div>
+                        <span class="text-sm text-gray-400">${formatLastSeen(client.last_seen)}</span>
+                    </div>
+                    <button onclick="toggleShowInfo('${client.uuid}', ${!client.show_info})" class="text-lg">
+                        <i class="fas fa-eye${client.show_info ? '' : '-slash'} ${client.show_info ? 'text-green-400' : 'text-gray-500'}"></i>
+                    </button>
+                </div>
+                <div class="mb-2">
+                    <div class="text-lg font-medium text-gray-100 name-display" onclick="editName(this, '${client.uuid}')">${client.name}</div>
+                    <input type="text" class="hidden name-input w-full p-1 bg-gray-700 border border-gray-600 rounded text-gray-100" value="${client.name}" onblur="saveName(this, '${client.uuid}')" onkeydown="if(event.key==='Enter') this.blur()">
+                </div>
+                <div class="text-xs text-gray-500 font-mono break-all">${client.uuid}</div>
+                <div class="absolute bottom-3 right-3">
+                    <button onclick="deleteClient('${client.uuid}')" class="text-red-500 hover:text-red-400 text-sm">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             `;
-            const optionIndex = existingOptions.findIndex(opt => opt.value === client.uuid);
-            let option;
-            if (optionIndex !== -1) {
-                option = existingOptions[optionIndex];
-                existingOptions.splice(optionIndex, 1);
-            } else {
+
+            // Обновляем select для плейлистов
+            let option = clientSelect.querySelector(`option[value="${client.uuid}"]`);
+            if (!option) {
                 option = document.createElement('option');
                 option.value = client.uuid;
                 clientSelect.appendChild(option);
             }
             option.textContent = client.name;
         });
-        existingRows.forEach(row => row.remove());
-        existingOptions.forEach(opt => opt.remove());
+
+        // Удаляем старые карточки и опции
+        existingCards.forEach(card => {
+            if (!clients.some(c => c.uuid === card.getAttribute('data-uuid'))) {
+                card.remove();
+            }
+        });
+        existingOptions.forEach(opt => {
+            if (!clients.some(c => c.uuid === opt.value)) {
+                opt.remove();
+            }
+        });
+
     } catch (err) {
         console.error('Ошибка загрузки клиентов:', err);
+    }
+}
+
+function editName(element, uuid) {
+    const display = element;
+    const input = display.nextElementSibling;
+    display.classList.add('hidden');
+    input.classList.remove('hidden');
+    input.focus();
+    input.select();
+}
+
+async function saveName(input, uuid) {
+    const newName = input.value.trim() || 'Без имени';
+    const display = input.previousElementSibling;
+    display.textContent = newName;
+    input.classList.add('hidden');
+    display.classList.remove('hidden');
+
+    try {
+        await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update_client_name', uuid, name: newName })
+        });
+        const option = document.querySelector(`#clientSelect option[value="${uuid}"]`);
+        if (option) option.textContent = newName;
+    } catch (err) {
+        console.error('Ошибка сохранения имени:', err);
+    }
+}
+
+async function toggleShowInfo(uuid, current) {
+    const newValue = !current;
+    try {
+        await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update_client_show_info', uuid, show_info: newValue ? 1 : 0 })
+        });
+        loadClients(); // Перезагружаем карточки
+    } catch (err) {
+        console.error('Ошибка переключения show_info:', err);
+    }
+}
+
+async function deleteClient(uuid) {
+    if (!confirm('Удалить устройство?')) return;
+    try {
+        const response = await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete_client', uuid })
+        });
+        const result = await response.json();
+        if (!result.error) {
+            document.querySelector(`.client-card[data-uuid="${uuid}"]`)?.remove();
+            document.querySelector(`#clientSelect option[value="${uuid}"]`)?.remove();
+            if (document.getElementById('clientSelect').value === uuid) {
+                document.getElementById('playlistTable').innerHTML = '';
+            }
+        }
+    } catch (err) {
+        console.error('Ошибка удаления:', err);
     }
 }
 
@@ -56,18 +135,15 @@ async function updateClientStatuses() {
     try {
         const response = await fetch('api.php?action=list_clients');
         const clients = await response.json();
-        console.log('Обновление статусов, клиенты:', clients);
-        const rows = document.querySelectorAll('#clientTable tr');
-        rows.forEach(row => {
-            const uuid = row.getAttribute('data-uuid');
+        document.querySelectorAll('.client-card').forEach(card => {
+            const uuid = card.getAttribute('data-uuid');
             const client = clients.find(c => c.uuid === uuid);
             if (client) {
-                console.log(`Обновление статуса для ${uuid}: last_seen = ${client.last_seen}`);
-                const statusDot = row.querySelector('.status-dot');
-                const statusText = row.querySelector('.status-text');
-                statusDot.classList.remove('status-online', 'status-offline');
-                statusDot.classList.add(client.status === 'online' ? 'status-online' : 'status-offline');
-                statusText.textContent = formatLastSeen(client.last_seen);
+                const dot = card.querySelector('.status-dot');
+                const text = card.querySelector('.text-sm.text-gray-400');
+                dot.classList.remove('status-online', 'status-offline');
+                dot.classList.add(client.status === 'online' ? 'status-online' : 'status-offline');
+                text.textContent = formatLastSeen(client.last_seen);
             }
         });
     } catch (err) {
@@ -75,97 +151,17 @@ async function updateClientStatuses() {
     }
 }
 
-async function deleteClient(uuid) {
-    if (confirm('Удалить устройство?')) {
-        try {
-            const response = await fetch('api.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'delete_client', uuid })
-            });
-            const result = await response.json();
-            if (result.error) {
-                console.error(result.error);
-            } else {
-                const row = document.querySelector(`#clientTable tr[data-uuid="${uuid}"]`);
-                if (row) row.remove();
-                const option = document.querySelector(`#clientSelect option[value="${uuid}"]`);
-                if (option) option.remove();
-                if (document.querySelector('#clientSelect').value === uuid) {
-                    document.querySelector('#playlistTable').innerHTML = '';
-                }
-            }
-        } catch (err) {
-            console.error('Ошибка:', err);
-        }
-    }
-}
-
-async function updateClientName(uuid, name) {
-    try {
-        const response = await fetch('api.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'update_client_name', uuid, name })
-        });
-        const result = await response.json();
-        if (result.error) {
-            console.error(result.error);
-        } else {
-            showNotification('Имя изменено');
-            const row = document.querySelector(`#clientTable tr[data-uuid="${uuid}"]`);
-            if (row) {
-                row.querySelector('td:nth-child(3) input').value = name;
-            }
-            const option = document.querySelector(`#clientSelect option[value="${uuid}"]`);
-            if (option) {
-                option.textContent = name;
-            }
-        }
-    } catch (err) {
-        console.error('Ошибка:', err);
-    }
-}
-
-async function updateClientShowInfo(uuid, show_info) {
-    try {
-        const response = await fetch('api.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'update_client_show_info', uuid, show_info: show_info ? 1 : 0 })
-        });
-        const result = await response.json();
-        if (result.error) {
-            console.error(result.error);
-        } else {
-            showNotification('Настройка отображения обновлена');
-            const row = document.querySelector(`#clientTable tr[data-uuid="${uuid}"]`);
-            if (row) {
-                row.querySelector('td:nth-child(4) input').checked = show_info;
-            }
-        }
-    } catch (err) {
-        console.error('Ошибка:', err);
-    }
-}
-
 function formatLastSeen(last_seen) {
-    const parsedLastSeen = parseInt(last_seen, 10);
-    if (isNaN(parsedLastSeen) || parsedLastSeen <= 0) {
-        return 'никогда не подключался';
-    }
+    const parsed = parseInt(last_seen, 10);
+    if (isNaN(parsed) || parsed <= 0) return 'никогда не подключался';
     const now = Math.floor(Date.now() / 1000);
-    const diff = now - parsedLastSeen;
-    console.log(`last_seen: ${parsedLastSeen}, now: ${now}, diff: ${diff}`);
-    if (diff <= 5) {
-        return 'в сети';
-    } else if (diff < 3600) {
-        const minutes = Math.floor(diff / 60);
-        const minSuffix = minutes % 10 === 1 && minutes !== 11 ? 'а' : (minutes % 10 >= 2 && minutes % 10 <= 4 && (minutes < 10 || minutes > 20) ? 'ы' : '');
-        return `${minutes} минут${minSuffix} назад`;
-    } else {
-        const hours = Math.floor(diff / 3600);
-        const hourSuffix = hours % 10 === 1 && hours !== 11 ? '' : (hours % 10 >= 2 && hours % 10 <= 4 && (hours < 10 || hours > 20) ? 'а' : 'ов');
-        return `${hours} час${hourSuffix} назад`;
+    const diff = now - parsed;
+    if (diff <= 5) return 'в сети';
+    if (diff < 60) return `${diff} сек. назад`;
+    if (diff < 3600) {
+        const m = Math.floor(diff / 60);
+        return `${m} мин. назад`;
     }
+    const h = Math.floor(diff / 3600);
+    return `${h} ч. назад`;
 }

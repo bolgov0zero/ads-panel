@@ -308,3 +308,38 @@ canvas#pdfCanvas {
 .help-content li {
     margin-bottom: 0.5rem;
 }
+
+.client-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.client-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.name-display {
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.name-display:hover {
+    background-color: rgba(55, 65, 81, 0.5);
+}
+
+.name-input {
+    font-size: 1.125rem;
+    font-weight: 500;
+}
+
+/* Улучшенная анимация для оффлайн */
+.status-offline {
+    animation: blink 1.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
