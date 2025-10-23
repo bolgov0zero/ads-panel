@@ -385,10 +385,4 @@ try {
 		$db->close();
 	}
 }
-
-case 'count_clients':
-    $result = $db->querySingle("SELECT COUNT(*) FROM clients");
-    echo json_encode(['count' => (int)$result]);
-    break;
-
 ?>

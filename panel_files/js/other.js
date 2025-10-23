@@ -326,9 +326,12 @@ async function checkNewClients() {
     try {
         const response = await fetch('api.php?action=count_clients');
         const result = await response.json();
+        console.log('Проверка количества клиентов:', result.count, 'Текущее:', clientCount);
         if (result.count !== clientCount) {
             clientCount = result.count;
             loadClients();
+        } else if (document.getElementById('clientTab').classList.contains('hidden') === false || document.getElementById('playlistTab').classList.contains('hidden') === false) {
+            updateClientStatuses();
         }
     } catch (err) {
         console.error('Ошибка проверки новых устройств:', err);
