@@ -113,7 +113,7 @@ fi
 # Получаем IP хоста
 HOST_IP=$(hostname -I | awk '{print $1}')
 # Получаем удалённую версию
-REMOTE_VERSION=$(curl -s https://raw.githubusercontent.com/bolgov0zero/ads-panel/refs/heads/main/version)
+REMOTE_VERSION=$(curl -s https://raw.githubusercontent.com/bolgov0zero/ads-panel/refs/heads/dev/version)
 # Получаем локальную версию, игнорируя ошибки сертификата
 LOCAL_VERSION=$(curl -s -k https://${HOST_IP}/version)
 if [ -n "$REMOTE_VERSION" ] && [ -n "$LOCAL_VERSION" ]; then
