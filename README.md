@@ -60,7 +60,7 @@ docker-compose up -d
 
 <img src="screenshots/screenshot2.png" alt="" width="800" height="584">
 
-<img src="screenshots/screenshot5.png" alt="" width="800" height="706">
+<img src="screenshots/screenshot3.png" alt="" width="800" height="706">
 
 <img src="screenshots/screenshot4.png" alt="" width="800" height="488">
 
