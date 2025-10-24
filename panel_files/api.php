@@ -426,7 +426,7 @@ try {
             $settings = $result->fetchArray(SQLITE3_ASSOC);
             $bot_token = $settings['bot_token'] ?? '';
             $chat_id = $settings['chat_id'] ?? '';
-            $result = sendTelegramMessage($bot_token, $chat_id, 'Ads Panel\nТестовое сообщение');
+            $result = sendTelegramMessage($bot_token, $chat_id, 'Ads Panel. Тестовое сообщение.');
             if (isset($result['error'])) {
                 echo json_encode(['error' => $result['error']]);
             } else {
