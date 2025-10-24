@@ -141,6 +141,25 @@ try {
                     $db->exec("INSERT INTO message_settings (id, enabled, text, color, font_size, speed, bold, background_color) VALUES (1, 0, '', '#ffffff', 24, 100, 0, '#000000')");
                 }
             }
+        ],
+        'telegram_settings' => [
+            'create' => "
+                CREATE TABLE telegram_settings (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    bot_token TEXT DEFAULT '',
+                    chat_id TEXT DEFAULT ''
+                )",
+            'columns' => [
+                ['name' => 'id', 'type' => 'INTEGER', 'constraints' => 'PRIMARY KEY CHECK (id = 1)'],
+                ['name' => 'bot_token', 'type' => 'TEXT', 'constraints' => 'DEFAULT \'\''],
+                ['name' => 'chat_id', 'type' => 'TEXT', 'constraints' => 'DEFAULT \'\'']
+            ],
+            'initial_data' => function ($db) {
+                $result = $db->querySingle("SELECT COUNT(*) FROM telegram_settings");
+                if ($result == 0) {
+                    $db->exec("INSERT INTO telegram_settings (id, bot_token, chat_id) VALUES (1, '', '')");
+                }
+            }
         ]
     ];
 

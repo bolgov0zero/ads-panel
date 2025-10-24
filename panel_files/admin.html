@@ -13,9 +13,8 @@
 <!-- Модальное окно входа -->
 <div id="loginModal" class="modal">
     <div class="modal-content">
-        <h2 class="text.
-
-            <p id="loginError" class="error">Неверный логин или пароль</p>
+        <h2 class="text-xl font-semibold mb-4">Вход</h2>
+        <p id="loginError" class="error">Неверный логин или пароль</p>
         <input type="text" id="loginUsername" placeholder="Логин" required>
         <input type="password" id="loginPassword" placeholder="Пароль" required>
         <div class="remember-label">
@@ -226,6 +225,27 @@
     <div id="settingsTab" class="tab-content hidden">
         <div class="mb-8">
             <h3 class="text-xl font-semibold mb-4 text-gray-100">Настройки</h3>
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg mb-6">
+                <h4 class="text-lg font-semibold mb-4 text-gray-100">Уведомления</h4>
+                <div class="flex flex-col space-y-4">
+                    <div>
+                        <label class="block mb-1 text-gray-200 text-sm">Bot Token:</label>
+                        <input type="password" id="telegramBotToken" placeholder="Введите Bot Token" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500" onfocus="this.type='text'" onblur="this.type='password'">
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-gray-200 text-sm">Chat ID:</label>
+                        <input type="password" id="telegramChatId" placeholder="Введите Chat ID" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500" onfocus="this.type='text'" onblur="this.type='password'">
+                    </div>
+                    <div class="flex gap-4">
+                        <button onclick="saveTelegramSettings()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200">
+                            <i class="fas fa-save mr-2"></i>Сохранить
+                        </button>
+                        <button onclick="sendTestTelegramMessage()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-all duration-200">
+                            <i class="fas fa-paper-plane mr-2"></i>Тестовое сообщение
+                        </button>
+                    </div>
+                </div>
+            </div>
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
                 <div class="flex flex-col space-y-4">
                     <button onclick="showChangePasswordModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200">
@@ -252,5 +272,6 @@
 <script src="js/devices.js"></script>
 <script src="js/playlist.js"></script>
 <script src="js/other.js"></script>
+<script src="js/notify.js"></script>
 </body>
 </html>

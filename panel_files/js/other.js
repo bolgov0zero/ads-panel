@@ -255,6 +255,8 @@ function openTab(tabId) {
     document.querySelector(`button[onclick="openTab('${tabId}')"]`).classList.add('bg-blue-600', 'text-white');
     if (tabId === 'helpTab') {
         renderHelpContent();
+    } else if (tabId === 'settingsTab') {
+        loadTelegramSettings(); // Загружаем настройки Telegram при открытии вкладки Настройки
     }
 }
 
