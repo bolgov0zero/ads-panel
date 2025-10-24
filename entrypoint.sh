@@ -19,12 +19,34 @@ chmod -R 775 /opt/ads /data
 chmod 600 /etc/apache2/ssl/server.key
 chmod 644 /etc/apache2/ssl/server.crt
 
+# Устанавливаем supervisord для управления фоновыми процессами
+apt-get update && apt-get install -y supervisor && apt-get clean && rm -rf /var/lib/apt/lists/*
+mkdir -p /etc/supervisor/conf.d
+
+# Создаём конфигурацию для supervisord
+cat > /etc/supervisor/conf.d/client-monitor.conf <<EOF
+[supervisord]
+nodaemon=true
+logfile=/var/log/supervisord.log
+pidfile=/var/run/supervisord.pid
+
+[program:client-monitor]
+command=php /var/www/html/client_monitor.php
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/client-monitor.err.log
+stdout_logfile=/var/log/client-monitor.out.log
+EOF
+
 # Запускаем init_db.php и логируем вывод
 echo "Запуск init_db.php..." >> /var/log/init_db.log
 php /var/www/html/init_db.php >> /var/log/init_db.log 2>&1
 if [ $? -ne 0 ]; then
     echo "Ошибка при выполнении init_db.php, смотрите /var/log/init_db.log" >&2
 fi
+
+# Запускаем supervisord
+supervisord -c /etc/supervisor/supervisord.conf &
 
 # Запускаем Apache в foreground-режиме
 exec apache2-foreground
