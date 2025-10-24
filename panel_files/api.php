@@ -185,6 +185,43 @@ try {
             echo json_encode(['message' => 'Имя клиента обновлено']);
             break;
 
+        case 'update_file_name':
+            $id = $input['id'] ?? 0;
+            $name = $input['name'] ?? '';
+            if ($id <= 0 || empty($name)) {
+                echo json_encode(['error' => 'Неверный ID или имя']);
+                break;
+            }
+            $stmt = $db->prepare("UPDATE files SET name = :name WHERE id = :id AND is_default = 0");
+            $stmt->bindValue(':name', $name, SQLITE3_TEXT);
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $stmt->execute();
+            echo json_encode(['message' => 'Имя файла обновлено']);
+            break;
+
+        case 'update_file_duration':
+            $id = $input['id'] ?? 0;
+            $duration = $input['duration'] ?? null;
+            if ($id <= 0) {
+                echo json_encode(['error' => 'Неверный ID']);
+                break;
+            }
+            $stmt = $db->prepare("UPDATE files SET duration = :duration WHERE id = :id AND type = 'pdf' AND is_default = 0");
+            $stmt->bindValue(':duration', $duration, $duration === null ? SQLITE3_NULL : SQLITE3_INTEGER);
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $stmt->execute();
+            echo json_encode(['message' => 'Продолжительность файла обновлена']);
+            break;
+
+        case 'list_files':
+            $result = $db->query("SELECT id, file_url, name, type, duration, order_num FROM files WHERE is_default = 0 ORDER BY order_num ASC");
+            $files = [];
+            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $files[] = $row;
+            }
+            echo json_encode($files);
+            break;
+
         case 'list_clients':
             $result = $db->query("SELECT uuid, name, show_info, COALESCE(last_seen, 0) AS last_seen FROM clients");
             $clients = [];
