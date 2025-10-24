@@ -230,11 +230,11 @@
                 <div class="flex flex-col space-y-4">
                     <div>
                         <label class="block mb-1 text-gray-200 text-sm">Bot Token:</label>
-                        <input type="text" id="telegramBotToken" placeholder="Введите Bot Token" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500">
+                        <input type="password" id="telegramBotToken" placeholder="Введите Bot Token" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500" onfocus="this.type='text'" onblur="this.type='password'">
                     </div>
                     <div>
                         <label class="block mb-1 text-gray-200 text-sm">Chat ID:</label>
-                        <input type="text" id="telegramChatId" placeholder="Введите Chat ID" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500">
+                        <input type="password" id="telegramChatId" placeholder="Введите Chat ID" class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500" onfocus="this.type='text'" onblur="this.type='password'">
                     </div>
                     <div class="flex gap-4">
                         <button onclick="saveTelegramSettings()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-200">
