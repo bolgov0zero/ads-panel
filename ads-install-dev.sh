@@ -126,12 +126,12 @@ else
     echo -e "Версия: \e[31m[✗] не удалось проверить версию\e[0m"
 fi
 echo ""
-echo "1. Запустить Ads Panel"
-echo "2. Перезапустить Ads Panel"
-echo "3. Обновить Ads Panel"
-echo -e "4. \e[31mЗавершить Ads Panel\e[0m"
+echo "1. Запустить"
+echo "2. Перезапустить"
+echo "3. Обновить"
+echo -e "4. \e[31mЗавершить\e[0m"
 echo ""
-echo -e "\e[33mИли нажмите любую клавишу проверить обновление.\e[0m"
+echo -e "\e[33mИли нажмите Enter чтобы проверить обновления.\e[0m"
 read -p "Выберите опцию: " choice
 
 case $choice in
