@@ -182,9 +182,9 @@ try {
             if ($previous_status !== null && $previous_status !== $client['status']) {
                 // Статус изменился
                 if ($client['status'] === 'online') {
-                    $message = "<b>Статус:</b> 🟢 в сети\n\nИмя: <i>{$client['name']}</i>\nUUID: <code>{$uuid}</code>";
+                    $message = "<b>Статус:</b> 🟢 в сети\n\n<b>Имя:</b> <i>{$client['name']}</i>\n<b>UUID:</b> <code>{$uuid}</code>";
                 } else {
-                    $message = "<b>Статус:</b> 🔴 не в сети\n\nИмя: <i>{$client['name']}</i>\nUUID: <code>{$uuid}</code>";
+                    $message = "<b>Статус:</b> 🔴 не в сети\n\n<b>Имя:</b> <i>{$client['name']}</i>\n<b>UUID:</b> <code>{$uuid}</code>";
                 }
                 logMessage("Обнаружено изменение статуса для UUID: $uuid, Новый статус: {$client['status']}, Сообщение: $message");
                 if (!empty($bot_token) && !empty($chat_id)) {
