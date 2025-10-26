@@ -4,6 +4,7 @@ $db_path = '/data/ads.db';
 $check_interval = 10; // Интервал проверки в секундах
 $offline_threshold = 5; // Порог для оффлайн-статуса в секундах
 $log_file = '/var/log/client-monitor.log'; // Единый файл лога для stdout и stderr
+$version_check_interval = 60; // Интервал проверки версии в секундах (1 минута)
 
 // Функция логирования
 function logMessage($message) {
@@ -40,6 +41,81 @@ function sendTelegramMessage($botToken, $chatId, $message) {
     return true;
 }
 
+// Новая функция: Проверка новой версии
+function checkForNewVersion($db) {
+    global $log_file, $version_check_interval;
+
+    // Получаем локальную версию
+    $local_version_file = '/var/www/html/version';
+    if (!file_exists($local_version_file)) {
+        logMessage("Ошибка: Файл локальной версии не найден: $local_version_file");
+        return;
+    }
+    $local_version_raw = trim(file_get_contents($local_version_file));
+    $local_version = ltrim($local_version_raw, 'v'); // Убираем 'v' для version_compare
+
+    // Скачиваем версию с GitHub
+    $github_url = 'https://raw.githubusercontent.com/bolgov0zero/ads-panel/refs/heads/main/version';
+    $ch = curl_init($github_url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    $github_version_raw = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200 || empty($github_version_raw)) {
+        logMessage("Ошибка скачивания версии с GitHub: HTTP $httpCode");
+        return;
+    }
+
+    $github_version = ltrim(trim($github_version_raw), 'v'); // Убираем 'v'
+
+    logMessage("Проверка версий: Локальная '$local_version_raw', GitHub '$github_version_raw'");
+
+    // Получаем текущие данные из БД
+    $stmt = $db->prepare("SELECT last_notified_version, last_check_time FROM version_notifications WHERE id = 1");
+    $result = $stmt->execute();
+    $row = $result->fetchArray(SQLITE3_ASSOC);
+    $last_notified_version = $row['last_notified_version'] ?? '';
+    $last_check_time = (int)($row['last_check_time'] ?? 0);
+
+    // Если прошло меньше минуты с последней проверки, пропускаем
+    if (time() - $last_check_time < $version_check_interval) {
+        return;
+    }
+
+    // Сравниваем версии
+    if (version_compare($github_version, $local_version) > 0 && $github_version !== $last_notified_version) {
+        // Новая версия! Формируем сообщение
+        $message = "🆕 Доступна новая версия!\nЛокальная: <b>$local_version_raw</b>\nGitHub: <b>$github_version_raw</b>";
+
+        // Загружаем настройки Telegram
+        $stmt = $db->prepare("SELECT bot_token, chat_id FROM telegram_settings WHERE id = 1");
+        $result = $stmt->execute();
+        $telegram_settings = $result->fetchArray(SQLITE3_ASSOC);
+        $bot_token = $telegram_settings['bot_token'] ?? '';
+        $chat_id = $telegram_settings['chat_id'] ?? '';
+
+        if (!empty($bot_token) && !empty($chat_id)) {
+            if (sendTelegramMessage($bot_token, $chat_id, $message)) {
+                // Обновляем БД: уведомили и отметили время проверки
+                $update_stmt = $db->prepare("UPDATE version_notifications SET last_notified_version = :version, last_check_time = :time WHERE id = 1");
+                $update_stmt->bindValue(':version', $github_version_raw, SQLITE3_TEXT);
+                $update_stmt->bindValue(':time', time(), SQLITE3_INTEGER);
+                $update_stmt->execute();
+                logMessage("Уведомление о новой версии отправлено: $github_version_raw");
+            }
+        } else {
+            logMessage("Уведомление о новой версии не отправлено: отсутствуют настройки Telegram");
+        }
+    }
+
+    // Всегда обновляем время последней проверки
+    $update_stmt = $db->prepare("UPDATE version_notifications SET last_check_time = :time WHERE id = 1");
+    $update_stmt->bindValue(':time', time(), SQLITE3_INTEGER);
+    $update_stmt->execute();
+}
+
 try {
     // Подключение к базе данных
     $db = new SQLite3($db_path);
@@ -64,6 +140,9 @@ try {
 
     while (true) {
         logMessage("Начало цикла проверки статусов устройств");
+
+        // Новая проверка: Проверяем версию раз в минуту
+        checkForNewVersion($db);
 
         // Получаем текущие статусы устройств
         $result = $db->query("SELECT uuid, name, COALESCE(last_seen, 0) AS last_seen FROM clients");
