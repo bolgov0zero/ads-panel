@@ -96,7 +96,7 @@ function checkForNewVersion($db, $bot_token, $chat_id) {
 
         // Сравниваем версии
         if (version_compare($github_version, $local_version) > 0 && $github_version_raw !== $last_notified_version) {
-            $message = "🆕 Доступна новая версия!\n<b>Локальная:</b> <code>$local_version_raw</code>\n<b>GitHub:</b> <code>$github_version_raw</code>";
+            $message = "🆕 <b>Доступна новая версия!</b>\n\n<b>Локальная:</b> <code>$local_version_raw</code>\n<b>GitHub:</b> <code>$github_version_raw</code>";
             if (!empty($bot_token) && !empty($chat_id)) {
                 if (sendTelegramMessage($bot_token, $chat_id, $message)) {
                     // Обновляем последнюю уведомленную версию и время проверки
@@ -182,9 +182,9 @@ try {
             if ($previous_status !== null && $previous_status !== $client['status']) {
                 // Статус изменился
                 if ($client['status'] === 'online') {
-                    $message = "<b>Статус:</b> 🟢 в сети\nИмя: <i>{$client['name']}</i>\nUUID: <code>{$uuid}</code>";
+                    $message = "<b>Статус:</b> 🟢 в сети\n\nИмя: <i>{$client['name']}</i>\nUUID: <code>{$uuid}</code>";
                 } else {
-                    $message = "<b>Статус:</b> 🔴 не в сети\nИмя: <i>{$client['name']}</i>\nUUID: <code>{$uuid}</code>";
+                    $message = "<b>Статус:</b> 🔴 не в сети\n\nИмя: <i>{$client['name']}</i>\nUUID: <code>{$uuid}</code>";
                 }
                 logMessage("Обнаружено изменение статуса для UUID: $uuid, Новый статус: {$client['status']}, Сообщение: $message");
                 if (!empty($bot_token) && !empty($chat_id)) {
