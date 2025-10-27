@@ -109,11 +109,17 @@ async function restartPlayback(uuid) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'restart_playback', uuid })
         });
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
         const result = await response.json();
         if (!result.error) {
             showNotification('Команда перезапуска отправлена', 'bg-green-500');
-            // Обновляем карточки с большей задержкой
-            setTimeout(loadClients, 2000);
+            // Обновляем карточки с задержкой
+            setTimeout(() => {
+                loadClients();
+                updateClientStatuses();
+            }, 3000);
         } else {
             showNotification('Ошибка отправки команды перезапуска: ' + result.error, 'bg-red-500');
         }
