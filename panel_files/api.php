@@ -1,11 +1,18 @@
 <?php
-header('Content-Type: application/json');
+// Suppress output to prevent warnings from corrupting JSON
+ob_start();
+header('Content-Type: application/json; charset=UTF-8');
+
+// Функция для логирования
+function logMessage($message) {
+    error_log(date('[Y-m-d H:i:s] ') . $message . "\n", 3, '/var/log/ads_api.log');
+}
 
 try {
     // Подключение к SQLite3
     $db = new SQLite3('/data/ads.db');
-    $db->busyTimeout(5000); // Устанавливаем таймаут для занятой базы данных
-    
+    $db->busyTimeout(5000);
+
     // Проверка корректности входного JSON
     $input = file_get_contents('php://input');
     $input_data = json_decode($input, true);
@@ -13,6 +20,7 @@ try {
         logMessage("Ошибка декодирования JSON: " . json_last_error_msg());
         header('HTTP/1.1 400 Bad Request');
         echo json_encode(['error' => 'Некорректный JSON в запросе']);
+        ob_end_flush();
         exit;
     }
     $action = $_POST['action'] ?? $_GET['action'] ?? $input_data['action'] ?? '';
@@ -245,7 +253,8 @@ try {
 
         case 'count_clients':
             $result = $db->querySingle("SELECT COUNT(*) FROM clients");
-            echo json_encode(['count' => $result]);
+            echo json_encode(['count' => (int)$result]);
+            logMessage("Возвращено количество клиентов: $result");
             break;
 
         case 'list_client_content':
@@ -498,8 +507,9 @@ try {
 } catch (Exception $e) {
     echo json_encode(['error' => 'Ошибка сервера: ' . $e->getMessage()]);
 } finally {
-    if (isset($db)) {
-        $db->close();
+        if (isset($db)) {
+            $db->close();
+        }
+        ob_end_flush();
     }
-}
 ?>
