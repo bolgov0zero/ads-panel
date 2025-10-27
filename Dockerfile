@@ -24,7 +24,7 @@ RUN openssl req -x509 -nodes -days 7300 -newkey rsa:2048 \
 
 # Копируем файлы приложения и entrypoint
 COPY ./panel_files /var/www/html
-COPY version /var/www/html
+COPY version.json /var/www/html
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 

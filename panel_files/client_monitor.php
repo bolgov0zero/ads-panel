@@ -92,7 +92,7 @@ function checkForNewVersion($db, $bot_token, $chat_id) {
         $system_name = $system_settings['system_name'] ?? 'Ads Panel';
 
         // Получаем локальную версию и заметку
-        $local_version_file = '/var/www/html/version_info.json';
+        $local_version_file = '/var/www/html/version.json';
         if (!file_exists($local_version_file)) {
             logMessage("Ошибка: Файл версии не найден: $local_version_file");
             return;
@@ -107,7 +107,7 @@ function checkForNewVersion($db, $bot_token, $chat_id) {
         $local_note = $local_data['note'] ?? '';
         
         // Скачиваем версию с GitHub
-        $github_url = 'https://raw.githubusercontent.com/bolgov0zero/ads-panel/refs/heads/main/version_info.json';
+        $github_url = 'https://raw.githubusercontent.com/bolgov0zero/ads-panel/refs/heads/main/version.json';
         $ch = curl_init($github_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);

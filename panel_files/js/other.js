@@ -7,7 +7,7 @@ const helpMarkdown = `
 
 async function loadVersion() {
     try {
-        const response = await fetch('version_info.json');
+        const response = await fetch('version.json');
         if (!response.ok) throw new Error('Не удалось загрузить данные версии');
         const data = await response.json();
         document.getElementById('appVersion').textContent = data.version;
