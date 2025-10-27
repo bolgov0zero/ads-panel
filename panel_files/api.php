@@ -159,12 +159,11 @@ try {
                 echo json_encode(['error' => 'UUID не указан']);
                 break;
             }
-            $stmt = $db->prepare("SELECT uuid, name, show_info, COALESCE(last_seen, 0) AS last_seen FROM clients WHERE uuid = :uuid");
+            $stmt = $db->prepare("SELECT name, show_info, last_seen, playback_status FROM clients WHERE uuid = :uuid");
             $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
             $result = $stmt->execute();
             if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $row['last_seen'] = (int)$row['last_seen']; // Гарантируем число
-                $row['status'] = (time() - $row['last_seen'] <= 5) ? 'online' : 'offline';
+                $row['status'] = (time() - $row['last_seen']) <= 5 ? 'online' : 'offline';
                 echo json_encode($row);
             } else {
                 echo json_encode(['error' => 'Устройство не найдено']);
@@ -223,29 +222,14 @@ try {
             break;
 
         case 'list_clients':
-            $result = $db->query("SELECT uuid, name, show_info, COALESCE(last_seen, 0) AS last_seen FROM clients");
-            $clients = [];
-            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $stmt = $db->prepare("SELECT content_id, content_type FROM client_content WHERE uuid = :uuid");
-                $stmt->bindValue(':uuid', $row['uuid'], SQLITE3_TEXT);
-                $contentResult = $stmt->execute();
-                $content = [];
-                while ($c = $contentResult->fetchArray(SQLITE3_ASSOC)) {
-                    $content[] = ['id' => $c['content_id'], 'type' => $c['content_type']];
-                }
-                $row['last_seen'] = (int)$row['last_seen']; // Гарантируем число
-                $row['status'] = (time() - $row['last_seen'] <= 5) ? 'online' : 'offline';
-                $clients[] = [
-                    'uuid' => $row['uuid'],
-                    'name' => $row['name'],
-                    'show_info' => $row['show_info'],
-                    'content' => $content,
-                    'status' => $row['status'],
-                    'last_seen' => $row['last_seen']
-                ];
-            }
-            echo json_encode($clients);
-            break;
+        $result = $db->query("SELECT uuid, name, show_info, last_seen, playback_status FROM clients");
+        $clients = [];
+        while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+            $row['status'] = (time() - $row['last_seen']) <= 5 ? 'online' : 'offline';
+            $clients[] = $row;
+        }
+        echo json_encode($clients);
+        break;
 
         case 'count_clients':
             $result = $db->querySingle("SELECT COUNT(*) FROM clients");
@@ -488,33 +472,6 @@ try {
             $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
             $stmt->execute();
             echo json_encode(['message' => 'Команда перезапуска отправлена']);
-            break;
-        
-        case 'get_client_info':
-            $uuid = $_GET['uuid'] ?? '';
-            if (empty($uuid)) {
-                echo json_encode(['error' => 'UUID не указан']);
-                break;
-            }
-            $stmt = $db->prepare("SELECT name, show_info, last_seen, playback_status FROM clients WHERE uuid = :uuid");
-            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
-            $result = $stmt->execute();
-            if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $row['status'] = (time() - $row['last_seen']) <= 5 ? 'online' : 'offline';
-                echo json_encode($row);
-            } else {
-                echo json_encode(['error' => 'Клиент не найден']);
-            }
-            break;
-        
-        case 'list_clients':
-            $result = $db->query("SELECT uuid, name, show_info, last_seen, playback_status FROM clients");
-            $clients = [];
-            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $row['status'] = (time() - $row['last_seen']) <= 5 ? 'online' : 'offline';
-                $clients[] = $row;
-            }
-            echo json_encode($clients);
             break;
 
         default:

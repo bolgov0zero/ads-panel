@@ -15,7 +15,7 @@ else
     echo -ne "[ ] Установка Docker и Docker Compose.\r"
     
     apt update > /dev/null 2>&1
-    apt install -y curl unzip > /dev/null 2>&1
+    apt install -y curl unzip jq > /dev/null 2>&1
     curl -sSL https://get.docker.com/ | CHANNEL=stable sh > /dev/null 2>&1
     systemctl enable --now docker > /dev/null 2>&1
     curl -sL https://github.com/docker/compose/releases/download/v$(curl -Ls https://www.servercow.de/docker-compose/latest.php)/docker-compose-$(uname -s)-$(uname -m) > /usr/local/bin/docker-compose
@@ -113,7 +113,7 @@ fi
 # Получаем IP хоста
 HOST_IP=$(hostname -I | awk '{print $1}')
 # Получаем удалённую версию из version_info.json
-REMOTE_VERSION=$(curl -s https://raw.githubusercontent.com/bolgov0zero/ads-panel/refs/heads/main/version.json | jq -r '.version')
+REMOTE_VERSION=$(curl -s https://raw.githubusercontent.com/bolgov0zero/ads-panel/refs/heads/dev/version.json | jq -r '.version')
 # Получаем локальную версию из version_info.json, игнорируя ошибки сертификата
 LOCAL_VERSION=$(curl -s -k https://${HOST_IP}/version.json | jq -r '.version')
 if [ -n "$REMOTE_VERSION" ] && [ -n "$LOCAL_VERSION" ]; then
