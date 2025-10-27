@@ -170,9 +170,10 @@ case $choice in
         clear
         echo "Завершение Ads Panel..."
         docker-compose down > /dev/null 2>&1
+        echo -e "\e[31mРабота Ads Panel завершена!\e[0m"
         sleep 2
         clear
-        echo -e "\e[31mРабота Ads Panel завершена!\e[0m"
+        ads
         ;;
     *)
         clear

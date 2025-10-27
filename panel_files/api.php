@@ -467,10 +467,10 @@ try {
                 echo json_encode(['error' => 'UUID не указан']);
                 break;
             }
-            // Устанавливаем флаг перезапуска (например, временное поле)
             $stmt = $db->prepare("UPDATE clients SET playback_status = 'restart' WHERE uuid = :uuid");
             $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
             $stmt->execute();
+            logMessage("Отправлена команда перезапуска для UUID: $uuid");
             echo json_encode(['message' => 'Команда перезапуска отправлена']);
             break;
 
