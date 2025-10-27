@@ -119,7 +119,8 @@ async function restartPlayback(uuid) {
             setTimeout(() => {
                 loadClients();
                 updateClientStatuses();
-            }, 3000);
+                console.log('Карточки и статусы обновлены после перезапуска для UUID:', uuid);
+            }, 2000);
         } else {
             showNotification('Ошибка отправки команды перезапуска: ' + result.error, 'bg-red-500');
         }

@@ -232,6 +232,9 @@ async function checkRestartCommand() {
         const response = await fetch(`api.php?action=get_client_info&uuid=${uuid}`, {
             headers: { 'Cache-Control': 'no-cache' }
         });
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
         const data = await response.json();
         console.log('Проверка команды перезапуска, данные:', data);
         if (data.error) {
@@ -242,7 +245,10 @@ async function checkRestartCommand() {
             console.log('Получена команда перезапуска для UUID:', uuid);
             stopCurrentContent(true);
             showContent(currentIndex, 0);
-            console.log('Видео перезапущено, currentIndex:', currentIndex);
+            // Сбрасываем статус на playing после перезапуска
+            playbackStatus = 'playing';
+            await updatePlaybackStatus();
+            console.log('Видео перезапущено, currentIndex:', currentIndex, 'playback_status:', playbackStatus);
         }
     } catch (err) {
         console.error('Ошибка проверки команды перезапуска:', err);
@@ -392,18 +398,26 @@ async function showContent(index, restoreTime = 0) {
     if (item.type === 'video') {
         if (currentContentUrl === item.file_url && isSingleItem) {
             video.currentTime = 0;
-            video.play().catch(err => console.error('Ошибка воспроизведения видео:', err));
+            video.play().catch(err => {
+                console.error('Ошибка воспроизведения видео:', err);
+                playbackStatus = 'stalled';
+                updatePlaybackStatus();
+            });
             console.log('Перезапуск текущего видео:', item.file_url);
             return;
         }
-        stopCurrentContent();
+        stopCurrentContent(true);
         currentIndex = index;
         video.src = item.file_url;
         video.style.display = 'block';
         video.loop = isSingleItem;
         video.currentTime = restoreTime;
         currentContentUrl = item.file_url;
-        video.play().catch(err => console.error('Ошибка воспроизведения видео:', err));
+        video.play().catch(err => {
+            console.error('Ошибка воспроизведения видео:', err);
+            playbackStatus = 'stalled';
+            updatePlaybackStatus();
+        });
         console.log('Показываем видео:', item.file_url, 'Время:', restoreTime);
     } else if (item.type === 'pdf') {
         currentIndex = index;

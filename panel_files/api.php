@@ -493,11 +493,6 @@ try {
             $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
             $stmt->execute();
             logMessage("Отправлена команда перезапуска для UUID: $uuid");
-            // Сбрасываем статус на playing после команды
-            $stmt = $db->prepare("UPDATE clients SET playback_status = 'playing' WHERE uuid = :uuid");
-            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
-            $stmt->execute();
-            logMessage("Статус сброшен на playing для UUID: $uuid");
             echo json_encode(['message' => 'Команда перезапуска отправлена']);
             break;
 
