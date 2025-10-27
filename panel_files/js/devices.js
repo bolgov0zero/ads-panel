@@ -119,7 +119,7 @@ async function restartPlayback(uuid) {
             setTimeout(async () => {
                 await loadClients();
                 await updateClientStatuses();
-                // Принудительно сбрасываем статус кнопки
+                // Принудительно обновляем состояние кнопки
                 const card = document.querySelector(`.client-card[data-uuid="${uuid}"]`);
                 if (card) {
                     const playButton = card.querySelector('.play-button');
@@ -127,9 +127,11 @@ async function restartPlayback(uuid) {
                     playButton.disabled = false; // Активируем кнопку
                     playIcon.classList.remove('fa-play', 'text-green-400');
                     playIcon.classList.add('fa-stop', 'text-red-500');
+                    // Принудительно вызываем обработчик для синхронизации
+                    playButton.onclick = () => restartPlayback(uuid);
                 }
                 console.log('Карточки и статусы обновлены после перезапуска для UUID:', uuid);
-            }, 1000); // Уменьшена задержка для более быстрого обновления
+            }, 500); // Задержка 500 мс для синхронизации
         } else {
             showNotification('Ошибка отправки команды перезапуска: ' + result.error, 'bg-red-500');
         }
@@ -210,7 +212,7 @@ async function updateClientStatuses() {
                 dot.classList.add(client.status === 'online' ? 'status-online' : 'status-offline');
                 text.textContent = formatLastSeen(client.last_seen);
                 playIcon.classList.remove('fa-play', 'fa-stop', 'text-green-400', 'text-red-500');
-                playIcon.classList.add(client.playback_status === 'playing' ? 'fa-play' : 'fa-stop', client.playback_status === 'playing' ? 'text-green-400' : 'text-red-500');
+                playIcon.classList.add(client.playback_status === 'playing' ? 'fa-play' : 'fa-stop', client.playback_status === 'playing' ? 'text-green-500' : 'text-red-500');
                 playButton.disabled = client.playback_status === 'playing';
                 console.log('Обновлён статус клиента:', client.uuid, 'playback_status:', client.playback_status);
             }

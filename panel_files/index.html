@@ -425,7 +425,6 @@ async function showContent(index, restoreTime = 0) {
         video.currentTime = restoreTime;
         currentContentUrl = item.file_url;
         video.play().catch(err => {
-            console.error('Ошибка воспроизведения видео:', err);
             playbackStatus = 'stalled';
             updatePlaybackStatus();
         });
