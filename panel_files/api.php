@@ -434,51 +434,18 @@ try {
             }
             break;
             
-        case 'send_test_telegram_message':
-            $stmt = $db->prepare("SELECT bot_token, chat_id FROM telegram_settings WHERE id = 1");
-            $result = $stmt->execute();
-            $settings = $result->fetchArray(SQLITE3_ASSOC);
-            $bot_token = $settings['bot_token'] ?? '';
-            $chat_id = $settings['chat_id'] ?? '';
-            // Логируем настройки Telegram
-            error_log("send_test_telegram_message: bot_token=" . ($bot_token ? 'установлен' : 'пустой') . ", chat_id=" . ($chat_id ? 'установлен' : 'пустой'));
-            if (empty($bot_token) || empty($chat_id)) {
-                echo json_encode(['error' => 'Настройки Telegram не заполнены']);
-                break;
-            }
-            $stmt = $db->prepare("SELECT system_name FROM system_settings WHERE id = 1");
-            $result = $stmt->execute();
-            $system_settings = $result->fetchArray(SQLITE3_ASSOC);
-            $system_name = $system_settings['system_name'] ?? 'Ads Panel';
-            // Логируем имя системы
-            error_log("send_test_telegram_message: system_name=$system_name");
-            $message = "<b>$system_name</b>. Тестовое сообщение.";
-            $result = sendTelegramMessage($bot_token, $chat_id, $message);
-            if (isset($result['error'])) {
-                error_log("send_test_telegram_message: Ошибка отправки: " . $result['error']);
-                echo json_encode(['error' => $result['error']]);
-            } else {
-                error_log("send_test_telegram_message: Сообщение отправлено: $message");
-                echo json_encode(['message' => 'Тестовое сообщение отправлено']);
-            }
-            break;
-        
         case 'get_system_name':
             $stmt = $db->prepare("SELECT system_name FROM system_settings WHERE id = 1");
             $result = $stmt->execute();
             if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                echo json_encode($row);
+                echo json_encode(['system_name' => $row['system_name']]);
             } else {
                 echo json_encode(['system_name' => 'Ads Panel']);
             }
             break;
         
         case 'update_system_name':
-            $system_name = $input['system_name'] ?? '';
-            if (empty($system_name)) {
-                echo json_encode(['error' => 'Имя системы не указано']);
-                break;
-            }
+            $system_name = $input['system_name'] ?? 'Ads Panel';
             $stmt = $db->prepare("
                 INSERT OR REPLACE INTO system_settings (id, system_name)
                 VALUES (1, :system_name)
