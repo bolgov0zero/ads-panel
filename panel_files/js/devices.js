@@ -112,13 +112,14 @@ async function restartPlayback(uuid) {
         const result = await response.json();
         if (!result.error) {
             showNotification('Команда перезапуска отправлена', 'bg-green-500');
-            setTimeout(loadClients, 1000); // Обновляем карточки после перезапуска
+            // Обновляем карточки с большей задержкой
+            setTimeout(loadClients, 2000);
         } else {
-            showNotification('Ошибка отправки команды перезапуска', 'bg-red-500');
+            showNotification('Ошибка отправки команды перезапуска: ' + result.error, 'bg-red-500');
         }
     } catch (err) {
         console.error('Ошибка перезапуска:', err);
-        showNotification('Ошибка перезапуска', 'bg-red-500');
+        showNotification('Ошибка перезапуска: ' + err.message, 'bg-red-500');
     }
 }
 
@@ -174,7 +175,9 @@ async function deleteClient(uuid) {
 
 async function updateClientStatuses() {
     try {
-        const response = await fetch('api.php?action=list_clients');
+        const response = await fetch('api.php?action=list_clients', {
+            headers: { 'Cache-Control': 'no-cache' }
+        });
         const clients = await response.json();
         document.querySelectorAll('.client-card').forEach(card => {
             const uuid = card.getAttribute('data-uuid');
@@ -190,10 +193,12 @@ async function updateClientStatuses() {
                 playIcon.classList.remove('fa-play', 'fa-stop', 'text-green-400', 'text-red-500');
                 playIcon.classList.add(client.playback_status === 'playing' ? 'fa-play' : 'fa-stop', client.playback_status === 'playing' ? 'text-green-400' : 'text-red-500');
                 playButton.disabled = client.playback_status === 'playing';
+                console.log('Обновлён статус клиента:', client.uuid, 'playback_status:', client.playback_status);
             }
         });
     } catch (err) {
         console.error('Ошибка обновления статусов:', err);
+        showNotification('Ошибка обновления статусов', 'bg-red-500');
     }
 }
 

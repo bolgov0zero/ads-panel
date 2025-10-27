@@ -5,6 +5,18 @@ try {
     // Подключение к SQLite3
     $db = new SQLite3('/data/ads.db');
     $db->busyTimeout(5000); // Устанавливаем таймаут для занятой базы данных
+    
+    // Проверка корректности входного JSON
+    $input = file_get_contents('php://input');
+    $input_data = json_decode($input, true);
+    if ($input !== '' && json_last_error() !== JSON_ERROR_NONE) {
+        logMessage("Ошибка декодирования JSON: " . json_last_error_msg());
+        header('HTTP/1.1 400 Bad Request');
+        echo json_encode(['error' => 'Некорректный JSON в запросе']);
+        exit;
+    }
+    $action = $_POST['action'] ?? $_GET['action'] ?? $input_data['action'] ?? '';
+    logMessage("Получен запрос: action=$action");
 
     // Функция отправки сообщения в Telegram
     function sendTelegramMessage($botToken, $chatId, $message) {
@@ -462,8 +474,9 @@ try {
             break;
         
         case 'restart_playback':
-            $uuid = $input['uuid'] ?? '';
+            $uuid = $input_data['uuid'] ?? '';
             if (empty($uuid)) {
+                logMessage("Ошибка: UUID не указан для restart_playback");
                 echo json_encode(['error' => 'UUID не указан']);
                 break;
             }
@@ -471,6 +484,11 @@ try {
             $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
             $stmt->execute();
             logMessage("Отправлена команда перезапуска для UUID: $uuid");
+            // Сбрасываем статус на playing после команды
+            $stmt = $db->prepare("UPDATE clients SET playback_status = 'playing' WHERE uuid = :uuid");
+            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $stmt->execute();
+            logMessage("Статус сброшен на playing для UUID: $uuid");
             echo json_encode(['message' => 'Команда перезапуска отправлена']);
             break;
 

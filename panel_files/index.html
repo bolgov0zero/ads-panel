@@ -79,21 +79,23 @@ function stopCurrentContent(force = false) {
     if (!force && contentList.length === 1) {
         return;
     }
-    video.pause();
+    if (video.src) {
+        video.pause();
+        video.removeAttribute('src'); // Удаляем src вместо присвоения ''
+        video.load(); // Сбрасываем элемент видео
+        console.log('Видео очищено');
+    }
     video.style.display = 'none';
-    video.src = ''; // Очищаем источник, чтобы избежать перекрытия
     if (pdfTimer) {
         clearTimeout(pdfTimer);
         pdfTimer = null;
     }
     pdfCanvas.style.display = 'none';
-    // Очищаем canvas
     const ctx = pdfCanvas.getContext('2d');
     ctx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
     currentContentUrl = null;
     console.log('Текущий контент остановлен, force:', force);
 }
-
 // Рендеринг PDF
 async function renderPDF(url) {
     if (isRendering) {
@@ -191,9 +193,11 @@ video.addEventListener('pause', () => {
 });
 
 video.addEventListener('error', () => {
-    playbackStatus = 'stalled';
-    updatePlaybackStatus();
-    console.error('Ошибка воспроизведения видео:', video.error);
+    if (video.error && video.error.code !== 0) {
+        playbackStatus = 'stalled';
+        updatePlaybackStatus();
+        console.error('Ошибка воспроизведения видео:', video.error.message);
+    }
 });
 
 // Обновление статуса воспроизведения на сервере
@@ -237,8 +241,6 @@ async function checkRestartCommand() {
         if (data.playback_status === 'restart') {
             console.log('Получена команда перезапуска для UUID:', uuid);
             stopCurrentContent(true);
-            playbackStatus = 'playing';
-            updatePlaybackStatus(); // Сбрасываем статус перед показом
             showContent(currentIndex, 0);
             console.log('Видео перезапущено, currentIndex:', currentIndex);
         }
