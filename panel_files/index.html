@@ -57,6 +57,8 @@ let currentContentUrl = null;
 let isRendering = false; // Флаг для отслеживания рендеринга
 const DEFAULT_PDF_DURATION = 5000;
 let messageSettings = { enabled: 0, text: '', color: '#ffffff', font_size: 24, speed: 100, bold: 0, background_color: '#000000' };
+let lastTimeUpdate = 0;
+let playbackStatus = 'playing';
 
 // Функция переподключения
 function reconnectClient() {
@@ -168,6 +170,69 @@ video.addEventListener('loadedmetadata', () => {
     video.style.height = '100vh';
 });
 
+// Отслеживание воспроизведения и зависания
+video.addEventListener('timeupdate', () => {
+    lastTimeUpdate = Date.now();
+    if (playbackStatus !== 'playing') {
+        playbackStatus = 'playing';
+        updatePlaybackStatus();
+    }
+});
+
+video.addEventListener('pause', () => {
+    if (video.ended) return; // Игнорируем паузу при завершении
+    playbackStatus = 'stalled';
+    updatePlaybackStatus();
+});
+
+video.addEventListener('error', () => {
+    playbackStatus = 'stalled';
+    updatePlaybackStatus();
+});
+
+// Обновление статуса воспроизведения на сервере
+async function updatePlaybackStatus() {
+    try {
+        await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update_playback_status', uuid, status: playbackStatus })
+        });
+    } catch (err) {
+        console.error('Ошибка обновления статуса воспроизведения:', err);
+    }
+}
+
+// Проверка зависания видео
+function checkVideoStall() {
+    if (video.src && !video.paused && !video.ended && (Date.now() - lastTimeUpdate > 2000)) {
+        if (playbackStatus !== 'stalled') {
+            playbackStatus = 'stalled';
+            updatePlaybackStatus();
+        }
+    }
+}
+
+// Проверка команды перезапуска
+async function checkRestartCommand() {
+    try {
+        const response = await fetch(`api.php?action=get_client_info&uuid=${uuid}`, {
+            headers: { 'Cache-Control': 'no-cache' }
+        });
+        const data = await response.json();
+        if (data.playback_status === 'restart') {
+            console.log('Получена команда перезапуска видео');
+            stopCurrentContent(true);
+            showContent(currentIndex, 0);
+            // Сбрасываем статус после перезапуска
+            playbackStatus = 'playing';
+            updatePlaybackStatus();
+        }
+    } catch (err) {
+        console.error('Ошибка проверки команды перезапуска:', err);
+    }
+}
+
 // Загрузка информации об устройстве
 async function loadClientInfo() {
     try {
@@ -184,9 +249,9 @@ async function loadClientInfo() {
             clientInfo.style.display = data.show_info === 1 && !messageSettings.enabled ? 'block' : 'none';
         }
     } catch (err) {
-        clientInfo.textContent = `UUID: ${uuid.toUpperCase()} | ИМЯ: Ошибка загрузки`;
+        clientInfo.textContent = `UUID: ${uuid.toUpperCase()} | ИМЯ: Неизвестно`;
         clientInfo.style.display = 'none';
-        console.error('Ошибка загрузки информации об устройстве:', err);
+        console.error('Ошибка загрузки информации о клиенте:', err);
     }
 }
 
@@ -197,38 +262,29 @@ async function loadMessageSettings() {
             headers: { 'Cache-Control': 'no-cache' }
         });
         const newSettings = await response.json();
-        console.log('Загружены настройки сообщения:', newSettings); // Отладка
         if (JSON.stringify(newSettings) !== JSON.stringify(messageSettings)) {
             messageSettings = newSettings;
-            if (messageSettings.enabled && messageSettings.text) {
+            if (messageSettings.enabled) {
                 stopCurrentContent(true);
-                marquee.style.display = 'block';
-                document.body.style.backgroundColor = messageSettings.background_color;
                 marqueeText.textContent = messageSettings.text;
+                marquee.style.backgroundColor = messageSettings.background_color;
+                marquee.style.display = 'block';
+                marquee.style.height = `${messageSettings.font_size + 20}px`;
                 marqueeText.style.color = messageSettings.color;
                 marqueeText.style.fontSize = `${messageSettings.font_size}px`;
                 marqueeText.style.fontWeight = messageSettings.bold ? 'bold' : 'normal';
-                // Устанавливаем высоту контейнера на основе размера шрифта
-                marquee.style.height = `${messageSettings.font_size * 1.5}px`; // Учитываем высоту строки
-                // Сбрасываем анимацию
-                marqueeText.style.animation = 'none';
-                marqueeText.offsetHeight; // Принудительный рефлоу
-                // Рассчитываем ширину текста и длительность анимации
-                const textWidth = marqueeText.offsetWidth || window.innerWidth;
-                const containerWidth = window.innerWidth;
-                const totalWidth = textWidth + containerWidth;
-                const duration = totalWidth / (messageSettings.speed || 100);
-                marqueeText.style.animation = `marquee ${duration}s linear infinite`;
-                console.log(`Ширина текста: ${textWidth}, Ширина окна: ${containerWidth}, Длительность анимации: ${duration}s`); // Отладка
-                clientInfo.style.display = 'none';
+                const textWidth = marqueeText.offsetWidth;
+                const duration = textWidth / messageSettings.speed;
+                marqueeText.style.animationDuration = `${duration}s`;
+                document.body.style.backgroundColor = messageSettings.background_color;
                 fullscreenBtn.style.display = 'none';
                 reconnectBtn.style.display = 'none';
+                clientInfo.style.display = 'none';
             } else {
-                marquee.style.display = 'none';
-                marqueeText.style.animation = 'none';
                 marqueeText.textContent = '';
-                marquee.style.height = '100px'; // Сбрасываем высоту
-                document.body.style.backgroundColor = 'white'; // Сбрасываем цвет фона
+                marquee.style.height = '100px';
+                marquee.style.display = 'none';
+                document.body.style.backgroundColor = 'white';
                 showContent(currentIndex, currentTime);
                 loadClientInfo();
                 if (!document.fullscreenElement) {
@@ -270,7 +326,7 @@ document.addEventListener('fullscreenchange', () => {
 document.addEventListener('webkitfullscreenchange', () => {
     if (!document.webkitFullscreenElement) {
         fullscreenBtn.style.display = messageSettings.enabled ? 'none' : 'block';
-        reconnectBtn.style.display = 'none';
+        reconnectBtn.style.display = messageSettings.enabled ? 'none' : 'block';
         loadClientInfo();
     }
 });
@@ -358,12 +414,12 @@ async function loadContent() {
 // Проверка обновлений
 async function checkContent() {
     try {
-        console.log(`Отправка запроса list_client_content с UUID: ${uuid}`); // Отладка
+        console.log(`Отправка запроса list_client_content с UUID: ${uuid}`);
         const response = await fetch(`api.php?action=list_client_content&uuid=${uuid}`, {
             headers: { 'Cache-Control': 'no-cache' }
         });
         const newList = await response.json();
-        console.log('Получен ответ list_client_content:', newList); // Отладка
+        console.log('Получен ответ list_client_content:', newList);
         if (JSON.stringify(newList) !== JSON.stringify(contentList)) {
             const wasEmpty = contentList.length === 0;
             const isEmpty = newList.length === 0;
@@ -398,6 +454,10 @@ loadClientInfo();
 loadContent();
 loadMessageSettings();
 setInterval(checkContent, 1000);
+setInterval(() => {
+    checkVideoStall();
+    checkRestartCommand();
+}, 1000);
 </script>
 </body>
 </html>

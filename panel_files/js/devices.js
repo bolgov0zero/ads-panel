@@ -23,9 +23,14 @@ async function loadClients() {
                         <div class="status-dot ${client.status === 'online' ? 'status-online' : 'status-offline'}"></div>
                         <span class="text-sm text-gray-400 status-text">${formatLastSeen(client.last_seen)}</span>
                     </div>
-                    <button onclick="toggleShowInfo('${client.uuid}')" class="view-button eye-toggle">
-                        <i class="fas fa-eye${client.show_info ? '' : '-slash'} ${client.show_info ? 'text-green-400' : 'text-gray-500'}"></i>
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button class="play-button" ${client.playback_status === 'playing' ? 'disabled' : `onclick="restartPlayback('${client.uuid}')"`}>
+                            <i class="fas ${client.playback_status === 'playing' ? 'fa-play' : 'fa-stop'} ${client.playback_status === 'playing' ? 'text-green-400' : 'text-red-500'}"></i>
+                        </button>
+                        <button onclick="toggleShowInfo('${client.uuid}')" class="view-button eye-toggle">
+                            <i class="fas fa-eye${client.show_info ? '' : '-slash'} ${client.show_info ? 'text-green-400' : 'text-gray-500'}"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="mb-2">
                     <div class="text-lg font-medium text-gray-100 name-display" onclick="editName(this, '${client.uuid}')">${client.name}</div>
@@ -39,7 +44,6 @@ async function loadClients() {
                 </div>
             `;
 
-            // Обновляем select
             let option = clientSelect.querySelector(`option[value="${client.uuid}"]`);
             if (!option) {
                 option = document.createElement('option');
@@ -49,7 +53,6 @@ async function loadClients() {
             option.textContent = client.name;
         });
 
-        // Удаляем старые карточки
         existingCards.forEach(card => {
             if (!clients.some(c => c.uuid === card.getAttribute('data-uuid'))) {
                 card.remove();
@@ -60,7 +63,6 @@ async function loadClients() {
                 opt.remove();
             }
         });
-
     } catch (err) {
         console.error('Ошибка загрузки клиентов:', err);
     }
@@ -87,7 +89,6 @@ async function toggleShowInfo(uuid) {
         });
         const result = await response.json();
         if (!result.error) {
-            // Обновляем только иконку
             if (isCurrentlyOn) {
                 icon.classList.remove('fa-eye', 'text-green-400');
                 icon.classList.add('fa-eye-slash', 'text-gray-500');
@@ -98,6 +99,26 @@ async function toggleShowInfo(uuid) {
         }
     } catch (err) {
         console.error('Ошибка переключения:', err);
+    }
+}
+
+async function restartPlayback(uuid) {
+    try {
+        const response = await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'restart_playback', uuid })
+        });
+        const result = await response.json();
+        if (!result.error) {
+            showNotification('Команда перезапуска отправлена', 'bg-green-500');
+            setTimeout(loadClients, 1000); // Обновляем карточки после перезапуска
+        } else {
+            showNotification('Ошибка отправки команды перезапуска', 'bg-red-500');
+        }
+    } catch (err) {
+        console.error('Ошибка перезапуска:', err);
+        showNotification('Ошибка перезапуска', 'bg-red-500');
     }
 }
 
@@ -161,9 +182,14 @@ async function updateClientStatuses() {
             if (client) {
                 const dot = card.querySelector('.status-dot');
                 const text = card.querySelector('.status-text');
+                const playButton = card.querySelector('.play-button');
+                const playIcon = playButton.querySelector('i');
                 dot.classList.remove('status-online', 'status-offline');
                 dot.classList.add(client.status === 'online' ? 'status-online' : 'status-offline');
                 text.textContent = formatLastSeen(client.last_seen);
+                playIcon.classList.remove('fa-play', 'fa-stop', 'text-green-400', 'text-red-500');
+                playIcon.classList.add(client.playback_status === 'playing' ? 'fa-play' : 'fa-stop', client.playback_status === 'playing' ? 'text-green-400' : 'text-red-500');
+                playButton.disabled = client.playback_status === 'playing';
             }
         });
     } catch (err) {
