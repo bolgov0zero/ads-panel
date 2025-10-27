@@ -167,33 +167,89 @@ try {
                 $row['status'] = (time() - $row['last_seen'] <= 5) ? 'online' : 'offline';
                 echo json_encode($row);
             } else {
-                echo json_encode(['error' => 'Клиент не найден']);
+                echo json_encode(['error' => 'Устройство не найдено']);
             }
+            break;
+
+        case 'update_client_name':
+            $uuid = $input['uuid'] ?? '';
+            $name = $input['name'] ?? 'Без имени';
+            if (empty($uuid)) {
+                echo json_encode(['error' => 'UUID не указан']);
+                break;
+            }
+            $stmt = $db->prepare("UPDATE clients SET name = :name WHERE uuid = :uuid");
+            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $stmt->bindValue(':name', $name, SQLITE3_TEXT);
+            $stmt->execute();
+            echo json_encode(['message' => 'Имя клиента обновлено']);
+            break;
+
+        case 'update_file_name':
+            $id = $input['id'] ?? 0;
+            $name = $input['name'] ?? '';
+            if ($id <= 0 || empty($name)) {
+                echo json_encode(['error' => 'Неверный ID или имя']);
+                break;
+            }
+            $stmt = $db->prepare("UPDATE files SET name = :name WHERE id = :id AND is_default = 0");
+            $stmt->bindValue(':name', $name, SQLITE3_TEXT);
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $stmt->execute();
+            echo json_encode(['message' => 'Имя файла обновлено']);
+            break;
+
+        case 'update_file_duration':
+            $id = $input['id'] ?? 0;
+            $duration = $input['duration'] ?? null;
+            if ($id <= 0) {
+                echo json_encode(['error' => 'Неверный ID']);
+                break;
+            }
+            $stmt = $db->prepare("UPDATE files SET duration = :duration WHERE id = :id AND type = 'pdf' AND is_default = 0");
+            $stmt->bindValue(':duration', $duration, $duration === null ? SQLITE3_NULL : SQLITE3_INTEGER);
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $stmt->execute();
+            echo json_encode(['message' => 'Продолжительность файла обновлена']);
+            break;
+
+        case 'list_files':
+            $result = $db->query("SELECT id, file_url, name, type, duration, order_num FROM files WHERE is_default = 0 ORDER BY order_num ASC");
+            $files = [];
+            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $files[] = $row;
+            }
+            echo json_encode($files);
             break;
 
         case 'list_clients':
             $result = $db->query("SELECT uuid, name, show_info, COALESCE(last_seen, 0) AS last_seen FROM clients");
             $clients = [];
             while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $row['last_seen'] = (int)$row['last_seen'];
+                $stmt = $db->prepare("SELECT content_id, content_type FROM client_content WHERE uuid = :uuid");
+                $stmt->bindValue(':uuid', $row['uuid'], SQLITE3_TEXT);
+                $contentResult = $stmt->execute();
+                $content = [];
+                while ($c = $contentResult->fetchArray(SQLITE3_ASSOC)) {
+                    $content[] = ['id' => $c['content_id'], 'type' => $c['content_type']];
+                }
+                $row['last_seen'] = (int)$row['last_seen']; // Гарантируем число
                 $row['status'] = (time() - $row['last_seen'] <= 5) ? 'online' : 'offline';
-                $clients[] = $row;
+                $clients[] = [
+                    'uuid' => $row['uuid'],
+                    'name' => $row['name'],
+                    'show_info' => $row['show_info'],
+                    'content' => $content,
+                    'status' => $row['status'],
+                    'last_seen' => $row['last_seen']
+                ];
             }
             echo json_encode($clients);
             break;
 
         case 'count_clients':
             $result = $db->querySingle("SELECT COUNT(*) FROM clients");
-            echo json_encode(['count' => (int)$result]);
-            break;
-
-        case 'list_files':
-            $result = $db->query("SELECT id, file_url, name, type, duration, order_num, is_default FROM files ORDER BY order_num ASC");
-            $files = [];
-            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $files[] = $row;
-            }
-            echo json_encode($files);
+            echo json_encode(['count' => $result]);
             break;
 
         case 'list_client_content':
@@ -204,9 +260,9 @@ try {
             }
             $stmt = $db->prepare("
                 SELECT f.id, f.file_url, f.name, f.order_num, f.type, f.duration
-                FROM client_content cc
-                JOIN files f ON cc.content_id = f.id AND cc.content_type = f.type
-                WHERE cc.uuid = :uuid
+                FROM files f
+                JOIN client_content cc ON f.id = cc.content_id AND cc.content_type = f.type
+                WHERE cc.uuid = :uuid AND f.is_default = 0
                 ORDER BY f.order_num ASC
             ");
             $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
@@ -370,6 +426,20 @@ try {
             $settings = $result->fetchArray(SQLITE3_ASSOC);
             $bot_token = $settings['bot_token'] ?? '';
             $chat_id = $settings['chat_id'] ?? '';
+            $result = sendTelegramMessage($bot_token, $chat_id, 'Ads Panel. Тестовое сообщение.');
+            if (isset($result['error'])) {
+                echo json_encode(['error' => $result['error']]);
+            } else {
+                echo json_encode(['message' => 'Тестовое сообщение отправлено']);
+            }
+            break;
+            
+        case 'send_test_telegram_message':
+            $stmt = $db->prepare("SELECT bot_token, chat_id FROM telegram_settings WHERE id = 1");
+            $result = $stmt->execute();
+            $settings = $result->fetchArray(SQLITE3_ASSOC);
+            $bot_token = $settings['bot_token'] ?? '';
+            $chat_id = $settings['chat_id'] ?? '';
             $stmt = $db->prepare("SELECT system_name FROM system_settings WHERE id = 1");
             $result = $stmt->execute();
             $system_settings = $result->fetchArray(SQLITE3_ASSOC);
@@ -381,7 +451,7 @@ try {
                 echo json_encode(['message' => 'Тестовое сообщение отправлено']);
             }
             break;
-
+        
         case 'get_system_name':
             $stmt = $db->prepare("SELECT system_name FROM system_settings WHERE id = 1");
             $result = $stmt->execute();
@@ -391,7 +461,7 @@ try {
                 echo json_encode(['system_name' => 'Ads Panel']);
             }
             break;
-
+        
         case 'update_system_name':
             $system_name = $input['system_name'] ?? '';
             if (empty($system_name)) {
