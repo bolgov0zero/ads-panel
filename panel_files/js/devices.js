@@ -115,12 +115,21 @@ async function restartPlayback(uuid) {
         const result = await response.json();
         if (!result.error) {
             showNotification('Команда перезапуска отправлена', 'bg-green-500');
-            // Обновляем карточки с задержкой
-            setTimeout(() => {
-                loadClients();
-                updateClientStatuses();
+            // Обновляем карточки и статусы с небольшой задержкой
+            setTimeout(async () => {
+                await loadClients();
+                await updateClientStatuses();
+                // Принудительно сбрасываем статус кнопки
+                const card = document.querySelector(`.client-card[data-uuid="${uuid}"]`);
+                if (card) {
+                    const playButton = card.querySelector('.play-button');
+                    const playIcon = playButton.querySelector('i');
+                    playButton.disabled = false; // Активируем кнопку
+                    playIcon.classList.remove('fa-play', 'text-green-400');
+                    playIcon.classList.add('fa-stop', 'text-red-500');
+                }
                 console.log('Карточки и статусы обновлены после перезапуска для UUID:', uuid);
-            }, 2000);
+            }, 1000); // Уменьшена задержка для более быстрого обновления
         } else {
             showNotification('Ошибка отправки команды перезапуска: ' + result.error, 'bg-red-500');
         }
