@@ -42,7 +42,7 @@ function sendTelegramMessage($botToken, $chatId, $message) {
 }
 
 // Функция проверки новой версии
-function checkForNewVersion($db, $bot_token, $chat_id) {
+function checkForNewVersion($db, $bot_token, $chat_id, $system_name) {
     global $log_file, $version_check_interval;
 
     try {
@@ -96,7 +96,7 @@ function checkForNewVersion($db, $bot_token, $chat_id) {
 
         // Сравниваем версии
         if (version_compare($github_version, $local_version) > 0 && $github_version_raw !== $last_notified_version) {
-            $message = "🆕 <b>Доступна новая версия!</b>\n\n<b>Локальная:</b> <code>$local_version_raw</code>\n<b>GitHub:</b> <code>$github_version_raw</code>";
+            $message = "🆕 <b>Доступна новая версия!</b>\n\n<b>Система:</b> <i>$system_name</i>\n<b>Локальная версия:</b> <code>$local_version_raw</code>\n<b>GitHub:</b> <code>$github_version_raw</code>";
             if (!empty($bot_token) && !empty($chat_id)) {
                 if (sendTelegramMessage($bot_token, $chat_id, $message)) {
                     // Обновляем последнюю уведомленную версию и время проверки
@@ -146,6 +146,17 @@ try {
     $chat_id = $telegram_settings['chat_id'] ?? '';
     logMessage("Загружены настройки Telegram: bot_token=" . ($bot_token ? 'установлен' : 'пустой') . ", chat_id=" . ($chat_id ? 'установлен' : 'пустой'));
 
+    // Загружаем имя системы
+    $stmt = $db->prepare("SELECT system_name FROM system_settings WHERE id = 1");
+    if (!$stmt) {
+        logMessage("Ошибка подготовки запроса к system_settings: " . $db->lastErrorMsg());
+        throw new Exception("Не удалось загрузить имя системы");
+    }
+    $result = $stmt->execute();
+    $system_settings = $result->fetchArray(SQLITE3_ASSOC);
+    $system_name = $system_settings['system_name'] ?? 'Ads Panel';
+    logMessage("Загружено имя системы: $system_name");
+
     // Проверяем настройки Telegram
     if (empty($bot_token) || empty($chat_id)) {
         logMessage("Предупреждение: Настройки Telegram не заполнены, уведомления не будут отправляться");
@@ -158,7 +169,7 @@ try {
         logMessage("Начало цикла проверки статусов устройств");
 
         // Проверяем версию
-        checkForNewVersion($db, $bot_token, $chat_id);
+        checkForNewVersion($db, $bot_token, $chat_id, $system_name);
 
         // Получаем текущие статусы устройств
         $result = $db->query("SELECT uuid, name, COALESCE(last_seen, 0) AS last_seen FROM clients");
@@ -182,9 +193,9 @@ try {
             if ($previous_status !== null && $previous_status !== $client['status']) {
                 // Статус изменился
                 if ($client['status'] === 'online') {
-                    $message = "<b>Статус:</b> 🟢 в сети\n\n<b>Имя:</b> <i>{$client['name']}</i>\n<b>UUID:</b> <code>{$uuid}</code>";
+                    $message = "<b>Статус:</b> 🟢 в сети\n\n<b>Система:</b> <i>$system_name</i>\n<b>Имя устройства:</b> <i>{$client['name']}</i>\n<b>UUID:</b> <code>{$uuid}</code>";
                 } else {
-                    $message = "<b>Статус:</b> 🔴 не в сети\n\n<b>Имя:</b> <i>{$client['name']}</i>\n<b>UUID:</b> <code>{$uuid}</code>";
+                    $message = "<b>Статус:</b> 🔴 не в сети\n\n<b>Система:</b> <i>$system_name</i>\n<b>Имя устройства:</b> <i>{$client['name']}</i>\n<b>UUID:</b> <code>{$uuid}</code>";
                 }
                 logMessage("Обнаружено изменение статуса для UUID: $uuid, Новый статус: {$client['status']}, Сообщение: $message");
                 if (!empty($bot_token) && !empty($chat_id)) {
