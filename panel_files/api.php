@@ -35,7 +35,7 @@ try {
     $action = $_POST['action'] ?? $_GET['action'] ?? $input['action'] ?? '';
 
     // Обновление времени последнего запроса для действий, связанных с клиентом
-    if (in_array($action, ['add_client', 'get_client_info', 'list_client_content', 'update_playback_status', 'restart_playback'])) {
+    if (in_array($action, ['add_client', 'get_client_info', 'list_client_content'])) {
         $uuid = $_GET['uuid'] ?? $input['uuid'] ?? '';
         if (!empty($uuid)) {
             $stmt = $db->prepare("UPDATE clients SET last_seen = :last_seen WHERE uuid = :uuid");
@@ -102,63 +102,6 @@ try {
             echo json_encode(['message' => 'Отображение UUID обновлено']);
             break;
 
-        case 'update_playback_status':
-            $uuid = $input['uuid'] ?? '';
-            $status = $input['status'] ?? 'playing';
-            if (empty($uuid)) {
-                echo json_encode(['error' => 'UUID не указан']);
-                break;
-            }
-            if (!in_array($status, ['playing', 'stalled'])) {
-                echo json_encode(['error' => 'Неверный статус воспроизведения']);
-                break;
-            }
-            $stmt = $db->prepare("UPDATE clients SET playback_status = :status WHERE uuid = :uuid");
-            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
-            $stmt->bindValue(':status', $status, SQLITE3_TEXT);
-            $stmt->execute();
-            echo json_encode(['message' => 'Статус воспроизведения обновлён']);
-            break;
-
-        case 'restart_playback':
-            $uuid = $input['uuid'] ?? '';
-            if (empty($uuid)) {
-                echo json_encode(['error' => 'UUID не указан']);
-                break;
-            }
-            $stmt = $db->prepare("UPDATE clients SET playback_status = 'restart' WHERE uuid = :uuid");
-            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
-            $stmt->execute();
-            echo json_encode(['message' => 'Команда перезапуска отправлена']);
-            break;
-
-        case 'get_client_info':
-            $uuid = $_GET['uuid'] ?? '';
-            if (empty($uuid)) {
-                echo json_encode(['error' => 'UUID не указан']);
-                break;
-            }
-            $stmt = $db->prepare("SELECT name, show_info, last_seen, playback_status FROM clients WHERE uuid = :uuid");
-            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
-            $result = $stmt->execute();
-            if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $row['status'] = (time() - $row['last_seen']) <= 5 ? 'online' : 'offline';
-                echo json_encode($row);
-            } else {
-                echo json_encode(['error' => 'Клиент не найден']);
-            }
-            break;
-
-        case 'list_clients':
-            $result = $db->query("SELECT uuid, name, show_info, last_seen, playback_status FROM clients");
-            $clients = [];
-            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $row['status'] = (time() - $row['last_seen']) <= 5 ? 'online' : 'offline';
-                $clients[] = $row;
-            }
-            echo json_encode($clients);
-            break;
-
         case 'scan_files':
             $uploadDir = '/opt/ads/';
             if (!is_dir($uploadDir)) {
@@ -174,7 +117,7 @@ try {
                     $fileFile = $uploadDir . $file;
                     $fileUrl = '/files/' . $file;
                     $name = $file;
-                    $duration = $fileType === 'pdf' ? 5 : null;
+                    $duration = $fileType === 'pdf' ? 5 : null; // По умолчанию 5 секунд для PDF
                     $stmt = $db->prepare("SELECT COUNT(*) FROM files WHERE file_url = :url");
                     $stmt->bindValue(':url', $fileUrl, SQLITE3_TEXT);
                     $result = $stmt->execute()->fetchArray(SQLITE3_NUM)[0];
@@ -189,110 +132,43 @@ try {
                     }
                 }
             }
-            echo json_encode(['message' => "Найдено новых файлов: $newFiles"]);
-            break;
-
-        case 'list_files':
-            $search = $_GET['search'] ?? '';
-            $query = "SELECT id, file_url, name, type, duration, order_num, is_default FROM files";
-            if ($search) {
-                $query .= " WHERE name LIKE :search";
-            }
-            $query .= " ORDER BY order_num ASC";
-            $stmt = $db->prepare($query);
-            if ($search) {
-                $stmt->bindValue(':search', "%$search%", SQLITE3_TEXT);
-            }
-            $result = $stmt->execute();
-            $files = [];
-            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $files[] = $row;
-            }
-            echo json_encode($files);
-            break;
-
-        case 'delete_file':
-            $id = $input['id'] ?? 0;
-            if ($id <= 0) {
-                echo json_encode(['error' => 'ID файла не указан']);
-                break;
-            }
-            $stmt = $db->prepare("SELECT file_url, is_default FROM files WHERE id = :id");
-            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
-            $result = $stmt->execute();
-            $file = $result->fetchArray(SQLITE3_ASSOC);
-            if (!$file) {
-                echo json_encode(['error' => 'Файл не найден']);
-                break;
-            }
-            if ($file['is_default']) {
-                echo json_encode(['error' => 'Системный файл не может быть удалён']);
-                break;
-            }
-            $filePath = '/opt/ads/' . basename($file['file_url']);
-            $stmt = $db->prepare("DELETE FROM files WHERE id = :id");
-            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
-            $stmt->execute();
-            $stmt = $db->prepare("DELETE FROM client_content WHERE content_id = :id");
-            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
-            $stmt->execute();
-            if (file_exists($filePath)) {
-                unlink($filePath);
-            }
-            echo json_encode(['message' => 'Файл удалён']);
-            break;
-
-        case 'update_file_duration':
-            $id = $input['id'] ?? 0;
-            $duration = $input['duration'] ?? null;
-            if ($id <= 0) {
-                echo json_encode(['error' => 'ID файла не указан']);
-                break;
-            }
-            $stmt = $db->prepare("UPDATE files SET duration = :duration WHERE id = :id AND type = 'pdf'");
-            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
-            $stmt->bindValue(':duration', $duration, $duration === null ? SQLITE3_NULL : SQLITE3_INTEGER);
-            $stmt->execute();
-            echo json_encode(['message' => 'Длительность обновлена']);
-            break;
-
-        case 'update_file_order':
-            $files = $input['files'] ?? [];
-            foreach ($files as $index => $file) {
-                $stmt = $db->prepare("UPDATE files SET order_num = :order WHERE id = :id");
-                $stmt->bindValue(':id', $file['id'], SQLITE3_INTEGER);
-                $stmt->bindValue(':order', $index + 1, SQLITE3_INTEGER);
-                $stmt->execute();
-            }
-            echo json_encode(['message' => 'Порядок файлов обновлён']);
+            echo json_encode(['message' => "Добавлено новых файлов: $newFiles"]);
             break;
 
         case 'add_client':
             $uuid = $input['uuid'] ?? '';
+            $name = $input['name'] ?? 'Без имени';
+            $show_info = isset($input['show_info']) ? (int)$input['show_info'] : 1; // По умолчанию показываем
             if (empty($uuid)) {
                 echo json_encode(['error' => 'UUID не указан']);
                 break;
             }
-            $stmt = $db->prepare("INSERT OR IGNORE INTO clients (uuid, name, show_info, last_seen, playback_status) VALUES (:uuid, 'Без имени', 1, :last_seen, 'playing')");
+            // Вставка клиента
+            $stmt = $db->prepare("INSERT OR REPLACE INTO clients (uuid, name, show_info, last_seen) VALUES (:uuid, :name, :show_info, :last_seen)");
             $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $stmt->bindValue(':name', $name, SQLITE3_TEXT);
+            $stmt->bindValue(':show_info', $show_info, SQLITE3_INTEGER);
             $stmt->bindValue(':last_seen', time(), SQLITE3_INTEGER);
             $stmt->execute();
-            echo json_encode(['message' => 'Клиент добавлен']);
+            echo json_encode(['message' => 'Клиент создан']);
             break;
 
-        case 'delete_client':
-            $uuid = $input['uuid'] ?? '';
+        case 'get_client_info':
+            $uuid = $_GET['uuid'] ?? '';
             if (empty($uuid)) {
                 echo json_encode(['error' => 'UUID не указан']);
                 break;
             }
-            $stmt = $db->prepare("DELETE FROM clients WHERE uuid = :uuid");
+            $stmt = $db->prepare("SELECT uuid, name, show_info, COALESCE(last_seen, 0) AS last_seen FROM clients WHERE uuid = :uuid");
             $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
-            $stmt->execute();
-            $stmt = $db->prepare("DELETE FROM client_content WHERE uuid = :uuid");
-            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
-            $stmt->execute();
-            echo json_encode(['message' => 'Клиент удалён']);
+            $result = $stmt->execute();
+            if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $row['last_seen'] = (int)$row['last_seen']; // Гарантируем число
+                $row['status'] = (time() - $row['last_seen'] <= 5) ? 'online' : 'offline';
+                echo json_encode($row);
+            } else {
+                echo json_encode(['error' => 'Устройство не найдено']);
+            }
             break;
 
         case 'update_client_name':
@@ -309,6 +185,73 @@ try {
             echo json_encode(['message' => 'Имя клиента обновлено']);
             break;
 
+        case 'update_file_name':
+            $id = $input['id'] ?? 0;
+            $name = $input['name'] ?? '';
+            if ($id <= 0 || empty($name)) {
+                echo json_encode(['error' => 'Неверный ID или имя']);
+                break;
+            }
+            $stmt = $db->prepare("UPDATE files SET name = :name WHERE id = :id AND is_default = 0");
+            $stmt->bindValue(':name', $name, SQLITE3_TEXT);
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $stmt->execute();
+            echo json_encode(['message' => 'Имя файла обновлено']);
+            break;
+
+        case 'update_file_duration':
+            $id = $input['id'] ?? 0;
+            $duration = $input['duration'] ?? null;
+            if ($id <= 0) {
+                echo json_encode(['error' => 'Неверный ID']);
+                break;
+            }
+            $stmt = $db->prepare("UPDATE files SET duration = :duration WHERE id = :id AND type = 'pdf' AND is_default = 0");
+            $stmt->bindValue(':duration', $duration, $duration === null ? SQLITE3_NULL : SQLITE3_INTEGER);
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $stmt->execute();
+            echo json_encode(['message' => 'Продолжительность файла обновлена']);
+            break;
+
+        case 'list_files':
+            $result = $db->query("SELECT id, file_url, name, type, duration, order_num FROM files WHERE is_default = 0 ORDER BY order_num ASC");
+            $files = [];
+            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $files[] = $row;
+            }
+            echo json_encode($files);
+            break;
+
+        case 'list_clients':
+            $result = $db->query("SELECT uuid, name, show_info, COALESCE(last_seen, 0) AS last_seen FROM clients");
+            $clients = [];
+            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $stmt = $db->prepare("SELECT content_id, content_type FROM client_content WHERE uuid = :uuid");
+                $stmt->bindValue(':uuid', $row['uuid'], SQLITE3_TEXT);
+                $contentResult = $stmt->execute();
+                $content = [];
+                while ($c = $contentResult->fetchArray(SQLITE3_ASSOC)) {
+                    $content[] = ['id' => $c['content_id'], 'type' => $c['content_type']];
+                }
+                $row['last_seen'] = (int)$row['last_seen']; // Гарантируем число
+                $row['status'] = (time() - $row['last_seen'] <= 5) ? 'online' : 'offline';
+                $clients[] = [
+                    'uuid' => $row['uuid'],
+                    'name' => $row['name'],
+                    'show_info' => $row['show_info'],
+                    'content' => $content,
+                    'status' => $row['status'],
+                    'last_seen' => $row['last_seen']
+                ];
+            }
+            echo json_encode($clients);
+            break;
+
+        case 'count_clients':
+            $result = $db->querySingle("SELECT COUNT(*) FROM clients");
+            echo json_encode(['count' => $result]);
+            break;
+
         case 'list_client_content':
             $uuid = $_GET['uuid'] ?? '';
             if (empty($uuid)) {
@@ -316,11 +259,11 @@ try {
                 break;
             }
             $stmt = $db->prepare("
-                SELECT f.id, f.file_url, f.name, f.type, f.duration
-                FROM client_content cc
-                JOIN files f ON cc.content_id = f.id AND cc.content_type = f.type
-                WHERE cc.uuid = :uuid
-                ORDER BY f.order_num
+                SELECT f.id, f.file_url, f.name, f.order_num, f.type, f.duration
+                FROM files f
+                JOIN client_content cc ON f.id = cc.content_id AND cc.content_type = f.type
+                WHERE cc.uuid = :uuid AND f.is_default = 0
+                ORDER BY f.order_num ASC
             ");
             $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
             $result = $stmt->execute();
@@ -328,32 +271,74 @@ try {
             while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
                 $content[] = $row;
             }
-            echo json_encode($content);
-            break;
-
-        case 'list_all_client_content':
-            $result = $db->query("
-                SELECT cc.uuid, f.id, f.file_url, f.name, f.type, f.duration
-                FROM client_content cc
-                JOIN files f ON cc.content_id = f.id AND cc.content_type = f.type
-                ORDER BY cc.uuid, f.order_num
-            ");
-            $content = [];
-            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $content[] = $row;
+            // Если контента нет, возвращаем ads.pdf
+            if (empty($content)) {
+                $stmt = $db->prepare("SELECT id, file_url, name, order_num, type, duration FROM files WHERE is_default = 1");
+                $result = $stmt->execute();
+                if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                    $content[] = $row;
+                }
             }
             echo json_encode($content);
             break;
 
-        case 'toggle_client_content':
+        case 'update_file_order':
+            $id = $input['id'] ?? 0;
+            $order = $input['order'] ?? 0;
+            if ($id <= 0 || $order < 0) {
+                echo json_encode(['error' => 'Неверный ID или порядок']);
+                break;
+            }
+            $stmt = $db->prepare("UPDATE files SET order_num = :order WHERE id = :id AND is_default = 0");
+            $stmt->bindValue(':order', $order, SQLITE3_INTEGER);
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $stmt->execute();
+            echo json_encode(['message' => 'Порядок файла обновлён']);
+            break;
+
+        case 'delete_file':
+            $id = $input['id'] ?? 0;
+            if ($id <= 0) {
+                echo json_encode(['error' => 'Неверный ID файла']);
+                break;
+            }
+            $stmt = $db->prepare("SELECT file_url FROM files WHERE id = :id AND is_default = 0");
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $result = $stmt->execute();
+            if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $filePath = str_replace('/files/', '/opt/ads/', $row['file_url']);
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
+                $db->exec("DELETE FROM files WHERE id = $id");
+                $db->exec("DELETE FROM client_content WHERE content_id = $id");
+                echo json_encode(['message' => 'Файл удалён']);
+            } else {
+                echo json_encode(['error' => 'Файл не найден или является системным']);
+            }
+            break;
+
+        case 'delete_client':
+            $uuid = $input['uuid'] ?? '';
+            if (empty($uuid)) {
+                echo json_encode(['error' => 'UUID не указан']);
+                break;
+            }
+            $db->exec("DELETE FROM clients WHERE uuid = '$uuid'");
+            $db->exec("DELETE FROM client_content WHERE uuid = '$uuid'");
+            echo json_encode(['message' => 'Клиент удалён']);
+            break;
+
+        case 'update_client_content':
             $uuid = $input['uuid'] ?? '';
             $content_id = $input['content_id'] ?? 0;
             $content_type = $input['content_type'] ?? 'video';
-            $enabled = isset($input['enabled']) ? (int)$input['enabled'] : 0;
+            $enabled = $input['enabled'] ?? false;
             if (empty($uuid) || $content_id <= 0) {
-                echo json_encode(['error' => 'UUID или ID контента не указаны']);
+                echo json_encode(['error' => 'Неверный UUID или content_id']);
                 break;
             }
+            // Проверяем, что content_id не является системным файлом
             $stmt = $db->prepare("SELECT is_default FROM files WHERE id = :id");
             $stmt->bindValue(':id', $content_id, SQLITE3_INTEGER);
             $result = $stmt->execute();
@@ -411,7 +396,7 @@ try {
                 echo json_encode(['enabled' => 0, 'text' => '', 'color' => '#ffffff', 'font_size' => 24, 'speed' => 100, 'bold' => 0, 'background_color' => '#000000']);
             }
             break;
-
+            
         case 'get_system_name':
             $stmt = $db->prepare("SELECT system_name FROM system_settings WHERE id = 1");
             $result = $stmt->execute();
@@ -421,7 +406,7 @@ try {
                 echo json_encode(['system_name' => 'Ads Panel']);
             }
             break;
-
+        
         case 'update_system_name':
             $system_name = $input['system_name'] ?? 'Ads Panel';
             $stmt = $db->prepare("
@@ -432,7 +417,7 @@ try {
             $stmt->execute();
             echo json_encode(['message' => 'Имя системы обновлено']);
             break;
-
+        
         case 'get_telegram_settings':
             $stmt = $db->prepare("SELECT bot_token, chat_id FROM telegram_settings WHERE id = 1");
             $result = $stmt->execute();
@@ -442,7 +427,7 @@ try {
                 echo json_encode(['bot_token' => '', 'chat_id' => '']);
             }
             break;
-
+        
         case 'update_telegram_settings':
             $bot_token = $input['bot_token'] ?? '';
             $chat_id = $input['chat_id'] ?? '';
@@ -455,7 +440,7 @@ try {
             $stmt->execute();
             echo json_encode(['message' => 'Настройки Telegram обновлены']);
             break;
-
+        
         case 'send_test_telegram_message':
             $stmt = $db->prepare("SELECT bot_token, chat_id FROM telegram_settings WHERE id = 1");
             $result = $stmt->execute();
@@ -472,6 +457,64 @@ try {
             } else {
                 echo json_encode(['message' => 'Тестовое сообщение отправлено']);
             }
+            break;
+            
+        case 'update_playback_status':
+            $uuid = $input['uuid'] ?? '';
+            $status = $input['status'] ?? 'playing';
+            if (empty($uuid)) {
+                echo json_encode(['error' => 'UUID не указан']);
+                break;
+            }
+            if (!in_array($status, ['playing', 'stalled'])) {
+                echo json_encode(['error' => 'Неверный статус воспроизведения']);
+                break;
+            }
+            $stmt = $db->prepare("UPDATE clients SET playback_status = :status WHERE uuid = :uuid");
+            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $stmt->bindValue(':status', $status, SQLITE3_TEXT);
+            $stmt->execute();
+            echo json_encode(['message' => 'Статус воспроизведения обновлён']);
+            break;
+        
+        case 'restart_playback':
+            $uuid = $input['uuid'] ?? '';
+            if (empty($uuid)) {
+                echo json_encode(['error' => 'UUID не указан']);
+                break;
+            }
+            // Устанавливаем флаг перезапуска (например, временное поле)
+            $stmt = $db->prepare("UPDATE clients SET playback_status = 'restart' WHERE uuid = :uuid");
+            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $stmt->execute();
+            echo json_encode(['message' => 'Команда перезапуска отправлена']);
+            break;
+        
+        case 'get_client_info':
+            $uuid = $_GET['uuid'] ?? '';
+            if (empty($uuid)) {
+                echo json_encode(['error' => 'UUID не указан']);
+                break;
+            }
+            $stmt = $db->prepare("SELECT name, show_info, last_seen, playback_status FROM clients WHERE uuid = :uuid");
+            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $result = $stmt->execute();
+            if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $row['status'] = (time() - $row['last_seen']) <= 5 ? 'online' : 'offline';
+                echo json_encode($row);
+            } else {
+                echo json_encode(['error' => 'Клиент не найден']);
+            }
+            break;
+        
+        case 'list_clients':
+            $result = $db->query("SELECT uuid, name, show_info, last_seen, playback_status FROM clients");
+            $clients = [];
+            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $row['status'] = (time() - $row['last_seen']) <= 5 ? 'online' : 'offline';
+                $clients[] = $row;
+            }
+            echo json_encode($clients);
             break;
 
         default:
