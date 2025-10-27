@@ -185,6 +185,9 @@ async function updateClientStatuses() {
         const response = await fetch('api.php?action=list_clients', {
             headers: { 'Cache-Control': 'no-cache' }
         });
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
         const clients = await response.json();
         document.querySelectorAll('.client-card').forEach(card => {
             const uuid = card.getAttribute('data-uuid');

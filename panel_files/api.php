@@ -242,14 +242,15 @@ try {
             break;
 
         case 'list_clients':
-        $result = $db->query("SELECT uuid, name, show_info, last_seen, playback_status FROM clients");
-        $clients = [];
-        while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-            $row['status'] = (time() - $row['last_seen']) <= 5 ? 'online' : 'offline';
-            $clients[] = $row;
-        }
-        echo json_encode($clients);
-        break;
+            $result = $db->query("SELECT uuid, name, show_info, last_seen, playback_status FROM clients");
+            $clients = [];
+            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $row['status'] = (time() - $row['last_seen']) <= 5 ? 'online' : 'offline';
+                $clients[] = $row;
+            }
+            echo json_encode($clients);
+            logMessage("Список клиентов возвращён, количество: " . count($clients) . ", статусы: " . json_encode(array_map(function($c) { return $c['playback_status']; }, $clients)));
+            break;
 
         case 'count_clients':
             $result = $db->querySingle("SELECT COUNT(*) FROM clients");

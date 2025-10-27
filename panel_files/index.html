@@ -182,7 +182,7 @@ video.addEventListener('timeupdate', () => {
         playbackStatus = 'playing';
         updatePlaybackStatus();
     }
-    console.log('Видео timeupdate, текущее время:', video.currentTime);
+    console.log('Видео timeupdate, текущее время:', video.currentTime, 'статус:', playbackStatus);
 });
 
 video.addEventListener('pause', () => {
@@ -208,21 +208,32 @@ async function updatePlaybackStatus() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'update_playback_status', uuid, status: playbackStatus })
         });
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
         const result = await response.json();
-        console.log('Статус воспроизведения обновлён:', result);
+        if (result.error) {
+            console.error('Ошибка обновления статуса:', result.error);
+        } else {
+            console.log('Статус воспроизведения обновлён:', playbackStatus);
+        }
     } catch (err) {
-        console.error('Ошибка обновления статуса воспроизведения:', err);
+        console.error('Ошибка отправки статуса воспроизведения:', err);
     }
 }
 
 // Проверка зависания видео
 function checkVideoStall() {
-    if (video.src && !video.paused && !video.ended && (Date.now() - lastTimeUpdate > 2000)) {
-        if (playbackStatus !== 'stalled') {
+    if (video.src && !video.paused && !video.ended && video.readyState >= 2) {
+        if (Date.now() - lastTimeUpdate > 2000 && playbackStatus !== 'stalled') {
             playbackStatus = 'stalled';
             updatePlaybackStatus();
             console.log('Обнаружено зависание видео, статус:', playbackStatus);
         }
+    } else if (video.src && playbackStatus === 'playing') {
+        // Подтверждаем playing, если видео активно
+        updatePlaybackStatus();
+        console.log('Видео активно, подтверждён статус:', playbackStatus);
     }
 }
 

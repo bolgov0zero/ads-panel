@@ -438,6 +438,7 @@ async function checkNewClients() {
             loadClients();
         } else if (!document.getElementById('clientTab').classList.contains('hidden')) {
             updateClientStatuses();
+            console.log('Обновлены статусы клиентов на вкладке устройств');
         }
     } catch (err) {
         console.error('Ошибка проверки новых устройств:', err);
