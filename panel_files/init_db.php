@@ -161,7 +161,6 @@ try {
                 }
             }
         ],
-        // Новая таблица для уведомлений о версиях
         'version_notifications' => [
             'create' => "
                 CREATE TABLE version_notifications (
@@ -178,6 +177,23 @@ try {
                 $result = $db->querySingle("SELECT COUNT(*) FROM version_notifications");
                 if ($result == 0) {
                     $db->exec("INSERT INTO version_notifications (id, last_notified_version, last_check_time) VALUES (1, '', 0)");
+                }
+            }
+        ],
+        'system_settings' => [
+            'create' => "
+                CREATE TABLE system_settings (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    system_name TEXT DEFAULT 'Ads Panel'
+                )",
+            'columns' => [
+                ['name' => 'id', 'type' => 'INTEGER', 'constraints' => 'PRIMARY KEY CHECK (id = 1)'],
+                ['name' => 'system_name', 'type' => 'TEXT', 'constraints' => 'DEFAULT \'Ads Panel\'']
+            ],
+            'initial_data' => function ($db) {
+                $result = $db->querySingle("SELECT COUNT(*) FROM system_settings");
+                if ($result == 0) {
+                    $db->exec("INSERT INTO system_settings (id, system_name) VALUES (1, 'Ads Panel')");
                 }
             }
         ]

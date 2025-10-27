@@ -245,6 +245,100 @@ async function checkAuth() {
     }
 }
 
+async function loadSystemName() {
+    try {
+        const response = await fetch('api.php?action=get_system_name');
+        const settings = await response.json();
+        console.log('Загружено имя системы:', settings);
+        document.getElementById('systemName').value = settings.system_name || 'Ads Panel';
+    } catch (err) {
+        console.error('Ошибка загрузки имени системы:', err);
+        showNotification('Ошибка загрузки имени системы', 'bg-red-500');
+    }
+}
+
+async function saveSystemName() {
+    try {
+        const system_name = document.getElementById('systemName').value;
+        const response = await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'update_system_name',
+                system_name
+            })
+        });
+        const result = await response.json();
+        if (result.error) {
+            console.error(result.error);
+            showNotification('Ошибка сохранения имени системы', 'bg-red-500');
+        } else {
+            showNotification('Имя системы сохранено');
+        }
+    } catch (err) {
+        console.error('Ошибка:', err);
+        showNotification('Ошибка сохранения имени системы', 'bg-red-500');
+    }
+}
+
+async function loadTelegramSettings() {
+    try {
+        const response = await fetch('api.php?action=get_telegram_settings');
+        const settings = await response.json();
+        console.log('Загружены настройки Telegram:', settings);
+        document.getElementById('telegramBotToken').value = settings.bot_token || '';
+        document.getElementById('telegramChatId').value = settings.chat_id || '';
+    } catch (err) {
+        console.error('Ошибка загрузки настроек Telegram:', err);
+    }
+}
+
+async function saveTelegramSettings() {
+    try {
+        const bot_token = document.getElementById('telegramBotToken').value;
+        const chat_id = document.getElementById('telegramChatId').value;
+        const response = await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'update_telegram_settings',
+                bot_token,
+                chat_id
+            })
+        });
+        const result = await response.json();
+        if (result.error) {
+            console.error(result.error);
+            showNotification('Ошибка сохранения настроек Telegram', 'bg-red-500');
+        } else {
+            showNotification('Настройки Telegram сохранены');
+        }
+    } catch (err) {
+        console.error('Ошибка:', err);
+        showNotification('Ошибка сохранения настроек Telegram', 'bg-red-500');
+    }
+}
+
+async function sendTestTelegramMessage() {
+    try {
+        const response = await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'send_test_telegram_message' })
+        });
+        const result = await response.json();
+        if (result.error) {
+            console.error(result.error);
+            showNotification(result.error, 'bg-red-500');
+        } else {
+            showNotification('Тестовое сообщение отправлено');
+        }
+    } catch (err) {
+        console.error('Ошибка:', err);
+        showNotification('Ошибка отправки тестового сообщения', 'bg-red-500');
+    }
+}
+
 function openTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
     document.querySelectorAll('.tab-button').forEach(btn => {
@@ -256,7 +350,8 @@ function openTab(tabId) {
     if (tabId === 'helpTab') {
         renderHelpContent();
     } else if (tabId === 'settingsTab') {
-        loadTelegramSettings(); // Загружаем настройки Telegram при открытии вкладки Настройки
+        loadTelegramSettings();
+        loadSystemName();
     }
 }
 
