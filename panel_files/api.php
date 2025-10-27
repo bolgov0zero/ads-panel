@@ -396,49 +396,12 @@ try {
                 echo json_encode(['enabled' => 0, 'text' => '', 'color' => '#ffffff', 'font_size' => 24, 'speed' => 100, 'bold' => 0, 'background_color' => '#000000']);
             }
             break;
-
-        case 'get_telegram_settings':
-            $stmt = $db->prepare("SELECT bot_token, chat_id FROM telegram_settings WHERE id = 1");
-            $result = $stmt->execute();
-            if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                echo json_encode($row);
-            } else {
-                echo json_encode(['bot_token' => '', 'chat_id' => '']);
-            }
-            break;
-
-        case 'update_telegram_settings':
-            $bot_token = $input['bot_token'] ?? '';
-            $chat_id = $input['chat_id'] ?? '';
-            $stmt = $db->prepare("
-                INSERT OR REPLACE INTO telegram_settings (id, bot_token, chat_id)
-                VALUES (1, :bot_token, :chat_id)
-            ");
-            $stmt->bindValue(':bot_token', $bot_token, SQLITE3_TEXT);
-            $stmt->bindValue(':chat_id', $chat_id, SQLITE3_TEXT);
-            $stmt->execute();
-            echo json_encode(['message' => 'Настройки Telegram обновлены']);
-            break;
-
-        case 'send_test_telegram_message':
-            $stmt = $db->prepare("SELECT bot_token, chat_id FROM telegram_settings WHERE id = 1");
-            $result = $stmt->execute();
-            $settings = $result->fetchArray(SQLITE3_ASSOC);
-            $bot_token = $settings['bot_token'] ?? '';
-            $chat_id = $settings['chat_id'] ?? '';
-            $result = sendTelegramMessage($bot_token, $chat_id, 'Ads Panel. Тестовое сообщение.');
-            if (isset($result['error'])) {
-                echo json_encode(['error' => $result['error']]);
-            } else {
-                echo json_encode(['message' => 'Тестовое сообщение отправлено']);
-            }
-            break;
             
         case 'get_system_name':
             $stmt = $db->prepare("SELECT system_name FROM system_settings WHERE id = 1");
             $result = $stmt->execute();
             if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                echo json_encode(['system_name' => $row['system_name']]);
+                echo json_encode($row);
             } else {
                 echo json_encode(['system_name' => 'Ads Panel']);
             }
@@ -453,6 +416,47 @@ try {
             $stmt->bindValue(':system_name', $system_name, SQLITE3_TEXT);
             $stmt->execute();
             echo json_encode(['message' => 'Имя системы обновлено']);
+            break;
+        
+        case 'get_telegram_settings':
+            $stmt = $db->prepare("SELECT bot_token, chat_id FROM telegram_settings WHERE id = 1");
+            $result = $stmt->execute();
+            if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                echo json_encode($row);
+            } else {
+                echo json_encode(['bot_token' => '', 'chat_id' => '']);
+            }
+            break;
+        
+        case 'update_telegram_settings':
+            $bot_token = $input['bot_token'] ?? '';
+            $chat_id = $input['chat_id'] ?? '';
+            $stmt = $db->prepare("
+                INSERT OR REPLACE INTO telegram_settings (id, bot_token, chat_id)
+                VALUES (1, :bot_token, :chat_id)
+            ");
+            $stmt->bindValue(':bot_token', $bot_token, SQLITE3_TEXT);
+            $stmt->bindValue(':chat_id', $chat_id, SQLITE3_TEXT);
+            $stmt->execute();
+            echo json_encode(['message' => 'Настройки Telegram обновлены']);
+            break;
+        
+        case 'send_test_telegram_message':
+            $stmt = $db->prepare("SELECT bot_token, chat_id FROM telegram_settings WHERE id = 1");
+            $result = $stmt->execute();
+            $settings = $result->fetchArray(SQLITE3_ASSOC);
+            $bot_token = $settings['bot_token'] ?? '';
+            $chat_id = $settings['chat_id'] ?? '';
+            $stmt = $db->prepare("SELECT system_name FROM system_settings WHERE id = 1");
+            $result = $stmt->execute();
+            $system_settings = $result->fetchArray(SQLITE3_ASSOC);
+            $system_name = $system_settings['system_name'] ?? 'Ads Panel';
+            $result = sendTelegramMessage($bot_token, $chat_id, "$system_name. Тестовое сообщение.");
+            if (isset($result['error'])) {
+                echo json_encode(['error' => $result['error']]);
+            } else {
+                echo json_encode(['message' => 'Тестовое сообщение отправлено']);
+            }
             break;
 
         default:
