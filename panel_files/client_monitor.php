@@ -103,10 +103,20 @@ function checkForNewVersion($db, $bot_token, $chat_id) {
 
         $github_version = ltrim(trim($github_version_raw), 'v');
         logMessage("Проверка версий: Локальная '$local_version_raw', GitHub '$github_version_raw'");
+        
+        // Скачиваем описание
+        $note_url = 'https://raw.githubusercontent.com/bolgov0zero/ads-panel/refs/heads/main/note';
+        $ch = curl_init($note_url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        $note_raw = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($ch);
+        curl_close($ch);
 
         // Сравниваем версии
         if (version_compare($github_version, $local_version) > 0 && $github_version_raw !== $last_notified_version) {
-            $message = "🆕 <b>Доступна новая версия!</b>\n\n<b>Система:</b> <i>$system_name</i>\n<b>Локальная:</b> <code>$local_version_raw</code>\n<b>GitHub:</b> <code>$github_version_raw</code>";
+            $message = "🆕 <b>Доступна новая версия!</b>\n\n<b>Система:</b> <i>$system_name</i>\n<b>Локальная:</b> <code>$local_version_raw</code>\n<b>GitHub:</b> <code>$github_version_raw</code>\n\n<b>Описание:</b> <code>$note_raw</code>";
             if (!empty($bot_token) && !empty($chat_id)) {
                 if (sendTelegramMessage($bot_token, $chat_id, $message)) {
                     // Обновляем последнюю уведомленную версию и время проверки
