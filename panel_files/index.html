@@ -509,7 +509,8 @@ loadMessageSettings();
 setInterval(() => {
     checkVideoStall();
     checkRestartCommand();
-}, 1000);
+    checkContent(); // Добавлено для периодической проверки обновлений контента
+}, 3000); // Каждые 3 секунды для синхронизации переключения
 </script>
 </body>
 </html>
