@@ -125,12 +125,14 @@ if [ -n "$REMOTE_VERSION" ] && [ -n "$LOCAL_VERSION" ]; then
 else
     echo -e "Версия: \e[31m[✗] не удалось проверить версию\e[0m"
 fi
+HOST_IP=$(hostname -I | awk '{print $1}')
 echo ""
 echo "1. Запустить"
 echo "2. Перезапустить"
 echo "3. Обновить"
 echo -e "4. \e[31mЗавершить\e[0m"
 echo ""
+echo -e "\e[32mПанель администратора:\e[0m https://${HOST_IP}/admin.html"
 echo -e "\e[33mИли нажмите Enter чтобы проверить обновления.\e[0m"
 read -p "Выберите опцию: " choice
 
