@@ -440,14 +440,25 @@ try {
             $settings = $result->fetchArray(SQLITE3_ASSOC);
             $bot_token = $settings['bot_token'] ?? '';
             $chat_id = $settings['chat_id'] ?? '';
+            // Логируем настройки Telegram
+            error_log("send_test_telegram_message: bot_token=" . ($bot_token ? 'установлен' : 'пустой') . ", chat_id=" . ($chat_id ? 'установлен' : 'пустой'));
+            if (empty($bot_token) || empty($chat_id)) {
+                echo json_encode(['error' => 'Настройки Telegram не заполнены']);
+                break;
+            }
             $stmt = $db->prepare("SELECT system_name FROM system_settings WHERE id = 1");
             $result = $stmt->execute();
             $system_settings = $result->fetchArray(SQLITE3_ASSOC);
             $system_name = $system_settings['system_name'] ?? 'Ads Panel';
-            $result = sendTelegramMessage($bot_token, $chat_id, "<b>$system_name</b>. Тестовое сообщение.");
+            // Логируем имя системы
+            error_log("send_test_telegram_message: system_name=$system_name");
+            $message = "<b>$system_name</b>. Тестовое сообщение.";
+            $result = sendTelegramMessage($bot_token, $chat_id, $message);
             if (isset($result['error'])) {
+                error_log("send_test_telegram_message: Ошибка отправки: " . $result['error']);
                 echo json_encode(['error' => $result['error']]);
             } else {
+                error_log("send_test_telegram_message: Сообщение отправлено: $message");
                 echo json_encode(['message' => 'Тестовое сообщение отправлено']);
             }
             break;
