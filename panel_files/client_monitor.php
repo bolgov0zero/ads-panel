@@ -91,69 +91,59 @@ function checkForNewVersion($db, $bot_token, $chat_id) {
         $system_settings = $result->fetchArray(SQLITE3_ASSOC);
         $system_name = $system_settings['system_name'] ?? 'Ads Panel';
 
-        // Получаем локальную версию
-        $local_version_file = '/var/www/html/version';
+        // Получаем локальную версию и заметку
+        $local_version_file = '/var/www/html/version_info.json';
         if (!file_exists($local_version_file)) {
-            logMessage("Ошибка: Файл локальной версии не найден: $local_version_file");
+            logMessage("Ошибка: Файл версии не найден: $local_version_file");
             return;
         }
-        $local_version_raw = trim(file_get_contents($local_version_file));
+        $local_data = json_decode(file_get_contents($local_version_file), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            logMessage("Ошибка декодирования локального JSON: " . json_last_error_msg());
+            return;
+        }
+        $local_version_raw = $local_data['version'] ?? '';
         $local_version = ltrim($local_version_raw, 'v');
-
+        $local_note = $local_data['note'] ?? '';
+        
         // Скачиваем версию с GitHub
-        $github_url = 'https://raw.githubusercontent.com/bolgov0zero/ads-panel/refs/heads/main/version';
+        $github_url = 'https://raw.githubusercontent.com/bolgov0zero/ads-panel/refs/heads/main/version_info.json';
         $ch = curl_init($github_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        $github_version_raw = curl_exec($ch);
+        $github_data_raw = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curl_error = curl_error($ch);
         curl_close($ch);
-
-        if ($httpCode !== 200 || empty($github_version_raw)) {
+        
+        if ($httpCode !== 200 || empty($github_data_raw)) {
             logMessage("Ошибка скачивания версии с GitHub: HTTP $httpCode, Ошибка: $curl_error");
             return;
         }
-
-        $github_version = ltrim(trim($github_version_raw), 'v');
+        
+        $github_data = json_decode($github_data_raw, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            logMessage("Ошибка декодирования GitHub JSON: " . json_last_error_msg());
+            return;
+        }
+        $github_version_raw = $github_data['version'] ?? '';
+        $github_version = ltrim($github_version_raw, 'v');
+        $github_note = $github_data['note'] ?? '';
+        
         logMessage("Проверка версий: Локальная '$local_version_raw', GitHub '$github_version_raw'");
-
-        // Скачиваем описание
-        $note_url = 'https://raw.githubusercontent.com/bolgov0zero/ads-panel/refs/heads/main/note';
-        $ch = curl_init($note_url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        $note_raw = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curl_error = curl_error($ch);
-        curl_close($ch);
-
+        
         // Сравниваем версии
         if (version_compare($github_version, $local_version) > 0 && $github_version_raw !== $last_notified_version) {
-            $message = "🆕 <b>Доступна новая версия!</b>\n\n<b>Система:</b> <i>$system_name</i>\n<b>Локальная:</b> <code>$local_version_raw</code>\n<b>GitHub:</b> <code>$github_version_raw</code>\n\n<b>Описание:</b>\n<code>$note_raw</code>";
+            $message = "🆕 <b>Доступна новая версия!</b>\n\n<b>Система:</b> <i>$system_name</i>\n<b>Локальная:</b> <code>$local_version_raw</code>\n<b>GitHub:</b> <code>$github_version_raw</code>\n\n<b>Описание:</b>\n<code>$github_note</code>";
             if (!empty($bot_token) && !empty($chat_id)) {
-                // Отправляем сообщение
                 if (sendTelegramMessage($bot_token, $chat_id, $message)) {
-                    // Обновляем последнюю уведомлённую версию только после успешной отправки
                     $update_stmt = $db->prepare("UPDATE version_notifications SET last_notified_version = :version, last_check_time = :time WHERE id = 1");
-                    if (!$update_stmt) {
-                        logMessage("Ошибка подготовки обновления version_notifications: " . $db->lastErrorMsg());
-                        return;
-                    }
                     $update_stmt->bindValue(':version', $github_version_raw, SQLITE3_TEXT);
                     $update_stmt->bindValue(':time', $current_time, SQLITE3_INTEGER);
-                    $result = $update_stmt->execute();
-                    if (!$result) {
-                        logMessage("Ошибка обновления version_notifications после отправки: " . $db->lastErrorMsg());
-                        return;
-                    }
+                    $update_stmt->execute();
                     logMessage("Уведомление о новой версии отправлено: $github_version_raw");
                 }
-            } else {
-                logMessage("Уведомление о новой версии не отправлено: отсутствуют настройки Telegram");
             }
-        } else {
-            logMessage("Новая версия не обнаружена или уже уведомлена: GitHub '$github_version_raw', Последняя уведомлённая '$last_notified_version'");
         }
     } catch (Exception $e) {
         logMessage("Ошибка в checkForNewVersion: " . $e->getMessage());

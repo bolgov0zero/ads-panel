@@ -7,10 +7,10 @@ const helpMarkdown = `
 
 async function loadVersion() {
     try {
-        const response = await fetch('version');
-        if (!response.ok) throw new Error('Не удалось загрузить версию');
-        const version = await response.text();
-        document.getElementById('appVersion').textContent = version.trim();
+        const response = await fetch('version_info.json');
+        if (!response.ok) throw new Error('Не удалось загрузить данные версии');
+        const data = await response.json();
+        document.getElementById('appVersion').textContent = data.version;
     } catch (err) {
         console.error('Ошибка загрузки версии:', err);
         document.getElementById('appVersion').textContent = 'Неизвестно';
