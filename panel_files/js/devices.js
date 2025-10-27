@@ -125,7 +125,7 @@ async function restartPlayback(uuid) {
                     const playButton = card.querySelector('.play-button');
                     const playIcon = playButton.querySelector('i');
                     playButton.disabled = false; // Активируем кнопку
-                    playIcon.classList.remove('fa-play', 'text-green-500');
+                    playIcon.classList.remove('fa-play', 'text-green-400');
                     playIcon.classList.add('fa-stop', 'text-red-500');
                 }
                 console.log('Карточки и статусы обновлены после перезапуска для UUID:', uuid);

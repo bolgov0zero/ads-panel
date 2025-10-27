@@ -484,23 +484,18 @@ try {
             break;
         
         case 'restart_playback':
-        $uuid = $input_data['uuid'] ?? '';
-        if (empty($uuid)) {
-            logMessage("Ошибка: UUID не указан для restart_playback");
-            echo json_encode(['error' => 'UUID не указан']);
+            $uuid = $input_data['uuid'] ?? '';
+            if (empty($uuid)) {
+                logMessage("Ошибка: UUID не указан для restart_playback");
+                echo json_encode(['error' => 'UUID не указан']);
+                break;
+            }
+            $stmt = $db->prepare("UPDATE clients SET playback_status = 'restart' WHERE uuid = :uuid");
+            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $stmt->execute();
+            logMessage("Отправлена команда перезапуска для UUID: $uuid");
+            echo json_encode(['message' => 'Команда перезапуска отправлена']);
             break;
-        }
-        $stmt = $db->prepare("UPDATE clients SET playback_status = 'restart', last_seen = :last_seen WHERE uuid = :uuid");
-        $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
-        $stmt->bindValue(':last_seen', time(), SQLITE3_INTEGER);
-        $stmt->execute();
-        // Сбрасываем статус на 'playing' после отправки команды
-        $stmt = $db->prepare("UPDATE clients SET playback_status = 'playing' WHERE uuid = :uuid");
-        $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
-        $stmt->execute();
-        logMessage("Отправлена команда перезапуска для UUID: $uuid");
-        echo json_encode(['message' => 'Команда перезапуска отправлена']);
-        break;
 
         default:
             echo json_encode(['error' => 'Неверное действие']);
