@@ -62,8 +62,22 @@ function checkForNewVersion($db, $bot_token, $chat_id) {
         $last_check_time = (int)($row['last_check_time'] ?? 0);
 
         // Пропускаем, если не прошла минута
-        if (time() - $last_check_time < $version_check_interval) {
-            logMessage("Пропуск проверки версии: не прошло $version_check_interval секунд");
+        $current_time = time();
+        if ($current_time - $last_check_time < $version_check_interval) {
+            logMessage("Пропуск проверки версии: не прошло $version_check_interval секунд (текущее время: $current_time, последнее: $last_check_time)");
+            return;
+        }
+
+        // Обновляем время проверки заранее, чтобы предотвратить дублирование
+        $update_stmt = $db->prepare("UPDATE version_notifications SET last_check_time = :time WHERE id = 1");
+        if (!$update_stmt) {
+            logMessage("Ошибка подготовки обновления времени в version_notifications: " . $db->lastErrorMsg());
+            return;
+        }
+        $update_stmt->bindValue(':time', $current_time, SQLITE3_INTEGER);
+        $result = $update_stmt->execute();
+        if (!$result) {
+            logMessage("Ошибка обновления времени в version_notifications: " . $db->lastErrorMsg());
             return;
         }
 
@@ -103,7 +117,7 @@ function checkForNewVersion($db, $bot_token, $chat_id) {
 
         $github_version = ltrim(trim($github_version_raw), 'v');
         logMessage("Проверка версий: Локальная '$local_version_raw', GitHub '$github_version_raw'");
-        
+
         // Скачиваем описание
         $note_url = 'https://raw.githubusercontent.com/bolgov0zero/ads-panel/refs/heads/main/note';
         $ch = curl_init($note_url);
@@ -118,31 +132,29 @@ function checkForNewVersion($db, $bot_token, $chat_id) {
         if (version_compare($github_version, $local_version) > 0 && $github_version_raw !== $last_notified_version) {
             $message = "🆕 <b>Доступна новая версия!</b>\n\n<b>Система:</b> <i>$system_name</i>\n<b>Локальная:</b> <code>$local_version_raw</code>\n<b>GitHub:</b> <code>$github_version_raw</code>\n\n<b>Описание:</b>\n<code>$note_raw</code>";
             if (!empty($bot_token) && !empty($chat_id)) {
+                // Отправляем сообщение
                 if (sendTelegramMessage($bot_token, $chat_id, $message)) {
-                    // Обновляем последнюю уведомленную версию и время проверки
+                    // Обновляем последнюю уведомлённую версию только после успешной отправки
                     $update_stmt = $db->prepare("UPDATE version_notifications SET last_notified_version = :version, last_check_time = :time WHERE id = 1");
                     if (!$update_stmt) {
                         logMessage("Ошибка подготовки обновления version_notifications: " . $db->lastErrorMsg());
                         return;
                     }
                     $update_stmt->bindValue(':version', $github_version_raw, SQLITE3_TEXT);
-                    $update_stmt->bindValue(':time', time(), SQLITE3_INTEGER);
-                    $update_stmt->execute();
+                    $update_stmt->bindValue(':time', $current_time, SQLITE3_INTEGER);
+                    $result = $update_stmt->execute();
+                    if (!$result) {
+                        logMessage("Ошибка обновления version_notifications после отправки: " . $db->lastErrorMsg());
+                        return;
+                    }
                     logMessage("Уведомление о новой версии отправлено: $github_version_raw");
                 }
             } else {
                 logMessage("Уведомление о новой версии не отправлено: отсутствуют настройки Telegram");
             }
+        } else {
+            logMessage("Новая версия не обнаружена или уже уведомлена: GitHub '$github_version_raw', Последняя уведомлённая '$last_notified_version'");
         }
-
-        // Обновляем время последней проверки
-        $update_stmt = $db->prepare("UPDATE version_notifications SET last_check_time = :time WHERE id = 1");
-        if (!$update_stmt) {
-            logMessage("Ошибка подготовки обновления времени в version_notifications: " . $db->lastErrorMsg());
-            return;
-        }
-        $update_stmt->bindValue(':time', time(), SQLITE3_INTEGER);
-        $update_stmt->execute();
     } catch (Exception $e) {
         logMessage("Ошибка в checkForNewVersion: " . $e->getMessage());
     }
