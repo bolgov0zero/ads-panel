@@ -1,10 +1,30 @@
 <?php
-header('Content-Type: application/json');
+// Suppress output to prevent warnings from corrupting JSON
+ob_start();
+header('Content-Type: application/json; charset=UTF-8');
+
+// Функция для логирования
+function logMessage($message) {
+    error_log(date('[Y-m-d H:i:s] ') . $message . "\n", 3, '/var/log/ads_api.log');
+}
 
 try {
     // Подключение к SQLite3
     $db = new SQLite3('/data/ads.db');
-    $db->busyTimeout(5000); // Устанавливаем таймаут для занятой базы данных
+    $db->busyTimeout(5000);
+
+    // Проверка корректности входного JSON
+    $input = file_get_contents('php://input');
+    $input_data = json_decode($input, true);
+    if ($input !== '' && json_last_error() !== JSON_ERROR_NONE) {
+        logMessage("Ошибка декодирования JSON: " . json_last_error_msg());
+        header('HTTP/1.1 400 Bad Request');
+        echo json_encode(['error' => 'Некорректный JSON в запросе']);
+        ob_end_flush();
+        exit;
+    }
+    $action = $_POST['action'] ?? $_GET['action'] ?? $input_data['action'] ?? '';
+    logMessage("Получен запрос: action=$action");
 
     // Функция отправки сообщения в Telegram
     function sendTelegramMessage($botToken, $chatId, $message) {
@@ -159,12 +179,11 @@ try {
                 echo json_encode(['error' => 'UUID не указан']);
                 break;
             }
-            $stmt = $db->prepare("SELECT uuid, name, show_info, COALESCE(last_seen, 0) AS last_seen FROM clients WHERE uuid = :uuid");
+            $stmt = $db->prepare("SELECT name, show_info, last_seen, playback_status FROM clients WHERE uuid = :uuid");
             $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
             $result = $stmt->execute();
             if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $row['last_seen'] = (int)$row['last_seen']; // Гарантируем число
-                $row['status'] = (time() - $row['last_seen'] <= 5) ? 'online' : 'offline';
+                $row['status'] = (time() - $row['last_seen']) <= 5 ? 'online' : 'offline';
                 echo json_encode($row);
             } else {
                 echo json_encode(['error' => 'Устройство не найдено']);
@@ -223,33 +242,20 @@ try {
             break;
 
         case 'list_clients':
-            $result = $db->query("SELECT uuid, name, show_info, COALESCE(last_seen, 0) AS last_seen FROM clients");
+            $result = $db->query("SELECT uuid, name, show_info, last_seen, playback_status FROM clients");
             $clients = [];
             while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $stmt = $db->prepare("SELECT content_id, content_type FROM client_content WHERE uuid = :uuid");
-                $stmt->bindValue(':uuid', $row['uuid'], SQLITE3_TEXT);
-                $contentResult = $stmt->execute();
-                $content = [];
-                while ($c = $contentResult->fetchArray(SQLITE3_ASSOC)) {
-                    $content[] = ['id' => $c['content_id'], 'type' => $c['content_type']];
-                }
-                $row['last_seen'] = (int)$row['last_seen']; // Гарантируем число
-                $row['status'] = (time() - $row['last_seen'] <= 5) ? 'online' : 'offline';
-                $clients[] = [
-                    'uuid' => $row['uuid'],
-                    'name' => $row['name'],
-                    'show_info' => $row['show_info'],
-                    'content' => $content,
-                    'status' => $row['status'],
-                    'last_seen' => $row['last_seen']
-                ];
+                $row['status'] = (time() - $row['last_seen']) <= 5 ? 'online' : 'offline';
+                $clients[] = $row;
             }
             echo json_encode($clients);
+            logMessage("Список клиентов возвращён, количество: " . count($clients) . ", статусы: " . json_encode(array_map(function($c) { return $c['playback_status']; }, $clients)));
             break;
 
         case 'count_clients':
             $result = $db->querySingle("SELECT COUNT(*) FROM clients");
-            echo json_encode(['count' => $result]);
+            echo json_encode(['count' => (int)$result]);
+            logMessage("Возвращено количество клиентов: $result");
             break;
 
         case 'list_client_content':
@@ -458,6 +464,38 @@ try {
                 echo json_encode(['message' => 'Тестовое сообщение отправлено']);
             }
             break;
+            
+        case 'update_playback_status':
+            $uuid = $input['uuid'] ?? '';
+            $status = $input['status'] ?? 'playing';
+            if (empty($uuid)) {
+                echo json_encode(['error' => 'UUID не указан']);
+                break;
+            }
+            if (!in_array($status, ['playing', 'stalled'])) {
+                echo json_encode(['error' => 'Неверный статус воспроизведения']);
+                break;
+            }
+            $stmt = $db->prepare("UPDATE clients SET playback_status = :status WHERE uuid = :uuid");
+            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $stmt->bindValue(':status', $status, SQLITE3_TEXT);
+            $stmt->execute();
+            echo json_encode(['message' => 'Статус воспроизведения обновлён']);
+            break;
+        
+        case 'restart_playback':
+            $uuid = $input_data['uuid'] ?? '';
+            if (empty($uuid)) {
+                logMessage("Ошибка: UUID не указан для restart_playback");
+                echo json_encode(['error' => 'UUID не указан']);
+                break;
+            }
+            $stmt = $db->prepare("UPDATE clients SET playback_status = 'restart' WHERE uuid = :uuid");
+            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $stmt->execute();
+            logMessage("Отправлена команда перезапуска для UUID: $uuid");
+            echo json_encode(['message' => 'Команда перезапуска отправлена']);
+            break;
 
         default:
             echo json_encode(['error' => 'Неверное действие']);
@@ -465,8 +503,9 @@ try {
 } catch (Exception $e) {
     echo json_encode(['error' => 'Ошибка сервера: ' . $e->getMessage()]);
 } finally {
-    if (isset($db)) {
-        $db->close();
+        if (isset($db)) {
+            $db->close();
+        }
+        ob_end_flush();
     }
-}
 ?>

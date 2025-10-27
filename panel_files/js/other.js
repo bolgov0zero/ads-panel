@@ -421,16 +421,28 @@ async function updateMessageSettings() {
 let clientCount = 0;
 async function checkNewClients() {
     try {
-        const response = await fetch('api.php?action=count_clients');
+        const response = await fetch('api.php?action=count_clients', {
+            headers: { 'Cache-Control': 'no-cache' }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
         const result = await response.json();
+        if (result.error) {
+            console.error('Ошибка ответа count_clients:', result.error);
+            return;
+        }
         if (result.count !== clientCount) {
             clientCount = result.count;
+            console.log('Обновлено количество клиентов:', clientCount);
             loadClients();
         } else if (!document.getElementById('clientTab').classList.contains('hidden')) {
             updateClientStatuses();
+            console.log('Обновлены статусы клиентов на вкладке устройств');
         }
     } catch (err) {
         console.error('Ошибка проверки новых устройств:', err);
+        showNotification('Ошибка проверки устройств', 'bg-red-500');
     }
 }
 
