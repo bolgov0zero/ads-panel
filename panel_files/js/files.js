@@ -23,25 +23,15 @@ async function loadFiles() {
             const thumbSrc = file.thumbnail || (isVideo ? '/assets/video-placeholder.jpg' : '/assets/pdf-placeholder.jpg');
 
             card.innerHTML = `
-                <!-- Иконка типа (ТОЛЬКО ИКОНКА) -->
-                <div class="absolute top-2 right-2 text-xs font-medium p-1 rounded-md ${isVideo ? 'bg-blue-600' : 'bg-purple-600'} text-white">
-                    <i class="fas ${isVideo ? 'fa-video' : 'fa-file-pdf'}"></i>
-                </div>
-
-                <!-- Кнопка удаления -->
-                <button onclick="deleteFile(${file.id})" class="absolute bottom-2 right-2 text-red-500 hover:text-red-400 transition z-10 p-1">
-                    <i class="fas fa-trash"></i>
-                </button>
-
-                <!-- Превью как IMG -->
+                <!-- Превью -->
                 <div class="mb-3 h-40 bg-gray-700 rounded-lg overflow-hidden border border-gray-600">
                     <img src="${thumbSrc}" alt="${escapeHtml(file.name)}" 
-                         class="w-full h-full object-cover cursor-pointer" 
+                         class="w-full h-full object-cover cursor-pointer transition-transform hover:scale-105" 
                          onclick="window.open('${file.file_url}', '_blank')">
                 </div>
-
+            
                 <!-- Имя файла -->
-                <div class="text-center">
+                <div class="text-center mb-2">
                     <span class="name-display block font-medium text-gray-200 truncate px-2" 
                           onclick="editFileName(this, ${file.id}, '${escapeHtml(file.name)}')">
                         ${escapeHtml(file.name)}
@@ -50,6 +40,20 @@ async function loadFiles() {
                            value="${escapeHtml(file.name)}" 
                            onblur="saveFileName(this, ${file.id})" 
                            onkeydown="if(event.key==='Enter') this.blur()">
+                </div>
+            
+                <!-- Нижняя панель: иконка слева, удаление справа -->
+                <div class="flex justify-between items-center px-1">
+                    <!-- Иконка типа -->
+                    <div class="text-xs ${isVideo ? 'text-blue-400' : 'text-purple-400'}">
+                        <i class="fas ${isVideo ? 'fa-video' : 'fa-file-pdf'}"></i>
+                    </div>
+            
+                    <!-- Кнопка удаления -->
+                    <button onclick="deleteFile(${file.id})" 
+                            class="text-red-500 hover:text-red-400 transition text-sm p-1">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
             `;
             grid.appendChild(card);

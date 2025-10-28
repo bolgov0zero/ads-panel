@@ -270,9 +270,18 @@ try {
             break;
 
         case 'list_files':
-            $result = $db->query("SELECT id, file_url, name, type, duration, order_num FROM files WHERE is_default = 0 ORDER BY order_num ASC");
+            $stmt = $db->prepare("SELECT id, file_url, name, type, duration, thumbnail FROM files ORDER BY order_num");
+            $result = $stmt->execute();
             $files = [];
             while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                // Исправляем thumbnail: если есть — делаем полный URL
+                if (!empty($row['thumbnail'])) {
+                    $row['thumbnail'] = $row['thumbnail']; // уже /files/thumbnails/...
+                } else {
+                    $row['thumbnail'] = $row['type'] === 'video' 
+                        ? '/assets/video-placeholder.jpg' 
+                        : '/assets/pdf-placeholder.jpg';
+                }
                 $files[] = $row;
             }
             echo json_encode($files);
