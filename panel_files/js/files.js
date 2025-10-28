@@ -9,11 +9,13 @@ function formatDuration(seconds) {
 async function loadFiles() {
     try {
         const response = await fetch('api.php?action=list_files');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
         const files = await response.json();
         const grid = document.getElementById('filesGrid');
         const noFilesMsg = document.getElementById('noFilesMessage');
 
-        if (files.length === 0) {
+        if (!Array.isArray(files) || files.length === 0) {
             grid.innerHTML = '';
             noFilesMsg.classList.remove('hidden');
             return;
@@ -21,14 +23,16 @@ async function loadFiles() {
             noFilesMsg.classList.add('hidden');
         }
 
-        grid.innerHTML = ''; // Очищаем
+        grid.innerHTML = '';
         files.forEach(file => {
+            // Защита: duration всегда число или null
+            const duration = file.duration && !isNaN(file.duration) ? parseInt(file.duration) : null;
+            const isVideo = file.type === 'video';
+            const thumbSrc = file.thumbnail || (isVideo ? '/assets/video-placeholder.jpg' : '/assets/pdf-placeholder.jpg');
+
             const card = document.createElement('div');
             card.className = 'file-card bg-gray-800 rounded-xl shadow-lg p-4 relative overflow-hidden client-card';
             card.setAttribute('data-id', file.id);
-
-            const isVideo = file.type === 'video';
-            const thumbSrc = file.thumbnail || (isVideo ? '/assets/video-placeholder.jpg' : '/assets/pdf-placeholder.jpg');
 
             card.innerHTML = `
                 <!-- Превью -->
@@ -37,7 +41,7 @@ async function loadFiles() {
                          class="w-full h-full object-cover cursor-pointer transition-transform hover:scale-105" 
                          onclick="window.open('${file.file_url}', '_blank')">
                 </div>
-            
+
                 <!-- Имя файла -->
                 <div class="text-center mb-2">
                     <span class="name-display block font-medium text-gray-200 truncate px-2" 
@@ -49,19 +53,16 @@ async function loadFiles() {
                            onblur="saveFileName(this, ${file.id})" 
                            onkeydown="if(event.key==='Enter') this.blur()">
                 </div>
-            
-                <!-- Нижняя панель: рамка с иконкой и длительностью -->
+
+                <!-- Рамка: иконка + длительность -->
                 <div class="flex justify-between items-center px-1">
-                    <!-- Рамка с иконкой и длительностью -->
-                    <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-700 rounded-md text-xs font-medium">
+                    <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-700 rounded-md text-xs font-medium border border-gray-600">
                         <i class="fas ${isVideo ? 'fa-video text-blue-400' : 'fa-file-pdf text-purple-400'}"></i>
-                        ${isVideo && file.duration ? 
-                            `<span class="text-gray-300">${formatDuration(file.duration)}</span>` : 
+                        ${isVideo && duration ? 
+                            `<span class="text-gray-300 font-mono">${formatDuration(duration)}</span>` : 
                             ''
                         }
                     </div>
-            
-                    <!-- Кнопка удаления -->
                     <button onclick="deleteFile(${file.id})" 
                             class="text-red-500 hover:text-red-400 transition text-sm p-1">
                         <i class="fas fa-trash"></i>

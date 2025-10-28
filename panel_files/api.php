@@ -345,13 +345,16 @@ try {
             $result = $stmt->execute();
             $files = [];
             while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                if (!empty($row['thumbnail'])) {
-                    $row['thumbnail'] = $row['thumbnail'];
-                } else {
+                // Гарантируем, что duration — число или null
+                $row['duration'] = $row['duration'] !== null ? (int)$row['duration'] : null;
+            
+                // Thumbnail: если нет — плейсхолдер
+                if (empty($row['thumbnail'])) {
                     $row['thumbnail'] = $row['type'] === 'video' 
                         ? '/assets/video-placeholder.jpg' 
                         : '/assets/pdf-placeholder.jpg';
                 }
+            
                 $files[] = $row;
             }
             echo json_encode($files);
