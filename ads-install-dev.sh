@@ -53,6 +53,7 @@ services:
       - PHP_POST_MAX_SIZE=500M
 volumes:
   file_storage:
+  file_thumbnails:
   db_data:
   ssl:
 EOF
