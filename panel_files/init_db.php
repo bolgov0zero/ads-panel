@@ -89,7 +89,8 @@ try {
                     name TEXT NOT NULL DEFAULT 'Без имени',
                     show_info INTEGER DEFAULT 1,
                     last_seen INTEGER DEFAULT 0,
-                    playback_status TEXT DEFAULT 'playing'
+                    playback_status TEXT DEFAULT 'playing',
+                    restart_requested INTEGER DEFAULT 0
                 )",
             'columns' => [
                 ['name' => 'uuid', 'type' => 'TEXT', 'constraints' => 'PRIMARY KEY'],
@@ -97,6 +98,7 @@ try {
                 ['name' => 'show_info', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 1'],
                 ['name' => 'last_seen', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 0'],
                 ['name' => 'playback_status', 'type' => 'TEXT', 'constraints' => 'DEFAULT \'playing\''],
+                ['name' => 'restart_requested', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 0'],
             ],
             'initial_data' => null
         ],
@@ -154,7 +156,7 @@ try {
             'columns' => [
                 ['name' => 'id', 'type' => 'INTEGER', 'constraints' => 'PRIMARY KEY CHECK (id = 1)'],
                 ['name' => 'bot_token', 'type' => 'TEXT', 'constraints' => 'DEFAULT \'\''],
-                ['name' => 'chat_id', 'type' => 'TEXT', 'constraints' => 'DEFAULT \'\'']
+                ['name' => 'chat_id', 'type' => 'TEXT', 'constraints' => 'DEFAULT \'\''],
             ],
             'initial_data' => function ($db) {
                 $result = $db->querySingle("SELECT COUNT(*) FROM telegram_settings");
@@ -190,7 +192,7 @@ try {
                 )",
             'columns' => [
                 ['name' => 'id', 'type' => 'INTEGER', 'constraints' => 'PRIMARY KEY CHECK (id = 1)'],
-                ['name' => 'system_name', 'type' => 'TEXT', 'constraints' => 'DEFAULT \'Ads Panel\'']
+                ['name' => 'system_name', 'type' => 'TEXT', 'constraints' => 'DEFAULT \'Ads Panel\''],
             ],
             'initial_data' => function ($db) {
                 $result = $db->querySingle("SELECT COUNT(*) FROM system_settings");

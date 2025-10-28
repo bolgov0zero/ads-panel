@@ -496,6 +496,33 @@ try {
             logMessage("Отправлена команда перезапуска для UUID: $uuid");
             echo json_encode(['message' => 'Команда перезапуска отправлена']);
             break;
+        
+        // ---- 1. Установка флага перезапуска ----
+        case 'restart_playback':
+            $uuid = $input['uuid'] ?? '';
+            if (empty($uuid)) {
+                echo json_encode(['error' => 'UUID не указан']);
+                break;
+            }
+            $stmt = $db->prepare("UPDATE clients SET restart_requested = 1 WHERE uuid = :uuid");
+            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $stmt->execute();
+            logMessage("restart_playback: flag set for $uuid");
+            echo json_encode(['message' => 'Команда перезапуска отправлена']);
+            break;
+        
+        // ---- 2. Сброс флага (вызывается клиентом после выполнения) ----
+        case 'clear_restart_flag':
+            $uuid = $input['uuid'] ?? '';
+            if (empty($uuid)) {
+                echo json_encode(['error' => 'UUID не указан']);
+                break;
+            }
+            $stmt = $db->prepare("UPDATE clients SET restart_requested = 0 WHERE uuid = :uuid");
+            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $stmt->execute();
+            echo json_encode(['message' => 'Флаг перезапуска сброшен']);
+            break;
 
         default:
             echo json_encode(['error' => 'Неверное действие']);

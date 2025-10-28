@@ -261,6 +261,17 @@ async function checkRestartCommand() {
             await updatePlaybackStatus();
             console.log('Видео перезапущено, currentIndex:', currentIndex, 'playback_status:', playbackStatus);
         }
+        if (data.restart_requested == 1) {
+            console.log('Получена команда перезапуска (restart_requested) для UUID:', uuid);
+            stopCurrentContent(true);
+            showContent(currentIndex, 0);
+            // Сбрасываем флаг на сервере
+            fetch('api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'clear_restart_flag', uuid })
+            }).catch(err => console.error('Не удалось сбросить флаг:', err));
+        }
     } catch (err) {
         console.error('Ошибка проверки команды перезапуска:', err);
     }

@@ -109,30 +109,36 @@ async function restartPlayback(uuid) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'restart_playback', uuid })
         });
+
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
+
         const result = await response.json();
-        if (!result.error) {
-            showNotification('Команда перезапуска отправлена', 'bg-green-500');
-            // Обновляем карточки и статусы с небольшой задержкой
-            setTimeout(async () => {
-                await loadClients();
-                await updateClientStatuses();
-                // Принудительно сбрасываем статус кнопки
-                const card = document.querySelector(`.client-card[data-uuid="${uuid}"]`);
-                if (card) {
-                    const playButton = card.querySelector('.play-button');
-                    const playIcon = playButton.querySelector('i');
-                    playButton.disabled = false; // Активируем кнопку
-                    playIcon.classList.remove('fa-play', 'text-green-400');
-                    playIcon.classList.add('fa-stop', 'text-red-500');
-                }
-                console.log('Карточки и статусы обновлены после перезапуска для UUID:', uuid);
-            }, 1000); // Уменьшена задержка для более быстрого обновления
-        } else {
-            showNotification('Ошибка отправки команды перезапуска: ' + result.error, 'bg-red-500');
+
+        if (result.error) {
+            throw new Error(result.error);
         }
+
+        // Успешно: показываем уведомление
+        showNotification('Команда перезапуска отправлена', 'bg-green-500');
+
+        // Немедленно обновляем UI: кнопка становится "воспроизведение" (play)
+        const card = document.querySelector(`.client-card[data-uuid="${uuid}"]`);
+        if (card) {
+            const playButton = card.querySelector('.play-button');
+            const playIcon = playButton.querySelector('i');
+
+            playButton.disabled = true; // Отключаем кнопку, пока не получим playing
+            playIcon.classList.remove('fa-stop', 'text-red-500');
+            playIcon.classList.add('fa-play', 'text-green-400');
+        }
+
+        // Принудительно обновляем статусы через 1 секунду (на случай, если клиент быстро отчитается)
+        setTimeout(async () => {
+            await updateClientStatuses();
+        }, 1000);
+
     } catch (err) {
         console.error('Ошибка перезапуска:', err);
         showNotification('Ошибка перезапуска: ' + err.message, 'bg-red-500');
@@ -194,27 +200,49 @@ async function updateClientStatuses() {
         const response = await fetch('api.php?action=list_clients', {
             headers: { 'Cache-Control': 'no-cache' }
         });
+
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
+
         const clients = await response.json();
+
         document.querySelectorAll('.client-card').forEach(card => {
             const uuid = card.getAttribute('data-uuid');
             const client = clients.find(c => c.uuid === uuid);
-            if (client) {
-                const dot = card.querySelector('.status-dot');
-                const text = card.querySelector('.status-text');
-                const playButton = card.querySelector('.play-button');
-                const playIcon = playButton.querySelector('i');
-                dot.classList.remove('status-online', 'status-offline');
-                dot.classList.add(client.status === 'online' ? 'status-online' : 'status-offline');
-                text.textContent = formatLastSeen(client.last_seen);
-                playIcon.classList.remove('fa-play', 'fa-stop', 'text-green-400', 'text-red-500');
-                playIcon.classList.add(client.playback_status === 'playing' ? 'fa-play' : 'fa-stop', client.playback_status === 'playing' ? 'text-green-400' : 'text-red-500');
-                playButton.disabled = client.playback_status === 'playing';
-                console.log('Обновлён статус клиента:', client.uuid, 'playback_status:', client.playback_status);
+
+            if (!client) return;
+
+            // --- Статус онлайн/оффлайн ---
+            const dot = card.querySelector('.status-dot');
+            dot.classList.remove('status-online', 'status-offline');
+            dot.classList.add(client.status === 'online' ? 'status-online' : 'status-offline');
+
+            // --- Время последнего подключения ---
+            const text = card.querySelector('.status-text');
+            text.textContent = formatLastSeen(client.last_seen);
+
+            // --- Кнопка воспроизведения ---
+            const playButton = card.querySelector('.play-button');
+            const playIcon = playButton.querySelector('i');
+
+            // Убираем все возможные классы
+            playIcon.classList.remove('fa-play', 'fa-stop', 'text-green-400', 'text-red-500');
+
+            // Устанавливаем в зависимости от playback_status
+            if (client.playback_status === 'playing') {
+                playIcon.classList.add('fa-play', 'text-green-400');
+                playButton.disabled = true;
+            } else {
+                playIcon.classList.add('fa-stop', 'text-red-500');
+                playButton.disabled = false;
+                // Включаем обработчик перезапуска
+                playButton.onclick = () => restartPlayback(uuid);
             }
+
+            console.log(`Статус обновлён для ${uuid}: ${client.playback_status}, онлайн: ${client.status}`);
         });
+
     } catch (err) {
         console.error('Ошибка обновления статусов:', err);
         showNotification('Ошибка обновления статусов', 'bg-red-500');
