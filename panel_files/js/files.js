@@ -1,83 +1,4 @@
-// Форматирует секунды в MM:SS
-function formatDuration(seconds) {
-    if (!seconds) return '';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
-
-async function loadFiles() {
-    try {
-        const response = await fetch('api.php?action=list_files');
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        
-        const files = await response.json();
-        const grid = document.getElementById('filesGrid');
-        const noFilesMsg = document.getElementById('noFilesMessage');
-
-        if (!Array.isArray(files) || files.length === 0) {
-            grid.innerHTML = '';
-            noFilesMsg.classList.remove('hidden');
-            return;
-        } else {
-            noFilesMsg.classList.add('hidden');
-        }
-
-        grid.innerHTML = '';
-        files.forEach(file => {
-            // Защита: duration всегда число или null
-            const duration = file.duration && !isNaN(file.duration) ? parseInt(file.duration) : null;
-            const isVideo = file.type === 'video';
-            const thumbSrc = file.thumbnail || (isVideo ? '/assets/video-placeholder.jpg' : '/assets/pdf-placeholder.jpg');
-
-            const card = document.createElement('div');
-            card.className = 'file-card bg-gray-800 rounded-xl shadow-lg p-4 relative overflow-hidden client-card';
-            card.setAttribute('data-id', file.id);
-
-            card.innerHTML = `
-                <!-- Превью -->
-                <div class="mb-3 h-40 bg-gray-700 rounded-lg overflow-hidden border border-gray-600">
-                    <img src="${thumbSrc}" alt="${escapeHtml(file.name)}" 
-                         class="w-full h-full object-cover cursor-pointer transition-transform hover:scale-105" 
-                         onclick="window.open('${file.file_url}', '_blank')">
-                </div>
-
-                <!-- Имя файла -->
-                <div class="text-center mb-2">
-                    <span class="name-display block font-medium text-gray-200 truncate px-2" 
-                          onclick="editFileName(this, ${file.id}, '${escapeHtml(file.name)}')">
-                        ${escapeHtml(file.name)}
-                    </span>
-                    <input type="text" class="name-input hidden w-full p-1 bg-gray-700 border border-gray-600 rounded text-center text-gray-200" 
-                           value="${escapeHtml(file.name)}" 
-                           onblur="saveFileName(this, ${file.id})" 
-                           onkeydown="if(event.key==='Enter') this.blur()">
-                </div>
-
-                <!-- Рамка: иконка + длительность -->
-                <div class="flex justify-between items-center px-1">
-                    <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-700 rounded-md text-xs font-medium border border-gray-600">
-                        <i class="fas ${isVideo ? 'fa-video text-blue-400' : 'fa-file-pdf text-purple-400'}"></i>
-                        ${isVideo && duration ? 
-                            `<span class="text-gray-300 font-mono">${formatDuration(duration)}</span>` : 
-                            ''
-                        }
-                    </div>
-                    <button onclick="deleteFile(${file.id})" 
-                            class="text-red-500 hover:text-red-400 transition text-sm p-1">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
-
-        filterFiles();
-    } catch (err) {
-        console.error('Ошибка загрузки файлов:', err);
-        showNotification('Ошибка загрузки файлов', 'bg-red-500');
-    }
-}
+// === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
 // Безопасное экранирование HTML
 function escapeHtml(text) {
@@ -86,7 +7,15 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Редактирование имени
+// Форматирует секунды в MM:SS
+function formatDuration(seconds) {
+    if (!seconds || seconds <= 0) return '';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// === РЕДАКТИРОВАНИЕ ИМЕНИ ===
 function editFileName(span, id, currentName) {
     const input = span.nextElementSibling;
     span.classList.add('hidden');
@@ -95,10 +24,10 @@ function editFileName(span, id, currentName) {
     input.select();
 }
 
-// Сохранение имени
 async function saveFileName(input, id) {
     const newName = input.value.trim();
     const span = input.previousElementSibling;
+
     if (newName === '' || newName === span.textContent) {
         input.classList.add('hidden');
         span.classList.remove('hidden');
@@ -130,31 +59,7 @@ async function saveFileName(input, id) {
     }
 }
 
-async function updateFileName(id, name) {
-    try {
-        const response = await fetch('api.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'update_file_name', id, name })
-        });
-        const result = await response.json();
-        if (result.error) {
-            console.error(result.error);
-        } else {
-            showNotification('Имя изменено');
-            const row = document.querySelector(`#fileTable tr[data-id="${id}"]`);
-            if (row) {
-                row.querySelector('td:nth-child(2) input').value = name;
-                filterFiles();
-            }
-            loadPlaylist();
-        }
-    } catch (err) {
-        console.error('Ошибка:', err);
-    }
-}
-
-// Удаление файла
+// === УДАЛЕНИЕ ФАЙЛА ===
 async function deleteFile(id) {
     if (!confirm('Удалить файл?')) return;
 
@@ -178,7 +83,7 @@ async function deleteFile(id) {
     }
 }
 
-// Фильтрация
+// === ФИЛЬТРАЦИЯ ===
 function filterFiles() {
     const search = document.getElementById('fileSearch').value.toLowerCase();
     const cards = document.querySelectorAll('.file-card');
@@ -203,16 +108,93 @@ function filterFiles() {
     }
 }
 
+// === ЗАГРУЗКА ФАЙЛОВ ===
+async function loadFiles() {
+    try {
+        const response = await fetch('api.php?action=list_files');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const files = await response.json();
+        const grid = document.getElementById('filesGrid');
+        const noFilesMsg = document.getElementById('noFilesMessage');
+
+        if (!Array.isArray(files) || files.length === 0) {
+            grid.innerHTML = '';
+            noFilesMsg.classList.remove('hidden');
+            return;
+        } else {
+            noFilesMsg.classList.add('hidden');
+        }
+
+        grid.innerHTML = '';
+        files.forEach(file => {
+            const duration = file.duration && !isNaN(file.duration) ? parseInt(file.duration) : null;
+            const isVideo = file.type === 'video';
+            const thumbSrc = file.thumbnail || 
+                (isVideo ? '/assets/video-placeholder.jpg' : '/assets/pdf-placeholder.jpg');
+
+            const card = document.createElement('div');
+            card.className = 'file-card bg-gray-800 rounded-xl shadow-lg p-4 relative overflow-hidden client-card';
+            card.setAttribute('data-id', file.id);
+
+            card.innerHTML = `
+                <!-- Превью -->
+                <div class="mb-3 h-40 bg-gray-700 rounded-lg overflow-hidden border border-gray-600">
+                    <img src="${thumbSrc}" alt="${escapeHtml(file.name)}" 
+                         class="w-full h-full object-cover cursor-pointer transition-transform hover:scale-105" 
+                         onclick="window.open('${file.file_url}', '_blank')">
+                </div>
+
+                <!-- Имя файла -->
+                <div class="text-center mb-2">
+                    <span class="name-display block font-medium text-gray-200 truncate px-2" 
+                          onclick="editFileName(this, ${file.id}, '${escapeHtml(file.name)}')">
+                        ${escapeHtml(file.name)}
+                    </span>
+                    <input type="text" class="name-input hidden w-full p-1 bg-gray-700 border border-gray-600 rounded text-center text-gray-200" 
+                           value="${escapeHtml(file.name)}" 
+                           onblur="saveFileName(this, ${file.id})" 
+                           onkeydown="if(event.key==='Enter') this.blur()">
+                </div>
+
+                <!-- Рамка: иконка + длительность -->
+                <div class="flex justify-between items-center px-1">
+                    <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-700 rounded-md text-xs font-medium border border-gray-600">
+                        <i class="fas ${isVideo ? 'fa-video text-blue-400' : 'fa-file-pdf text-purple-400'}"></i>
+                        ${isVideo && duration && duration > 0 ? 
+                            `<span class="text-gray-300 font-mono">${formatDuration(duration)}</span>` : 
+                            ''
+                        }
+                    </div>
+                    <button onclick="deleteFile(${file.id})" 
+                            class="text-red-500 hover:text-red-400 transition text-sm p-1">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        filterFiles();
+    } catch (err) {
+        console.error('Ошибка загрузки файлов:', err);
+        showNotification('Ошибка загрузки файлов', 'bg-red-500');
+    }
+}
+
+// === ЗАГРУЗКА ФАЙЛА ===
 document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const spinner = document.getElementById('uploadSpinner');
     spinner.classList.remove('hidden');
     const formData = new FormData(e.target);
     formData.append('action', 'upload_file');
+    
     try {
         const response = await fetch('api.php', { method: 'POST', body: formData });
         const result = await response.json();
         spinner.classList.add('hidden');
+        
         if (result.error) {
             showNotification(result.error, 'bg-red-500');
         } else {
@@ -226,6 +208,7 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     }
 });
 
+// === СКАНИРОВАНИЕ ФАЙЛОВ ===
 document.getElementById('scanFilesBtn').addEventListener('click', async () => {
     try {
         const response = await fetch('api.php', {

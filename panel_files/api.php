@@ -70,7 +70,7 @@ try {
             $uploadDir = '/opt/ads/';
             $thumbDir = '/opt/ads/thumbnails/';
             
-            // Создаем папки
+            // Создаём папки
             if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
             if (!is_dir($thumbDir)) mkdir($thumbDir, 0755, true);
             
@@ -104,51 +104,56 @@ try {
                 break;
             }
             
-            // Перемещаем файл
+            // === 1. Перемещаем файл ===
             if (!move_uploaded_file($_FILES['file']['tmp_name'], $filePath)) {
                 echo json_encode(['error' => 'Не удалось сохранить файл']);
                 break;
             }
             
-            if ($fileType === 'video') {
-                $cmd = "ffprobe -v quiet -show_entries format=duration -of csv=p=0 " . escapeshellarg($filePath);
-                $durationOutput = trim(shell_exec($cmd));
-                $duration = $durationOutput ? round(floatval($durationOutput)) : null;
-            }
-            
-            // **ГЕНЕРАЦИЯ ПРЕВЬЮ**
+            // === 2. Генерация превью ===
             $thumbnail = '';
             if ($fileType === 'video') {
-                // MP4: ffmpeg - первый кадр
-                $cmd = "ffmpeg -i '$filePath' -ss 00:00:01 -vframes 1 -y '$thumbPath' 2>/dev/null";
+                $cmd = "ffmpeg -i " . escapeshellarg($filePath) . " -ss 00:00:01 -vframes 1 -y " . escapeshellarg($thumbPath) . " 2>/dev/null";
                 exec($cmd, $output, $returnCode);
                 if ($returnCode === 0 && file_exists($thumbPath)) {
                     $thumbnail = $thumbUrl;
                 }
             } else {
-                // PDF: ImageMagick convert
-                $cmd = "convert -density 150 '$filePath[0]' -thumbnail 300x200 -quality 85 '$thumbPath' 2>/dev/null";
+                $cmd = "convert -density 150 " . escapeshellarg($filePath . '[0]') . " -thumbnail 300x200 -quality 85 " . escapeshellarg($thumbPath) . " 2>/dev/null";
                 exec($cmd, $output, $returnCode);
                 if ($returnCode === 0 && file_exists($thumbPath)) {
                     $thumbnail = $thumbUrl;
                 }
             }
             
+            // === 3. Получаем длительность для видео ===
             $duration = $fileType === 'pdf' ? 5 : null;
+            if ($fileType === 'video') {
+                $cmd = "ffprobe -v quiet -show_entries format=duration -of csv=p=0 " . escapeshellarg($filePath);
+                $output = shell_exec($cmd);
+                $durationFloat = $output ? floatval(trim($output)) : null;
+                $duration = $durationFloat ? round($durationFloat) : null;
+            }
             
-            // Сохраняем в БД с thumbnail
+            // === 4. Добавляем в БД ===
             $stmt = $db->prepare("
-                INSERT INTO files (file_url, name, type, duration, order_num, is_default, thumbnail) 
-                SELECT :url, :name, :type, :duration, COALESCE(MAX(order_num) + 1, 1), 0, :thumbnail FROM files
+                INSERT INTO files 
+                (file_url, name, type, duration, order_num, is_default, thumbnail) 
+                VALUES (:url, :name, :type, :duration, 
+                        COALESCE((SELECT MAX(order_num) FROM files), 0) + 1, 
+                        0, :thumbnail)
             ");
             $stmt->bindValue(':url', $fileUrl, SQLITE3_TEXT);
             $stmt->bindValue(':name', $fileName, SQLITE3_TEXT);
             $stmt->bindValue(':type', $fileType, SQLITE3_TEXT);
             $stmt->bindValue(':duration', $duration, $duration === null ? SQLITE3_NULL : SQLITE3_INTEGER);
             $stmt->bindValue(':thumbnail', $thumbnail, SQLITE3_TEXT);
-            $stmt->execute();
             
-            echo json_encode(['message' => 'Файл загружен с превью']);
+            if ($stmt->execute()) {
+                echo json_encode(['message' => 'Файл загружен']);
+            } else {
+                echo json_encode(['error' => 'Ошибка добавления в БД']);
+            }
             break;
 
         case 'update_client_show_info':
@@ -345,16 +350,12 @@ try {
             $result = $stmt->execute();
             $files = [];
             while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                // Гарантируем, что duration — число или null
                 $row['duration'] = $row['duration'] !== null ? (int)$row['duration'] : null;
-            
-                // Thumbnail: если нет — плейсхолдер
                 if (empty($row['thumbnail'])) {
                     $row['thumbnail'] = $row['type'] === 'video' 
                         ? '/assets/video-placeholder.jpg' 
                         : '/assets/pdf-placeholder.jpg';
                 }
-            
                 $files[] = $row;
             }
             echo json_encode($files);
