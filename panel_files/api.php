@@ -67,7 +67,7 @@ try {
 
     switch ($action) {
         case 'upload_file':
-            $uploadDir = '/opt/ads/';
+            $uploadDir = '/opt/ads/files/';
             $thumbDir = '/opt/ads/thumbnails/';
             
             // Создаём папки
@@ -171,12 +171,12 @@ try {
             break;
 
         case 'scan_files':
-            $uploadDir = '/opt/ads/';
+            $uploadDir = '/opt/ads/files/';
             $thumbDir = '/opt/ads/thumbnails/';
             
             // Создаём папки
             if (!is_dir($uploadDir)) {
-                echo json_encode(['error' => 'Папка /opt/ads/ не существует']);
+                echo json_encode(['error' => 'Папка /opt/ads/files/ не существует']);
                 break;
             }
             if (!is_dir($thumbDir)) {
@@ -432,7 +432,7 @@ try {
             $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
             $result = $stmt->execute();
             if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $filePath = str_replace('/files/', '/opt/ads/', $row['file_url']);
+                $filePath = str_replace('/files/', '/opt/ads/files/', $row['file_url']);
                 if (file_exists($filePath)) {
                     unlink($filePath);
                 }

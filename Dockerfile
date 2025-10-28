@@ -13,9 +13,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Создаём директории
-RUN mkdir -p /opt/ads /opt/ads/thumbnails /data /etc/apache2/ssl /var/log && \
-    chown -R www-data:www-data /opt/ads /opt/ads/thumbnails /data /etc/apache2/ssl /var/log && \
-    chmod -R 775 /opt/ads /opt/ads/thumbnails /data /var/log
+RUN mkdir -p /opt/ads/files/ /opt/ads/thumbnails /data /etc/apache2/ssl /var/log && \
+    chown -R www-data:www-data /opt/ads/files/ /opt/ads/thumbnails /data /etc/apache2/ssl /var/log && \
+    chmod -R 775 /opt/ads/files/ /opt/ads/thumbnails /data /var/log
 
 # Генерируем самоподписанный SSL-сертификат
 RUN openssl req -x509 -nodes -days 7300 -newkey rsa:2048 \
@@ -36,14 +36,14 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf && \
     a2enmod rewrite ssl
 
 # Настройка доступа к файлам и превью
-RUN echo "Alias /files /opt/ads" >> /etc/apache2/conf-available/files.conf && \
-    echo "<Directory /opt/ads>" >> /etc/apache2/conf-available/files.conf && \
+RUN echo "Alias /files /opt/ads/files/" >> /etc/apache2/conf-available/files.conf && \
+    echo "<Directory /opt/ads/files/>" >> /etc/apache2/conf-available/files.conf && \
     echo "    Options Indexes FollowSymLinks" >> /etc/apache2/conf-available/files.conf && \
     echo "    AllowOverride All" >> /etc/apache2/conf-available/files.conf && \
     echo "    Require all granted" >> /etc/apache2/conf-available/files.conf && \
     echo "</Directory>" >> /etc/apache2/conf-available/files.conf && \
     \
-    echo "Alias /files/thumbnails /opt/ads/thumbnails" >> /etc/apache2/conf-available/files.conf && \
+    echo "Alias /thumbnails /opt/ads/thumbnails" >> /etc/apache2/conf-available/files.conf && \
     echo "<Directory /opt/ads/thumbnails>" >> /etc/apache2/conf-available/files.conf && \
     echo "    Options Indexes FollowSymLinks" >> /etc/apache2/conf-available/files.conf && \
     echo "    AllowOverride All" >> /etc/apache2/conf-available/files.conf && \
