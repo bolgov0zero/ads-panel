@@ -1,63 +1,58 @@
-# 1. Переходим на slim + multi-stage (экономия ~250 МБ)
+# === СТАДИЯ СБОРКИ (только для PHP-расширений) ===
 FROM php:8.1-apache-bullseye AS builder
 
-# Устанавливаем ВСЁ в одном RUN + полная очистка
+# Устанавливаем dev-зависимости и расширения
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         libsqlite3-dev \
-        openssl \
-        ffmpeg \
-        imagemagick \
-        supervisor \
         ca-certificates && \
     docker-php-ext-install pdo_sqlite && \
-    \
-    # Очистка в том же слое
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/* /tmp/* && \
-    apt-get clean && \
-    apt-get autoclean
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
-# Генерация SSL
-RUN openssl req -x509 -nodes -days 7300 -newkey rsa:2048 \
-    -keyout /etc/apache2/ssl/server.key \
-    -out /etc/apache2/ssl/server.crt \
-    -subj "/C=RU/ST=Moscow/L=Moscow/O=iDisk Project/CN=Ads Panel" && \
-    chmod 600 /etc/apache2/ssl/server.key && \
-    chmod 644 /etc/apache2/ssl/server.crt
-
-# Копируем только нужное
+# Копируем приложение (для последующего копирования в финальный образ)
 COPY ./panel_files /var/www/html
 COPY version.json /var/www/html
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# === ФИНАЛЬНЫЙ СЛОЙ (минимальный) ===
+# === ФИНАЛЬНЫЙ ОБРАЗ (минимальный) ===
 FROM php:8.1-apache-bullseye
 
-# Копируем только runtime-артефакты
+# Копируем PHP-расширения и приложение
 COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
 COPY --from=builder /usr/local/etc/php/ /usr/local/etc/php/
-COPY --from=builder /etc/apache2/ssl/ /etc/apache2/ssl/
 COPY --from=builder /var/www/html/ /var/www/html/
 COPY --from=builder /usr/local/bin/entrypoint.sh /usr/local/bin/entrypoint.sh
 
-# Устанавливаем ТОЛЬКО runtime-пакеты (без dev)
+# Устанавливаем runtime-пакеты + openssl (временно)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         libsqlite3-0 \
         ffmpeg \
         imagemagick \
         supervisor \
-        ca-certificates && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/* && \
-    apt-get clean
+        ca-certificates \
+        openssl && \
+    \
+    # Создаём директории
+    mkdir -p /opt/ads /opt/ads/thumbnails /data /etc/apache2/ssl /var/log && \
+    chown -R www-data:www-data /opt/ads /opt/ads/thumbnails /data /etc/apache2/ssl /var/log && \
+    chmod -R 775 /opt/ads /opt/ads/thumbnails /data /var/log && \
+    \
+    # Генерируем SSL-сертификат
+    openssl req -x509 -nodes -days 7300 -newkey rsa:2048 \
+        -keyout /etc/apache2/ssl/server.key \
+        -out /etc/apache2/ssl/server.crt \
+        -subj "/C=RU/ST=Moscow/L=Moscow/O=iDisk Project/CN=Ads Panel" && \
+    chmod 600 /etc/apache2/ssl/server.key && \
+    chmod 644 /etc/apache2/ssl/server.crt && \
+    \
+    # Удаляем openssl и кэш
+    apt-get remove -y openssl && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/* /tmp/*
 
-# Директории + права
-RUN mkdir -p /opt/ads /opt/ads/thumbnails /data /var/log && \
-    chown -R www-data:www-data /opt/ads /opt/ads/thumbnails /data /var/log && \
-    chmod -R 775 /opt/ads /opt/ads/thumbnails /data /var/log
-
-# Apache + PHP config (всё в одном RUN)
+# Настраиваем Apache и PHP (всё в одном RUN)
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf && \
     a2enmod rewrite ssl && \
     \
@@ -79,7 +74,7 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf && \
     } > /etc/apache2/conf-available/files.conf && \
     a2enconf files && \
     \
-    # default-ssl.conf
+    # default-ssl.conf (HTTPS)
     { \
         echo "<VirtualHost *:443>"; \
         echo "    DocumentRoot /var/www/html"; \
@@ -95,7 +90,7 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf && \
     } > /etc/apache2/sites-available/default-ssl.conf && \
     a2ensite default-ssl && \
     \
-    # 000-default.conf
+    # 000-default.conf (редирект HTTP → HTTPS)
     { \
         echo "<VirtualHost *:80>"; \
         echo "    ServerName localhost"; \
@@ -103,15 +98,20 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf && \
         echo "</VirtualHost>"; \
     } > /etc/apache2/sites-available/000-default.conf && \
     \
-    # PHP
+    # PHP: загрузка больших файлов
     { \
         echo "upload_max_filesize = 500M"; \
         echo "post_max_size = 500M"; \
     } > /usr/local/etc/php/conf.d/uploads.ini && \
+    \
+    # PHP: отключение ошибок в продакшене
     { \
         echo "display_errors = Off"; \
         echo "display_startup_errors = Off"; \
     } > /usr/local/etc/php/conf.d/errors.ini
 
+# Открываем порты
 EXPOSE 80 443
+
+# Запуск
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
