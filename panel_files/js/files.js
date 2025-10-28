@@ -4,13 +4,6 @@ async function loadFiles() {
         const files = await response.json();
         const grid = document.getElementById('filesGrid');
         const noFilesMsg = document.getElementById('noFilesMessage');
-        const existingCards = new Map();
-
-        // Сохраняем текущие карточки
-        grid.querySelectorAll('.file-card').forEach(card => {
-            const id = card.getAttribute('data-id');
-            if (id) existingCards.set(id, card);
-        });
 
         if (files.length === 0) {
             grid.innerHTML = '';
@@ -20,43 +13,37 @@ async function loadFiles() {
             noFilesMsg.classList.add('hidden');
         }
 
+        grid.innerHTML = ''; // Очищаем
         files.forEach(file => {
-            let card = existingCards.get(String(file.id));
-            if (!card) {
-                card = document.createElement('div');
-                card.className = 'file-card bg-gray-800 rounded-xl shadow-lg p-4 relative overflow-hidden client-card';
-                card.setAttribute('data-id', file.id);
-                grid.appendChild(card);
-            }
+            const card = document.createElement('div');
+            card.className = 'file-card bg-gray-800 rounded-xl shadow-lg p-4 relative overflow-hidden client-card';
+            card.setAttribute('data-id', file.id);
 
             const isVideo = file.type === 'video';
-            const thumbnail = isVideo 
-                ? `${file.file_url}?t=${Date.now()}` // видео — превью через <video>
-                : file.file_url; // PDF — просто ссылка
+            const thumbSrc = file.thumbnail || (isVideo ? '/assets/video-placeholder.jpg' : '/assets/pdf-placeholder.jpg');
 
             card.innerHTML = `
-                <!-- Иконка типа -->
-                <div class="absolute top-2 right-2 text-xs font-medium px-2 py-1 rounded-md ${isVideo ? 'bg-blue-600' : 'bg-purple-600'} text-white">
+                <!-- Иконка типа (ТОЛЬКО ИКОНКА) -->
+                <div class="absolute top-2 right-2 text-xs font-medium p-1 rounded-md ${isVideo ? 'bg-blue-600' : 'bg-purple-600'} text-white">
                     <i class="fas ${isVideo ? 'fa-video' : 'fa-file-pdf'}"></i>
-                    ${isVideo ? 'Видео' : 'PDF'}
                 </div>
 
                 <!-- Кнопка удаления -->
-                <button onclick="deleteFile(${file.id})" class="absolute bottom-2 right-2 text-red-500 hover:text-red-400 transition z-10">
+                <button onclick="deleteFile(${file.id})" class="absolute bottom-2 right-2 text-red-500 hover:text-red-400 transition z-10 p-1">
                     <i class="fas fa-trash"></i>
                 </button>
 
-                <!-- Превью -->
+                <!-- Превью как IMG -->
                 <div class="mb-3 h-40 bg-gray-700 rounded-lg overflow-hidden border border-gray-600">
-                    ${isVideo 
-                        ? `<video src="${thumbnail}" class="w-full h-full object-cover" preload="metadata" onclick="this.play()"></video>`
-                        : `<iframe src="${thumbnail}#toolbar=0&navpanes=0&scrollbar=0" class="w-full h-full" frameborder="0"></iframe>`
-                    }
+                    <img src="${thumbSrc}" alt="${escapeHtml(file.name)}" 
+                         class="w-full h-full object-cover cursor-pointer" 
+                         onclick="window.open('${file.file_url}', '_blank')">
                 </div>
 
-                <!-- Имя файла (редактируемое) -->
+                <!-- Имя файла -->
                 <div class="text-center">
-                    <span class="name-display block font-medium text-gray-200 truncate px-2" onclick="editFileName(this, ${file.id}, '${escapeHtml(file.name)}')">
+                    <span class="name-display block font-medium text-gray-200 truncate px-2" 
+                          onclick="editFileName(this, ${file.id}, '${escapeHtml(file.name)}')">
                         ${escapeHtml(file.name)}
                     </span>
                     <input type="text" class="name-input hidden w-full p-1 bg-gray-700 border border-gray-600 rounded text-center text-gray-200" 
@@ -65,12 +52,8 @@ async function loadFiles() {
                            onkeydown="if(event.key==='Enter') this.blur()">
                 </div>
             `;
-
-            existingCards.delete(String(file.id));
+            grid.appendChild(card);
         });
-
-        // Удаляем старые карточки
-        existingCards.forEach(card => card.remove());
 
         filterFiles();
     } catch (err) {

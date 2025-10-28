@@ -59,7 +59,8 @@ try {
                     type TEXT NOT NULL DEFAULT 'video',
                     duration INTEGER,
                     order_num INTEGER NOT NULL,
-                    is_default INTEGER DEFAULT 0
+                    is_default INTEGER DEFAULT 0,
+                    thumbnail TEXT DEFAULT ''
                 )",
             'columns' => [
                 ['name' => 'file_url', 'type' => 'TEXT', 'constraints' => 'NOT NULL'],
@@ -68,6 +69,7 @@ try {
                 ['name' => 'duration', 'type' => 'INTEGER'],
                 ['name' => 'order_num', 'type' => 'INTEGER', 'constraints' => 'NOT NULL'],
                 ['name' => 'is_default', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 0'],
+                ['name' => 'thumbnail', 'type' => 'TEXT', 'constraints' => 'DEFAULT \'\'']
             ],
             'initial_data' => function ($db) {
                 if (file_exists('/var/www/html/ads.pdf')) {

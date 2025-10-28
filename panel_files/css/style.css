@@ -399,6 +399,19 @@ canvas#pdfCanvas {
     background: #1a1a1a;
 }
 
+.file-card .absolute.top-2.right-2 i {
+    font-size: 0.75rem;
+}
+
+/* Превью img */
+.file-card img {
+    transition: transform 0.2s ease;
+}
+
+.file-card img:hover {
+    transform: scale(1.05);
+}
+
 /* Адаптивность */
 @media (max-width: 640px) {
     #filesGrid {
