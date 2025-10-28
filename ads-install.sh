@@ -45,6 +45,7 @@ services:
       - "8443:443"
     volumes:
       - file_storage:/opt/ads
+      - file_thumbnails:/opt/ads/thumbnails
       - db_data:/data
       - ssl:/etc/apache2/ssl
     environment:
