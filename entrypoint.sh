@@ -20,7 +20,6 @@ chmod 600 /etc/apache2/ssl/server.key
 chmod 644 /etc/apache2/ssl/server.crt
 
 # Устанавливаем supervisord для управления фоновыми процессами
-apt-get update && apt-get install -y supervisor && apt-get clean && rm -rf /var/lib/apt/lists/*
 mkdir -p /etc/supervisor/conf.d
 
 # Создаём конфигурацию для supervisord
