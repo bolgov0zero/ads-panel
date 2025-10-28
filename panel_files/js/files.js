@@ -2,32 +2,131 @@ async function loadFiles() {
     try {
         const response = await fetch('api.php?action=list_files');
         const files = await response.json();
-        const tbody = document.getElementById('fileTable');
-        const existingRows = Array.from(tbody.querySelectorAll('tr'));
-        files.forEach(file => {
-            const rowIndex = existingRows.findIndex(row => row.getAttribute('data-id') === String(file.id));
-            let row;
-            if (rowIndex !== -1) {
-                row = existingRows[rowIndex];
-                existingRows.splice(rowIndex, 1);
-            } else {
-                row = document.createElement('tr');
-                row.setAttribute('data-id', file.id);
-                tbody.appendChild(row);
-            }
-            row.innerHTML = `
-                <td class="p-3"><center>${file.id}</center></td>
-                <td class="p-3"><input type="text" value="${file.name}" class="p-1 bg-gray-700 border border-gray-600 rounded w-full" onchange="updateFileName(${file.id}, this.value)"></td>
-                <td class="p-3"><center>${file.type === 'video' ? 'Видео' : 'PDF'}</center></td>
-                <td class="p-3"><center>
-                    <button class="text-red-500 hover:text-red-400" onclick="deleteFile(${file.id})"><i class="fas fa-trash"></i></button>
-                </center></td>
-            `;
+        const grid = document.getElementById('filesGrid');
+        const noFilesMsg = document.getElementById('noFilesMessage');
+        const existingCards = new Map();
+
+        // Сохраняем текущие карточки
+        grid.querySelectorAll('.file-card').forEach(card => {
+            const id = card.getAttribute('data-id');
+            if (id) existingCards.set(id, card);
         });
-        existingRows.forEach(row => row.remove());
+
+        if (files.length === 0) {
+            grid.innerHTML = '';
+            noFilesMsg.classList.remove('hidden');
+            return;
+        } else {
+            noFilesMsg.classList.add('hidden');
+        }
+
+        files.forEach(file => {
+            let card = existingCards.get(String(file.id));
+            if (!card) {
+                card = document.createElement('div');
+                card.className = 'file-card bg-gray-800 rounded-xl shadow-lg p-4 relative overflow-hidden client-card';
+                card.setAttribute('data-id', file.id);
+                grid.appendChild(card);
+            }
+
+            const isVideo = file.type === 'video';
+            const thumbnail = isVideo 
+                ? `${file.file_url}?t=${Date.now()}` // видео — превью через <video>
+                : file.file_url; // PDF — просто ссылка
+
+            card.innerHTML = `
+                <!-- Иконка типа -->
+                <div class="absolute top-2 right-2 text-xs font-medium px-2 py-1 rounded-md ${isVideo ? 'bg-blue-600' : 'bg-purple-600'} text-white">
+                    <i class="fas ${isVideo ? 'fa-video' : 'fa-file-pdf'}"></i>
+                    ${isVideo ? 'Видео' : 'PDF'}
+                </div>
+
+                <!-- Кнопка удаления -->
+                <button onclick="deleteFile(${file.id})" class="absolute bottom-2 right-2 text-red-500 hover:text-red-400 transition z-10">
+                    <i class="fas fa-trash"></i>
+                </button>
+
+                <!-- Превью -->
+                <div class="mb-3 h-40 bg-gray-700 rounded-lg overflow-hidden border border-gray-600">
+                    ${isVideo 
+                        ? `<video src="${thumbnail}" class="w-full h-full object-cover" preload="metadata" onclick="this.play()"></video>`
+                        : `<iframe src="${thumbnail}#toolbar=0&navpanes=0&scrollbar=0" class="w-full h-full" frameborder="0"></iframe>`
+                    }
+                </div>
+
+                <!-- Имя файла (редактируемое) -->
+                <div class="text-center">
+                    <span class="name-display block font-medium text-gray-200 truncate px-2" onclick="editFileName(this, ${file.id}, '${escapeHtml(file.name)}')">
+                        ${escapeHtml(file.name)}
+                    </span>
+                    <input type="text" class="name-input hidden w-full p-1 bg-gray-700 border border-gray-600 rounded text-center text-gray-200" 
+                           value="${escapeHtml(file.name)}" 
+                           onblur="saveFileName(this, ${file.id})" 
+                           onkeydown="if(event.key==='Enter') this.blur()">
+                </div>
+            `;
+
+            existingCards.delete(String(file.id));
+        });
+
+        // Удаляем старые карточки
+        existingCards.forEach(card => card.remove());
+
         filterFiles();
     } catch (err) {
         console.error('Ошибка загрузки файлов:', err);
+        showNotification('Ошибка загрузки файлов', 'bg-red-500');
+    }
+}
+
+// Безопасное экранирование HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Редактирование имени
+function editFileName(span, id, currentName) {
+    const input = span.nextElementSibling;
+    span.classList.add('hidden');
+    input.classList.remove('hidden');
+    input.focus();
+    input.select();
+}
+
+// Сохранение имени
+async function saveFileName(input, id) {
+    const newName = input.value.trim();
+    const span = input.previousElementSibling;
+    if (newName === '' || newName === span.textContent) {
+        input.classList.add('hidden');
+        span.classList.remove('hidden');
+        return;
+    }
+
+    try {
+        const response = await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update_file_name', id, name: newName })
+        });
+        const result = await response.json();
+        if (result.error) {
+            showNotification(result.error, 'bg-red-500');
+            input.value = span.textContent;
+        } else {
+            span.textContent = newName;
+            showNotification('Имя изменено');
+        }
+    } catch (err) {
+        console.error('Ошибка:', err);
+        showNotification('Ошибка сохранения', 'bg-red-500');
+        input.value = span.textContent;
+    } finally {
+        input.classList.add('hidden');
+        span.classList.remove('hidden');
+        filterFiles();
     }
 }
 
@@ -55,36 +154,53 @@ async function updateFileName(id, name) {
     }
 }
 
+// Удаление файла
 async function deleteFile(id) {
-    if (confirm('Удалить файл?')) {
-        try {
-            const response = await fetch('api.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'delete_file', id })
-            });
-            const result = await response.json();
-            if (result.error) {
-                console.error(result.error);
-            } else {
-                const fileRow = document.querySelector(`#fileTable tr[data-id="${id}"]`);
-                if (fileRow) fileRow.remove();
-                const playlistRow = document.querySelector(`#playlistTable tr[data-id="${id}"]`);
-                if (playlistRow) playlistRow.remove();
-            }
-        } catch (err) {
-            console.error('Ошибка:', err);
+    if (!confirm('Удалить файл?')) return;
+
+    try {
+        const response = await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete_file', id })
+        });
+        const result = await response.json();
+        if (result.error) {
+            showNotification(result.error, 'bg-red-500');
+        } else {
+            const card = document.querySelector(`.file-card[data-id="${id}"]`);
+            if (card) card.remove();
+            showNotification('Файл удалён');
         }
+    } catch (err) {
+        console.error('Ошибка:', err);
+        showNotification('Ошибка удаления', 'bg-red-500');
     }
 }
 
+// Фильтрация
 function filterFiles() {
     const search = document.getElementById('fileSearch').value.toLowerCase();
-    const rows = document.querySelectorAll('#fileTable tr');
-    rows.forEach(row => {
-        const name = row.querySelector('td:nth-child(2) input').value.toLowerCase();
-        row.style.display = name.includes(search) ? '' : 'none';
+    const cards = document.querySelectorAll('.file-card');
+    let visible = 0;
+
+    cards.forEach(card => {
+        const name = card.querySelector('.name-display').textContent.toLowerCase();
+        if (name.includes(search)) {
+            card.style.display = '';
+            visible++;
+        } else {
+            card.style.display = 'none';
+        }
     });
+
+    const noFilesMsg = document.getElementById('noFilesMessage');
+    if (visible === 0 && cards.length > 0) {
+        noFilesMsg.classList.remove('hidden');
+        noFilesMsg.innerHTML = '<p>Ничего не найдено по запросу.</p>';
+    } else {
+        noFilesMsg.classList.add('hidden');
+    }
 }
 
 document.getElementById('uploadForm').addEventListener('submit', async (e) => {
@@ -98,15 +214,14 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         const result = await response.json();
         spinner.classList.add('hidden');
         if (result.error) {
-            console.error(result.error);
             showNotification(result.error, 'bg-red-500');
         } else {
             showNotification('Файл успешно загружен!');
+            e.target.reset();
             loadFiles();
         }
     } catch (err) {
         spinner.classList.add('hidden');
-        console.error('Ошибка загрузки:', err);
         showNotification('Ошибка загрузки файла', 'bg-red-500');
     }
 });
@@ -120,14 +235,12 @@ document.getElementById('scanFilesBtn').addEventListener('click', async () => {
         });
         const result = await response.json();
         if (result.error) {
-            console.error(result.error);
             showNotification(result.error, 'bg-red-500');
         } else {
-            showNotification(result.message);
+            showNotification(result.message || 'Сканирование завершено');
             loadFiles();
         }
     } catch (err) {
-        console.error('Ошибка сканирования файлов:', err);
-        showNotification('Ошибка сканирования файлов', 'bg-red-500');
+        showNotification('Ошибка сканирования', 'bg-red-500');
     }
 });

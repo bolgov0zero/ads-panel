@@ -360,3 +360,48 @@ canvas#pdfCanvas {
     cursor: not-allowed;
     opacity: 0.5;
 }
+
+/* Карточка файла */
+.file-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+}
+
+.file-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.file-card video,
+.file-card iframe {
+    pointer-events: none; /* Запрещаем скролл в iframe */
+}
+
+.file-card .name-display {
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+    user-select: none;
+}
+
+.file-card .name-display:hover {
+    background-color: rgba(55, 65, 81, 0.5);
+}
+
+.file-card .name-input {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+/* Превью iframe для PDF */
+.file-card iframe {
+    background: #1a1a1a;
+}
+
+/* Адаптивность */
+@media (max-width: 640px) {
+    #filesGrid {
+        grid-cols-1;
+    }
+}
