@@ -133,7 +133,7 @@ echo "3. Обновить Ads Panel"
 echo -e "4. \e[31mЗавершить Ads Panel\e[0m"
 echo ""
 echo -e "\e[32mПанель администратора:\e[0m https://${HOST_IP}/admin.html"
-echo -e "\e[33mИли нажмите любую клавишу проверить обновление.\e[0m"
+echo -e "\e[33mИли нажмите Enter чтобы проверить обновления.\e[0m"
 read -p "Выберите опцию: " choice
 
 case $choice in
