@@ -396,3 +396,23 @@ canvas#pdfCanvas {
 .file-card [class*="absolute"] {
     position: static !important;
 }
+
+/* === РАМКА С ИКОНКОЙ И ДЛИТЕЛЬНОСТЬЮ === */
+.file-card .bg-gray-700.rounded-md {
+    background-color: rgba(55, 65, 81, 0.6);
+    backdrop-filter: blur(2px);
+    border: 1px solid rgba(75, 85, 99, 0.4);
+}
+
+/* Иконка в рамке */
+.file-card .bg-gray-700.rounded-md i {
+    font-size: 0.875rem;
+    width: 16px;
+    text-align: center;
+}
+
+/* Длительность */
+.file-card .bg-gray-700.rounded-md span {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px;
+}

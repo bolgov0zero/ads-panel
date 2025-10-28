@@ -1,3 +1,11 @@
+// Форматирует секунды в MM:SS
+function formatDuration(seconds) {
+    if (!seconds) return '';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
 async function loadFiles() {
     try {
         const response = await fetch('api.php?action=list_files');
@@ -42,11 +50,15 @@ async function loadFiles() {
                            onkeydown="if(event.key==='Enter') this.blur()">
                 </div>
             
-                <!-- Нижняя панель: иконка слева, удаление справа -->
+                <!-- Нижняя панель: рамка с иконкой и длительностью -->
                 <div class="flex justify-between items-center px-1">
-                    <!-- Иконка типа -->
-                    <div class="text-xs ${isVideo ? 'text-blue-400' : 'text-purple-400'}">
-                        <i class="fas ${isVideo ? 'fa-video' : 'fa-file-pdf'}"></i>
+                    <!-- Рамка с иконкой и длительностью -->
+                    <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-700 rounded-md text-xs font-medium">
+                        <i class="fas ${isVideo ? 'fa-video text-blue-400' : 'fa-file-pdf text-purple-400'}"></i>
+                        ${isVideo && file.duration ? 
+                            `<span class="text-gray-300">${formatDuration(file.duration)}</span>` : 
+                            ''
+                        }
                     </div>
             
                     <!-- Кнопка удаления -->

@@ -110,6 +110,12 @@ try {
                 break;
             }
             
+            if ($fileType === 'video') {
+                $cmd = "ffprobe -v quiet -show_entries format=duration -of csv=p=0 " . escapeshellarg($filePath);
+                $durationOutput = trim(shell_exec($cmd));
+                $duration = $durationOutput ? round(floatval($durationOutput)) : null;
+            }
+            
             // **ГЕНЕРАЦИЯ ПРЕВЬЮ**
             $thumbnail = '';
             if ($fileType === 'video') {
