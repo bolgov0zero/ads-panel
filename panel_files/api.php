@@ -68,9 +68,12 @@ try {
     switch ($action) {
         case 'upload_file':
             $uploadDir = '/opt/ads/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
+            $thumbDir = '/opt/ads/thumbnails/';
+            
+            // Создаем папки
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+            if (!is_dir($thumbDir)) mkdir($thumbDir, 0755, true);
+            
             if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
                 $errors = [
                     UPLOAD_ERR_INI_SIZE => 'Файл превышает upload_max_filesize',
@@ -85,27 +88,61 @@ try {
                 echo json_encode(['error' => $errors[$error] ?? 'Неизвестная ошибка загрузки']);
                 break;
             }
-            $fileFile = $uploadDir . basename($_FILES['file']['name']);
-            $fileUrl = '/files/' . basename($_FILES['file']['name']);
-            $name = basename($_FILES['file']['name']);
-            $extension = strtolower(pathinfo($_FILES['file']['name'], PATHINFO_EXTENSION));
+            
+            $fileName = basename($_FILES['file']['name']);
+            $filePath = $uploadDir . $fileName;
+            $fileUrl = '/files/' . $fileName;
+            $thumbName = 'thumb_' . $fileName . '.jpg';
+            $thumbPath = $thumbDir . $thumbName;
+            $thumbUrl = '/files/thumbnails/' . $thumbName;
+            
+            $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
             $fileType = in_array($extension, ['mp4']) ? 'video' : (in_array($extension, ['pdf']) ? 'pdf' : null);
+            
             if (!$fileType) {
                 echo json_encode(['error' => 'Файл должен быть в формате MP4 или PDF']);
                 break;
             }
-            $duration = $fileType === 'pdf' ? 5 : null; // По умолчанию 5 секунд для PDF
-            if (move_uploaded_file($_FILES['file']['tmp_name'], $fileFile)) {
-                $stmt = $db->prepare("INSERT INTO files (file_url, name, type, duration, order_num, is_default) SELECT :url, :name, :type, :duration, COALESCE(MAX(order_num) + 1, 1), 0 FROM files");
-                $stmt->bindValue(':url', $fileUrl, SQLITE3_TEXT);
-                $stmt->bindValue(':name', $name, SQLITE3_TEXT);
-                $stmt->bindValue(':type', $fileType, SQLITE3_TEXT);
-                $stmt->bindValue(':duration', $duration, $duration === null ? SQLITE3_NULL : SQLITE3_INTEGER);
-                $stmt->execute();
-                echo json_encode(['message' => 'Файл загружен']);
-            } else {
-                echo json_encode(['error' => 'Не удалось переместить файл']);
+            
+            // Перемещаем файл
+            if (!move_uploaded_file($_FILES['file']['tmp_name'], $filePath)) {
+                echo json_encode(['error' => 'Не удалось сохранить файл']);
+                break;
             }
+            
+            // **ГЕНЕРАЦИЯ ПРЕВЬЮ**
+            $thumbnail = '';
+            if ($fileType === 'video') {
+                // MP4: ffmpeg - первый кадр
+                $cmd = "ffmpeg -i '$filePath' -ss 00:00:01 -vframes 1 -y '$thumbPath' 2>/dev/null";
+                exec($cmd, $output, $returnCode);
+                if ($returnCode === 0 && file_exists($thumbPath)) {
+                    $thumbnail = $thumbUrl;
+                }
+            } else {
+                // PDF: ImageMagick convert
+                $cmd = "convert -density 150 '$filePath[0]' -thumbnail 300x200 -quality 85 '$thumbPath' 2>/dev/null";
+                exec($cmd, $output, $returnCode);
+                if ($returnCode === 0 && file_exists($thumbPath)) {
+                    $thumbnail = $thumbUrl;
+                }
+            }
+            
+            $duration = $fileType === 'pdf' ? 5 : null;
+            
+            // Сохраняем в БД с thumbnail
+            $stmt = $db->prepare("
+                INSERT INTO files (file_url, name, type, duration, order_num, is_default, thumbnail) 
+                SELECT :url, :name, :type, :duration, COALESCE(MAX(order_num) + 1, 1), 0, :thumbnail FROM files
+            ");
+            $stmt->bindValue(':url', $fileUrl, SQLITE3_TEXT);
+            $stmt->bindValue(':name', $fileName, SQLITE3_TEXT);
+            $stmt->bindValue(':type', $fileType, SQLITE3_TEXT);
+            $stmt->bindValue(':duration', $duration, $duration === null ? SQLITE3_NULL : SQLITE3_INTEGER);
+            $stmt->bindValue(':thumbnail', $thumbnail, SQLITE3_TEXT);
+            $stmt->execute();
+            
+            echo json_encode(['message' => 'Файл загружен с превью']);
             break;
 
         case 'update_client_show_info':
@@ -124,35 +161,95 @@ try {
 
         case 'scan_files':
             $uploadDir = '/opt/ads/';
+            $thumbDir = '/opt/ads/thumbnails/';
+            
+            // Создаём папки
             if (!is_dir($uploadDir)) {
                 echo json_encode(['error' => 'Папка /opt/ads/ не существует']);
                 break;
             }
+            if (!is_dir($thumbDir)) {
+                mkdir($thumbDir, 0755, true);
+            }
+            
             $files = scandir($uploadDir);
             $newFiles = 0;
+            $errors = [];
+            
             foreach ($files as $file) {
+                // Пропускаем . и ..
+                if ($file === '.' || $file === '..') continue;
+            
+                // Исключаем системный файл ads.pdf
+                if ($file === 'ads.pdf') continue;
+            
+                $filePath = $uploadDir . $file;
+                $fileUrl = '/files/' . $file;
+            
+                // Проверяем, это файл и не директория
+                if (!is_file($filePath)) continue;
+            
                 $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
                 $fileType = in_array($extension, ['mp4']) ? 'video' : (in_array($extension, ['pdf']) ? 'pdf' : null);
-                if ($fileType) {
-                    $fileFile = $uploadDir . $file;
-                    $fileUrl = '/files/' . $file;
-                    $name = $file;
-                    $duration = $fileType === 'pdf' ? 5 : null; // По умолчанию 5 секунд для PDF
-                    $stmt = $db->prepare("SELECT COUNT(*) FROM files WHERE file_url = :url");
-                    $stmt->bindValue(':url', $fileUrl, SQLITE3_TEXT);
-                    $result = $stmt->execute()->fetchArray(SQLITE3_NUM)[0];
-                    if ($result === 0) {
-                        $stmt = $db->prepare("INSERT INTO files (file_url, name, type, duration, order_num, is_default) SELECT :url, :name, :type, :duration, COALESCE(MAX(order_num) + 1, 1), 0 FROM files");
-                        $stmt->bindValue(':url', $fileUrl, SQLITE3_TEXT);
-                        $stmt->bindValue(':name', $name, SQLITE3_TEXT);
-                        $stmt->bindValue(':type', $fileType, SQLITE3_TEXT);
-                        $stmt->bindValue(':duration', $duration, $duration === null ? SQLITE3_NULL : SQLITE3_INTEGER);
-                        $stmt->execute();
-                        $newFiles++;
+            
+                // Пропускаем неподдерживаемые форматы
+                if (!$fileType) continue;
+            
+                // Проверяем, уже есть ли файл в БД
+                $stmt = $db->prepare("SELECT COUNT(*) FROM files WHERE file_url = :url");
+                $stmt->bindValue(':url', $fileUrl, SQLITE3_TEXT);
+                $count = $stmt->execute()->fetchArray(SQLITE3_NUM)[0];
+                if ($count > 0) continue; // Уже есть — пропускаем
+            
+                // Генерируем превью
+                $thumbName = 'thumb_' . $file . '.jpg';
+                $thumbPath = $thumbDir . $thumbName;
+                $thumbUrl = '/files/thumbnails/' . $thumbName;
+                $thumbnail = '';
+            
+                if ($fileType === 'video') {
+                    $cmd = "ffmpeg -i " . escapeshellarg($filePath) . " -ss 00:00:01 -vframes 1 -y " . escapeshellarg($thumbPath) . " 2>/dev/null";
+                    exec($cmd, $output, $returnCode);
+                    if ($returnCode === 0 && file_exists($thumbPath)) {
+                        $thumbnail = $thumbUrl;
+                    }
+                } else { // pdf
+                    $cmd = "convert -density 150 " . escapeshellarg($filePath . '[0]') . " -thumbnail 300x200 -quality 85 " . escapeshellarg($thumbPath) . " 2>/dev/null";
+                    exec($cmd, $output, $returnCode);
+                    if ($returnCode === 0 && file_exists($thumbPath)) {
+                        $thumbnail = $thumbUrl;
                     }
                 }
+            
+                $duration = $fileType === 'pdf' ? 5 : null;
+            
+                // Добавляем в БД
+                $stmt = $db->prepare("
+                    INSERT INTO files 
+                    (file_url, name, type, duration, order_num, is_default, thumbnail) 
+                    VALUES (:url, :name, :type, :duration, 
+                            COALESCE((SELECT MAX(order_num) FROM files), 0) + 1, 
+                            0, :thumbnail)
+                ");
+                $stmt->bindValue(':url', $fileUrl, SQLITE3_TEXT);
+                $stmt->bindValue(':name', $file, SQLITE3_TEXT);
+                $stmt->bindValue(':type', $fileType, SQLITE3_TEXT);
+                $stmt->bindValue(':duration', $duration, $duration === null ? SQLITE3_NULL : SQLITE3_INTEGER);
+                $stmt->bindValue(':thumbnail', $thumbnail, SQLITE3_TEXT);
+            
+                if ($stmt->execute()) {
+                    $newFiles++;
+                } else {
+                    $errors[] = "Не удалось добавить $file";
+                }
             }
-            echo json_encode(['message' => "Добавлено новых файлов: $newFiles"]);
+            
+            $message = "Сканирование завершено. Добавлено файлов: $newFiles";
+            if (!empty($errors)) {
+                $message .= ". Ошибки: " . implode('; ', $errors);
+            }
+            
+            echo json_encode(['message' => $message]);
             break;
 
         case 'add_client':
@@ -233,9 +330,22 @@ try {
             break;
 
         case 'list_files':
-            $result = $db->query("SELECT id, file_url, name, type, duration, order_num FROM files WHERE is_default = 0 ORDER BY order_num ASC");
+            $stmt = $db->prepare("
+                SELECT id, file_url, name, type, duration, thumbnail 
+                FROM files 
+                WHERE is_default = 0 
+                ORDER BY order_num
+            ");
+            $result = $stmt->execute();
             $files = [];
             while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                if (!empty($row['thumbnail'])) {
+                    $row['thumbnail'] = $row['thumbnail'];
+                } else {
+                    $row['thumbnail'] = $row['type'] === 'video' 
+                        ? '/assets/video-placeholder.jpg' 
+                        : '/assets/pdf-placeholder.jpg';
+                }
                 $files[] = $row;
             }
             echo json_encode($files);

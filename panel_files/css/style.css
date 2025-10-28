@@ -1,23 +1,21 @@
+/* === ОСНОВНЫЕ СТИЛИ === */
 .max-w-7xl {
     max-width: 844px !important;
 }
 
-video {
-    max-width: 100vw;
-    height: 100vh;
-    display: none;
-    margin: 0 auto; /* Центрирование по горизонтали */
-}
-
+/* === ПЛЕЕР И ПРЕВЬЮ === */
+video,
 canvas#pdfCanvas {
     max-width: 100vw;
     height: 100vh;
     display: none;
-    margin: 0 auto; /* Центрирование по горизонтали */
-    transform: none !important; /* Предотвращаем CSS-трансформации */
+    margin: 0 auto;
+    transform: none !important;
 }
 
-#fullscreenBtn, #reconnectBtn {
+/* === КНОПКИ УПРАВЛЕНИЯ === */
+#fullscreenBtn,
+#reconnectBtn {
     position: absolute;
     bottom: 30px;
     right: 20px;
@@ -28,29 +26,33 @@ canvas#pdfCanvas {
     border-radius: 5px;
     cursor: pointer;
     z-index: 10;
+    transition: background 0.2s;
 }
 
 #reconnectBtn {
-    right: 150px; /* Смещаем левее кнопки "Во весь экран" */
+    right: 150px;
 }
 
-#fullscreenBtn:hover, #reconnectBtn:hover {
+#fullscreenBtn:hover,
+#reconnectBtn:hover {
     background-color: rgba(0, 0, 0, 0.9);
 }
 
+/* === ИНФО О КЛИЕНТЕ === */
 #clientInfo {
     position: absolute;
     bottom: 7px;
     right: 20px;
     color: white;
     background-color: rgba(0, 0, 0, 0.7);
-    padding: 4px;
+    padding: 4px 8px;
     border-radius: 5px;
     z-index: 10;
     font-size: 11px;
-    display: none; /* По умолчанию скрыто, пока не загрузится настройка */
+    display: none;
 }
 
+/* === БЕГУЩАЯ СТРОКА === */
 #marquee {
     position: absolute;
     top: 50%;
@@ -58,24 +60,25 @@ canvas#pdfCanvas {
     width: 100%;
     overflow: hidden;
     display: none;
-    z-index: 20; /* Выше всех других элементов */
+    z-index: 20;
     transform: translateY(-50%);
-    padding: 10px 0; /* Отступ для больших шрифтов */
+    padding: 10px 0;
 }
 
 #marquee span {
     display: inline-block;
     white-space: nowrap;
     position: absolute;
-    left: 100%; /* Начальная позиция за правым краем */
+    left: 100%;
     animation: marquee linear infinite;
 }
 
 @keyframes marquee {
     0% { transform: translateX(0); }
-    100% { transform: translateX(calc(-100% - 100vw)); } /* Полное скрытие за левым краем */
+    100% { transform: translateX(calc(-100% - 100vw)); }
 }
 
+/* === УВЕДОМЛЕНИЯ === */
 #notification {
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
@@ -85,6 +88,7 @@ canvas#pdfCanvas {
     transform: translateY(1rem);
 }
 
+/* === ПЕРЕКЛЮЧАТЕЛИ (iOS-style) === */
 .ios-switch {
     position: relative;
     display: inline-block;
@@ -130,6 +134,7 @@ canvas#pdfCanvas {
     transform: translateX(16px);
 }
 
+/* === СКРОЛЛБАРЫ === */
 .overflow-x-auto::-webkit-scrollbar {
     height: 8px;
 }
@@ -143,11 +148,13 @@ canvas#pdfCanvas {
     background: #1f2937;
 }
 
+/* === НАСТРОЙКИ СООБЩЕНИЯ === */
 .message-settings-controls {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
+    gap: 1rem;
 }
 
 .message-settings-controls > div {
@@ -156,6 +163,7 @@ canvas#pdfCanvas {
     gap: 0.5rem;
 }
 
+/* === СТАТУСЫ === */
 .status-dot {
     display: inline-block;
     width: 10px;
@@ -180,14 +188,11 @@ canvas#pdfCanvas {
 }
 
 @keyframes blink {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.3;
-    }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
 }
 
+/* === МОДАЛЬНЫЕ ОКНА === */
 .modal {
     display: none;
     position: fixed;
@@ -210,7 +215,8 @@ canvas#pdfCanvas {
     color: #e5e7eb;
 }
 
-.modal-content input, .modal-content button {
+.modal-content input,
+.modal-content button {
     width: 100%;
     margin-bottom: 1rem;
     padding: 0.5rem;
@@ -225,6 +231,7 @@ canvas#pdfCanvas {
     border: none;
     padding: 0.75rem;
     cursor: pointer;
+    transition: background 0.2s;
 }
 
 .modal-content button:hover {
@@ -257,33 +264,7 @@ canvas#pdfCanvas {
     white-space: nowrap;
 }
 
-.h-10 {
-    height: 55px !important;
-}
-
-@media (max-width: 640px) {
-    .tab-button {
-        padding: 0.5rem 1rem;
-        font-size: 0.875rem;
-    }
-    table {
-        font-size: 0.875rem;
-    }
-    th, td {
-        padding: 0.5rem;
-    }
-    .message-settings-controls {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .message-settings-controls > div {
-        margin-bottom: 1rem;
-    }
-    .modal-content {
-        margin: 1rem;
-    }
-}
-
+/* === СПРАВКА === */
 .help-content {
     background-color: #1f2937;
     padding: 2rem;
@@ -307,39 +288,93 @@ canvas#pdfCanvas {
     margin-bottom: 0.5rem;
 }
 
-.client-card {
+/* === КАРТОЧКИ КЛИЕНТОВ И ФАЙЛОВ === */
+.client-card,
+.file-card {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
 }
 
-.client-card:hover {
+.client-card:hover,
+.file-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
-.name-display {
+/* === КАРТОЧКИ ФАЙЛОВ === */
+.file-card img {
+    transition: transform 0.2s ease;
+    pointer-events: auto;
+}
+
+.file-card img:hover {
+    transform: scale(1.05);
+}
+
+.file-card .name-display {
     cursor: pointer;
     padding: 2px 4px;
     border-radius: 4px;
     transition: background 0.2s;
+    user-select: none;
 }
 
-.name-display:hover {
+.file-card .name-display:hover {
     background-color: rgba(55, 65, 81, 0.5);
 }
 
-.name-input {
-    font-size: 1.125rem;
+.file-card .name-input {
+    font-size: 0.95rem;
     font-weight: 500;
 }
 
-/* Улучшенная анимация для оффлайн */
-.status-offline {
-    animation: blink 1.5s ease-in-out infinite;
+/* Нижняя панель: иконка слева, удаление справа */
+.file-card .flex.justify-between {
+    margin-top: 4px;
+    font-size: 0.875rem;
 }
 
-@keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+/* Иконка типа — только иконка */
+.file-card .flex.justify-between i {
+    font-size: 1rem;
+}
+
+/* === АДАПТИВНОСТЬ === */
+@media (max-width: 640px) {
+    .tab-button {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    table {
+        font-size: 0.875rem;
+    }
+
+    th, td {
+        padding: 0.5rem;
+    }
+
+    .message-settings-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .message-settings-controls > div {
+        margin-bottom: 1rem;
+    }
+
+    .modal-content {
+        margin: 1rem;
+    }
+
+    #filesGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* === ДОПОЛНИТЕЛЬНО === */
+.h-10 {
+    height: 55px !important;
 }
 
 .rem-button {
@@ -347,16 +382,17 @@ canvas#pdfCanvas {
     right: 1.4rem;
 }
 
-.view-button {
-    font-size: 1rem;
-}
-
+.view-button,
 .play-button {
     font-size: 1rem;
-    cursor: pointer;
 }
 
 .play-button:disabled {
     cursor: not-allowed;
     opacity: 0.5;
+}
+
+/* Убираем старые absolute позиции */
+.file-card [class*="absolute"] {
+    position: static !important;
 }
