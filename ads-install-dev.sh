@@ -3,7 +3,7 @@
 clear
 echo ""
 echo -e "\e[33m=======================================\e[0m"
-echo -e "\e[33mAds Panel - Система управления рекламой\e[0m"
+echo -e "\e[33mAds Panel Dev - Система управления рекламой\e[0m"
 echo -e "\e[33m=======================================\e[0m"
 echo ""
 
@@ -101,9 +101,9 @@ cd "$ADS_DIR" || {
 }
 
 clear
-echo -e "\e[33m================\e[0m"
-echo -e "\e[33mСкрипт Ads Panel\e[0m"
-echo -e "\e[33m================\e[0m"
+echo -e "\e[33m====================\e[0m"
+echo -e "\e[33mСкрипт Ads Panel Dev\e[0m"
+echo -e "\e[33m====================\e[0m"
 echo ""
 if docker ps | grep -q "Up"; then > /dev/null 2>&1
     echo -e "Статус: \e[32m[✓] работает\e[0m"
