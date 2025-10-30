@@ -166,7 +166,7 @@ try {
             // --- Проверка смены онлайн-статуса ---
             if ($prev && $prev['online'] != $is_online) {
                 $status_text = $is_online ? "в сети" : "не в сети";
-                $emoji = $is_online ? "Зелёный круг" : "Красный круг";
+                $emoji = $is_online ? "🟢" : "🔴";
                 $message = "<b>Статус:</b> $emoji $status_text\n\n<b>Система:</b> <i>$system_name</i>\n<b>Имя:</b> <i>{$row['name']}</i>\n<b>UUID:</b> <code>$uuid</code>";
                 logMessage("Онлайн-статус изменён: $uuid → $status_text");
                 if (!empty($bot_token) && !empty($chat_id)) {
@@ -176,8 +176,8 @@ try {
 
             // --- Проверка смены статуса воспроизведения ---
             if ($prev && $prev['playback'] != $playback) {
-                $playback_text = $playback === 'playing' ? "воспроизведение" : "остановлено";
-                $emoji = $playback === 'playing' ? "Зелёная кнопка" : "Красная кнопка";
+                $playback_text = $playback === 'playing' ? "восстановлено" : "зависло";
+                $emoji = $playback === 'playing' ? "▶️" : "⏹️";
                 $message = "<b>Воспроизведение:</b> $emoji $playback_text\n\n<b>Система:</b> <i>$system_name</i>\n<b>Имя:</b> <i>{$row['name']}</i>\n<b>UUID:</b> <code>$uuid</code>";
                 logMessage("Статус воспроизведения изменён: $uuid → $playback_text");
                 if (!empty($bot_token) && !empty($chat_id)) {
