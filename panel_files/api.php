@@ -362,10 +362,10 @@ try {
 
         case 'list_files':
             $stmt = $db->prepare("
-                SELECT id, file_url, name, type, duration, thumbnail 
+                SELECT id, file_url, name, type, duration, order_num, thumbnail 
                 FROM files 
                 WHERE is_default = 0 
-                ORDER BY order_num
+                ORDER BY order_num ASC
             ");
             $result = $stmt->execute();
             $files = [];
