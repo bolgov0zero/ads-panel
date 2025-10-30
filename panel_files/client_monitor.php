@@ -177,7 +177,7 @@ try {
             // --- Проверка смены статуса воспроизведения ---
             if ($prev && $prev['playback'] != $playback) {
                 $playback_text = $playback === 'playing' ? "восстановлено" : "зависло";
-                $emoji = $playback === 'playing' ? "▶️" : "⏹️";
+                $emoji = $playback === 'playing' ? "✅" : "🚨";
                 $message = "<b>Воспроизведение:</b> $emoji $playback_text\n\n<b>Система:</b> <i>$system_name</i>\n<b>Имя:</b> <i>{$row['name']}</i>\n<b>UUID:</b> <code>$uuid</code>";
                 logMessage("Статус воспроизведения изменён: $uuid → $playback_text");
                 if (!empty($bot_token) && !empty($chat_id)) {
