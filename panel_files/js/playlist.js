@@ -29,7 +29,7 @@ async function loadPlaylist() {
                 <td class="p-3"><center>${file.type === 'video' ? 'Видео' : 'PDF'}</center></td>
                 <td class="p-3"><center><label class="ios-switch"><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="updateClientContent('${uuid}', ${file.id}, '${file.type}', this.checked)"><span class="slider"></span></label></center></td>
                 <td class="p-3"><center>
-                    <input type="number" value="${file.order_num}" class="w-20 p-1 bg-gray-700 border border-gray-600 rounded" onchange="updateOrder('file', ${file.id}, this.value)">
+                    <input type="number" value="${file.order_num ?? 0}" class="w-20 p-1 bg-gray-700 border border-gray-600 rounded" onchange="updateOrder('file', ${file.id}, this.value)">
                 </center></td>
                 <td class="p-3"><center>
                     ${file.type === 'pdf' ? 
