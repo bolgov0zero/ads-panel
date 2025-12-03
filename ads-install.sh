@@ -66,8 +66,8 @@ fi
 # Запускаем docker-compose
 sleep 1
 echo -ne "[ ] Запуск Ads Panel.\r"
-docker-compose up -d > /dev/null 2>&1
-docker-compose restart > /dev/null 2>&1
+docker compose up -d > /dev/null 2>&1
+docker compose restart > /dev/null 2>&1
 
 if [ $? -eq 0 ]; then
     echo -e "\e[32m[✓]\e[0m Запуск Ads Panel."
@@ -140,7 +140,7 @@ case $choice in
     1)
         clear
         echo "Запуск Ads Panel..."
-        docker-compose up -d > /dev/null 2>&1
+        docker compose up -d > /dev/null 2>&1
         echo "Запуск завершён!"
         sleep 2
         clear
@@ -149,7 +149,7 @@ case $choice in
     2)
         clear
         echo "Перезапуск Ads Panel..."
-        docker-compose restart > /dev/null 2>&1
+        docker compose restart > /dev/null 2>&1
         echo "Перезапуск завершён!"
         sleep 2
         clear
@@ -158,8 +158,8 @@ case $choice in
     3)
         clear
         echo "Обновление Ads Panel..."
-        docker-compose pull > /dev/null 2>&1
-        docker-compose up -d > /dev/null 2>&1
+        docker compose pull > /dev/null 2>&1
+        docker compose up -d > /dev/null 2>&1
         docker image prune -f > /dev/null 2>&1
         echo "Обновление Ads Panel завершено!"
         sleep 2
@@ -169,7 +169,7 @@ case $choice in
     4)
         clear
         echo "Завершение Ads Panel..."
-        docker-compose down > /dev/null 2>&1
+        docker compose down > /dev/null 2>&1
         echo -e "\e[31mРабота Ads Panel завершена!\e[0m"
         sleep 2
         clear
