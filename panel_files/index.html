@@ -78,7 +78,6 @@ function showButtons() {
     
     fullscreenBtn.classList.remove('buttons-hidden');
     reconnectBtn.classList.remove('buttons-hidden');
-    clientInfo.classList.remove('buttons-hidden');
     
     // Сбрасываем таймер скрытия
     if (mouseMoveTimer) {
@@ -95,7 +94,6 @@ function hideButtons() {
     
     fullscreenBtn.classList.add('buttons-hidden');
     reconnectBtn.classList.add('buttons-hidden');
-    clientInfo.classList.add('buttons-hidden');
 }
 
 // Инициализация отслеживания движения мыши
@@ -108,7 +106,6 @@ function initMouseTracking() {
     // Показываем кнопки при наведении на них (на всякий случай)
     fullscreenBtn.addEventListener('mouseenter', showButtons);
     reconnectBtn.addEventListener('mouseenter', showButtons);
-    clientInfo.addEventListener('mouseenter', showButtons);
     
     // Изначально скрываем кнопки через 2 секунды после загрузки
     setTimeout(hideButtons, HIDE_BUTTONS_DELAY);
@@ -348,9 +345,6 @@ async function loadClientInfo() {
             clientInfo.textContent = `UUID: ${uuid.toUpperCase()} | ИМЯ: ${data.name}`;
             const shouldShow = data.show_info === 1 && !messageSettings.enabled;
             clientInfo.style.display = shouldShow ? 'block' : 'none';
-            if (!shouldShow) {
-                clientInfo.classList.add('buttons-hidden');
-            }
             console.log('Информация о клиенте загружена:', data);
         }
     } catch (err) {
