@@ -396,6 +396,22 @@ document.addEventListener('msfullscreenchange', () => {
 fullscreenBtn.addEventListener('click', enterFullscreen);
 reconnectBtn.addEventListener('click', reconnectClient);
 
+// Автоматическое нажатие кнопки при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM загружен, пробуем автонажатие кнопки');
+    
+    // Ждем немного, чтобы все элементы точно загрузились
+    setTimeout(function() {
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        if (fullscreenBtn && fullscreenBtn.style.display !== 'none') {
+            console.log('Автонажатие кнопки "Во весь экран"');
+            fullscreenBtn.click();
+        } else {
+            console.log('Кнопка не найдена или скрыта');
+        }
+    }, 2000); // Ждем 2 секунды после загрузки
+});
+
 // Показ контента
 async function showContent(index, restoreTime = 0) {
     if (messageSettings.enabled) {
