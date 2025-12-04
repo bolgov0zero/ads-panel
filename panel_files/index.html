@@ -10,6 +10,13 @@
     body {
         overflow: hidden;
     }
+    #fullscreenBtn, #reconnectBtn {
+        transition: opacity 0.3s ease;
+    }
+    .buttons-hidden {
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
 </style>
 </head>
 <body>
@@ -60,176 +67,52 @@ let messageSettings = { enabled: 0, text: '', color: '#ffffff', font_size: 24, s
 let lastTimeUpdate = 0;
 let playbackStatus = 'playing';
 
-// ========== АВТОНАЖАТИЕ ПОЛНОЭКРАННОГО РЕЖИМА ==========
-let autoFullscreenAttempted = false;
-let autoFullscreenTries = 0;
-const MAX_AUTO_TRIES = 5;
+// Переменные для управления таймером скрытия кнопок
+let mouseMoveTimer = null;
+const HIDE_BUTTONS_DELAY = 2000; // 2 секунды до скрытия кнопок
 
-// Улучшенная функция входа в полноэкранный режим
-function enterFullscreenEnhanced() {
-    console.log('enterFullscreenEnhanced вызвана');
+// Функция для показа кнопок
+function showButtons() {
+    if (messageSettings.enabled) return;
+    if (document.fullscreenElement) return;
     
-    const element = document.documentElement;
+    fullscreenBtn.classList.remove('buttons-hidden');
+    reconnectBtn.classList.remove('buttons-hidden');
+    clientInfo.classList.remove('buttons-hidden');
     
-    // Пробуем все методы полноэкранного режима
-    const fullscreenMethods = [
-        () => element.requestFullscreen ? element.requestFullscreen() : Promise.reject(),
-        () => element.mozRequestFullScreen ? element.mozRequestFullScreen() : Promise.reject(),
-        () => element.webkitRequestFullscreen ? element.webkitRequestFullscreen() : Promise.reject(),
-        () => element.msRequestFullscreen ? element.msRequestFullscreen() : Promise.reject()
-    ];
-    
-    // Пробуем каждый метод последовательно
-    let promiseChain = Promise.reject();
-    
-    for (const method of fullscreenMethods) {
-        promiseChain = promiseChain.catch(() => {
-            try {
-                return method().then(() => {
-                    console.log('Полноэкранный режим активирован');
-                    // Скрываем кнопки
-                    fullscreenBtn.style.display = 'none';
-                    reconnectBtn.style.display = 'none';
-                    clientInfo.style.display = 'none';
-                    return Promise.resolve();
-                });
-            } catch (err) {
-                return Promise.reject(err);
-            }
-        });
+    // Сбрасываем таймер скрытия
+    if (mouseMoveTimer) {
+        clearTimeout(mouseMoveTimer);
     }
     
-    promiseChain.catch(err => {
-        console.log('Все методы полноэкранного режима не сработали:', err);
-        
-        // Пробуем альтернативный способ через click() на кнопке
-        setTimeout(() => {
-            if (!document.fullscreenElement) {
-                console.log('Пробуем альтернативный метод через 500мс');
-                const clickEvent = new MouseEvent('click', {
-                    view: window,
-                    bubbles: true,
-                    cancelable: true
-                });
-                fullscreenBtn.dispatchEvent(clickEvent);
-            }
-        }, 500);
+    // Устанавливаем новый таймер для скрытия
+    mouseMoveTimer = setTimeout(hideButtons, HIDE_BUTTONS_DELAY);
+}
+
+// Функция для скрытия кнопок
+function hideButtons() {
+    if (messageSettings.enabled) return;
+    
+    fullscreenBtn.classList.add('buttons-hidden');
+    reconnectBtn.classList.add('buttons-hidden');
+    clientInfo.classList.add('buttons-hidden');
+}
+
+// Инициализация отслеживания движения мыши
+function initMouseTracking() {
+    // Показываем кнопки при движении мыши
+    document.addEventListener('mousemove', () => {
+        showButtons();
     });
     
-    return promiseChain;
+    // Показываем кнопки при наведении на них (на всякий случай)
+    fullscreenBtn.addEventListener('mouseenter', showButtons);
+    reconnectBtn.addEventListener('mouseenter', showButtons);
+    clientInfo.addEventListener('mouseenter', showButtons);
+    
+    // Изначально скрываем кнопки через 2 секунды после загрузки
+    setTimeout(hideButtons, HIDE_BUTTONS_DELAY);
 }
-
-// Переопределяем оригинальную функцию enterFullscreen
-function enterFullscreen() {
-    console.log('Оригинальная enterFullscreen вызвана');
-    
-    const element = document.documentElement;
-    if (element.requestFullscreen) {
-        element.requestFullscreen().catch(err => {
-            console.log('Ошибка requestFullscreen:', err);
-        });
-    } else if (element.mozRequestFullScreen) {
-        element.mozRequestFullScreen().catch(err => {
-            console.log('Ошибка mozRequestFullScreen:', err);
-        });
-    } else if (element.webkitRequestFullscreen) {
-        element.webkitRequestFullscreen().catch(err => {
-            console.log('Ошибка webkitRequestFullscreen:', err);
-        });
-    } else if (element.msRequestFullscreen) {
-        element.msRequestFullscreen().catch(err => {
-            console.log('Ошибка msRequestFullscreen:', err);
-        });
-    }
-    
-    // Скрываем кнопки
-    fullscreenBtn.style.display = 'none';
-    reconnectBtn.style.display = 'none';
-    clientInfo.style.display = 'none';
-}
-
-// Функция для автоматического нажатия
-function attemptAutoFullscreen() {
-    if (autoFullscreenAttempted) {
-        console.log('Автонажатие уже было попыток');
-        return false;
-    }
-    
-    if (messageSettings.enabled) {
-        console.log('Автонажатие отменено: включено сообщение');
-        return false;
-    }
-    
-    // Проверяем, не находимся ли уже в полноэкранном режиме
-    if (document.fullscreenElement || 
-        document.webkitFullscreenElement || 
-        document.mozFullScreenElement || 
-        document.msFullscreenElement) {
-        console.log('Уже в полноэкранном режиме');
-        autoFullscreenAttempted = true;
-        fullscreenBtn.style.display = 'none';
-        reconnectBtn.style.display = 'none';
-        clientInfo.style.display = 'none';
-        return true;
-    }
-    
-    // Проверяем видимость кнопки
-    const isButtonVisible = 
-        fullscreenBtn.offsetParent !== null && 
-        fullscreenBtn.style.display !== 'none' &&
-        fullscreenBtn.style.visibility !== 'hidden' &&
-        fullscreenBtn.getBoundingClientRect().width > 0;
-    
-    if (!isButtonVisible) {
-        console.log('Кнопка не видима для автонажатия');
-        return false;
-    }
-    
-    console.log('Попытка автонажатия #' + (autoFullscreenTries + 1));
-    autoFullscreenTries++;
-    
-    // Способ 1: Имитация реального клика пользователя
-    try {
-        // Создаем детальное событие клика
-        const clickEvent = new MouseEvent('click', {
-            view: window,
-            bubbles: true,
-            cancelable: true,
-            detail: 1,
-            screenX: window.screenX + 100,
-            screenY: window.screenY + 100,
-            clientX: 100,
-            clientY: 100,
-            ctrlKey: false,
-            altKey: false,
-            shiftKey: false,
-            metaKey: false,
-            button: 0,
-            buttons: 1,
-            relatedTarget: fullscreenBtn
-        });
-        
-        // Диспетчеризуем событие
-        fullscreenBtn.dispatchEvent(clickEvent);
-        
-        // Также вызываем функцию напрямую
-        setTimeout(() => {
-            enterFullscreenEnhanced();
-        }, 50);
-        
-        // Пометим как попытку
-        if (autoFullscreenTries >= 2) {
-            autoFullscreenAttempted = true;
-        }
-        
-        return true;
-    } catch (err) {
-        console.error('Ошибка при автонажатии:', err);
-        return false;
-    }
-}
-
-// ========== ОСТАЛЬНОЙ ОРИГИНАЛЬНЫЙ КОД ==========
 
 // Функция переподключения
 function reconnectClient() {
@@ -242,6 +125,7 @@ function reconnectClient() {
     }).then(() => {
         console.log('Клиент переподключен с новым UUID:', uuid);
         loadClientInfo();
+        showButtons(); // Показываем кнопки после переподключения
     }).catch(err => console.error('Ошибка переподключения клиента:', err));
 }
 
@@ -401,7 +285,7 @@ function checkVideoStall() {
             playbackStatus = 'stalled';
             updatePlaybackStatus();
             console.log('Обнаружено зависание видео, статус:', playbackStatus);
-    }
+        }
     } else if (video.src && playbackStatus === 'playing') {
         // Подтверждаем playing, если видео активно
         updatePlaybackStatus();
@@ -462,7 +346,11 @@ async function loadClientInfo() {
             console.error('Ошибка получения информации о клиенте:', data.error);
         } else {
             clientInfo.textContent = `UUID: ${uuid.toUpperCase()} | ИМЯ: ${data.name}`;
-            clientInfo.style.display = data.show_info === 1 && !messageSettings.enabled ? 'block' : 'none';
+            const shouldShow = data.show_info === 1 && !messageSettings.enabled;
+            clientInfo.style.display = shouldShow ? 'block' : 'none';
+            if (!shouldShow) {
+                clientInfo.classList.add('buttons-hidden');
+            }
             console.log('Информация о клиенте загружена:', data);
         }
     } catch (err) {
@@ -498,6 +386,8 @@ async function loadMessageSettings() {
                 fullscreenBtn.style.display = 'none';
                 reconnectBtn.style.display = 'none';
                 clientInfo.style.display = 'none';
+                // Скрываем кнопки
+                hideButtons();
             } else {
                 marqueeText.textContent = '';
                 marquee.style.height = '100px';
@@ -508,6 +398,10 @@ async function loadMessageSettings() {
                 if (!document.fullscreenElement) {
                     fullscreenBtn.style.display = 'block';
                     reconnectBtn.style.display = 'block';
+                    // Показываем кнопки при отключении сообщения
+                    showButtons();
+                    // Скрываем через 2 секунды
+                    setTimeout(hideButtons, HIDE_BUTTONS_DELAY);
                 }
             }
         }
@@ -516,21 +410,39 @@ async function loadMessageSettings() {
     }
 }
 
+// Функция для входа в полноэкранный режим
+function enterFullscreen() {
+    const element = document.documentElement;
+    if (element.requestFullscreen) {
+        element.requestFullscreen();
+    } else if (element.mozRequestFullScreen) {
+        element.mozRequestFullScreen();
+    } else if (element.webkitRequestFullscreen) {
+        element.webkitRequestFullscreen();
+    } else if (element.msRequestFullscreen) {
+        element.msRequestFullscreen();
+    }
+    fullscreenBtn.style.display = 'none';
+    reconnectBtn.style.display = 'none';
+    clientInfo.style.display = 'none';
+    console.log('Вход в полноэкранный режим');
+}
+
 // Обработчики событий полноэкранного режима
 document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement) {
         fullscreenBtn.style.display = messageSettings.enabled ? 'none' : 'block';
         reconnectBtn.style.display = messageSettings.enabled ? 'none' : 'block';
         loadClientInfo();
+        // Показываем кнопки при выходе из полноэкранного режима
+        if (!messageSettings.enabled) {
+            showButtons();
+            setTimeout(hideButtons, HIDE_BUTTONS_DELAY);
+        }
         console.log('Выход из полноэкранного режима');
-        // Сбрасываем флаг автонажатия при выходе из полноэкранного
-        autoFullscreenAttempted = false;
-        autoFullscreenTries = 0;
     } else {
-        console.log('Вход в полноэкранный режим');
-        fullscreenBtn.style.display = 'none';
-        reconnectBtn.style.display = 'none';
-        clientInfo.style.display = 'none';
+        // Скрываем кнопки при входе в полноэкранный режим
+        hideButtons();
     }
 });
 document.addEventListener('webkitfullscreenchange', () => {
@@ -538,12 +450,12 @@ document.addEventListener('webkitfullscreenchange', () => {
         fullscreenBtn.style.display = messageSettings.enabled ? 'none' : 'block';
         reconnectBtn.style.display = messageSettings.enabled ? 'none' : 'block';
         loadClientInfo();
-        autoFullscreenAttempted = false;
-        autoFullscreenTries = 0;
+        if (!messageSettings.enabled) {
+            showButtons();
+            setTimeout(hideButtons, HIDE_BUTTONS_DELAY);
+        }
     } else {
-        fullscreenBtn.style.display = 'none';
-        reconnectBtn.style.display = 'none';
-        clientInfo.style.display = 'none';
+        hideButtons();
     }
 });
 document.addEventListener('mozfullscreenchange', () => {
@@ -551,12 +463,12 @@ document.addEventListener('mozfullscreenchange', () => {
         fullscreenBtn.style.display = messageSettings.enabled ? 'none' : 'block';
         reconnectBtn.style.display = messageSettings.enabled ? 'none' : 'block';
         loadClientInfo();
-        autoFullscreenAttempted = false;
-        autoFullscreenTries = 0;
+        if (!messageSettings.enabled) {
+            showButtons();
+            setTimeout(hideButtons, HIDE_BUTTONS_DELAY);
+        }
     } else {
-        fullscreenBtn.style.display = 'none';
-        reconnectBtn.style.display = 'none';
-        clientInfo.style.display = 'none';
+        hideButtons();
     }
 });
 document.addEventListener('msfullscreenchange', () => {
@@ -564,22 +476,16 @@ document.addEventListener('msfullscreenchange', () => {
         fullscreenBtn.style.display = messageSettings.enabled ? 'none' : 'block';
         reconnectBtn.style.display = messageSettings.enabled ? 'none' : 'block';
         loadClientInfo();
-        autoFullscreenAttempted = false;
-        autoFullscreenTries = 0;
+        if (!messageSettings.enabled) {
+            showButtons();
+            setTimeout(hideButtons, HIDE_BUTTONS_DELAY);
+        }
     } else {
-        fullscreenBtn.style.display = 'none';
-        reconnectBtn.style.display = 'none';
-        clientInfo.style.display = 'none';
+        hideButtons();
     }
 });
 
-// Обновляем обработчики кнопок
-fullscreenBtn.addEventListener('click', function(e) {
-    console.log('Ручной клик по кнопке "Во весь экран"');
-    e.preventDefault();
-    enterFullscreenEnhanced();
-});
-
+fullscreenBtn.addEventListener('click', enterFullscreen);
 reconnectBtn.addEventListener('click', reconnectClient);
 
 // Показ контента
@@ -698,59 +604,11 @@ async function checkContent() {
     }
 }
 
-// ========== ИНИЦИАЛИЗАЦИЯ АВТОНАЖАТИЯ ==========
-
-// Функция для запуска автонажатия с несколькими попытками
-function initAutoFullscreen() {
-    console.log('Инициализация автонажатия');
-    
-    // Первая попытка через 3 секунды
-    setTimeout(() => {
-        console.log('Первая попытка автонажатия через 3 секунды');
-        attemptAutoFullscreen();
-        
-        // Вторая попытка через 5 секунд
-        setTimeout(() => {
-            if (!document.fullscreenElement && !autoFullscreenAttempted) {
-                console.log('Вторая попытка автонажатия через 5 секунд');
-                attemptAutofullscreen();
-            }
-        }, 5000);
-        
-        // Третья попытка через 10 секунд
-        setTimeout(() => {
-            if (!document.fullscreenElement && !autoFullscreenAttempted) {
-                console.log('Третья попытка автонажатия через 10 секунд');
-                attemptAutofullscreen();
-            }
-        }, 10000);
-    }, 3000);
-    
-    // Периодическая проверка (каждые 30 секунд)
-    setInterval(() => {
-        if (!document.fullscreenElement && 
-            !document.webkitFullscreenElement && 
-            !document.mozFullScreenElement && 
-            !document.msFullscreenElement &&
-            !messageSettings.enabled &&
-            !autoFullscreenAttempted) {
-            
-            console.log('Периодическая проверка - пробуем автонажатие');
-            autoFullscreenTries = 0;
-            attemptAutofullscreen();
-        }
-    }, 30000);
-}
-
 // Инициализация
 loadClientInfo();
 loadContent();
 loadMessageSettings();
-
-// Запускаем автонажатие после загрузки
-setTimeout(() => {
-    initAutoFullscreen();
-}, 1000);
+initMouseTracking(); // Инициализируем отслеживание мыши
 
 setInterval(() => {
     checkVideoStall();
