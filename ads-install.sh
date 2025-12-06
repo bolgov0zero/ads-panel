@@ -39,6 +39,7 @@ services:
   web:
     image: bolgov0zero/ads-panel:latest
     container_name: ads-panel
+    restart: always
     ports:
       - "80:80"
       - "443:443"
