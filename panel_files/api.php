@@ -311,7 +311,7 @@ try {
             $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
             $result = $stmt->execute();
             if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $row['status'] = (time() - $row['last_seen']) <= 5 ? 'online' : 'offline';
+                $row['status'] = (time() - $row['last_seen']) <= 60 ? 'online' : 'offline';
                 echo json_encode($row);
             } else {
                 echo json_encode(['error' => 'Устройство не найдено']);
@@ -385,7 +385,7 @@ try {
             $result = $db->query("SELECT uuid, name, show_info, last_seen, playback_status FROM clients");
             $clients = [];
             while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $row['status'] = (time() - $row['last_seen']) <= 5 ? 'online' : 'offline';
+                $row['status'] = (time() - $row['last_seen']) <= 60 ? 'online' : 'offline';
                 $clients[] = $row;
             }
             echo json_encode($clients);

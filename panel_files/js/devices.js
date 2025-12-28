@@ -254,7 +254,7 @@ function formatLastSeen(last_seen) {
     if (isNaN(parsed) || parsed <= 0) return 'никогда не подключался';
     const now = Math.floor(Date.now() / 1000);
     const diff = now - parsed;
-    if (diff <= 5) return 'в сети';
+    if (diff <= 60) return 'в сети';
     if (diff < 60) return `${diff} сек. назад`;
     if (diff < 3600) {
         const m = Math.floor(diff / 60);

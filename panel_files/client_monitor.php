@@ -2,7 +2,7 @@
 
 $db_path = '/data/ads.db';
 $check_interval = 10; // Интервал проверки в секундах
-$offline_threshold = 5; // Порог для оффлайн-статуса в секундах
+$offline_threshold = 60; // Порог для оффлайн-статуса в секундах
 $log_file = '/var/log/client-monitor.log';
 $version_check_interval = 60;
 

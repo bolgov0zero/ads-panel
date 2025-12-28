@@ -61,7 +61,7 @@ function formatLastSeen(last_seen) {
     }
     const now = Math.floor(Date.now() / 1000);
     const diff = now - parsedLastSeen;
-    if (diff <= 5) {
+    if (diff <= 60) {
         return 'в сети';
     } else if (diff < 3600) {
         const minutes = Math.floor(diff / 60);
