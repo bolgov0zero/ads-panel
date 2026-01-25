@@ -58,7 +58,7 @@ docker-compose up -d
 
 # Скриншоты
 
-<img src="screenshots/screenshot1.png" alt="" width="800" height="769">
+<img src="screenshots/screenshot1.png" alt="" width="728" height="845">
 
 <img src="screenshots/screenshot2.png" alt="" width="800" height="584">
 
