@@ -463,12 +463,18 @@ canvas#pdfCanvas {
     transform: scale(1.05);
 }
 
-/* Имя файла */
+/* Имя файла - расширено */
+.file-row .col-span-5 {
+    padding-right: 1rem;
+}
+
 .name-display {
     cursor: pointer;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+    line-height: 1.5;
 }
 
 .name-display:hover {
@@ -477,24 +483,21 @@ canvas#pdfCanvas {
 }
 
 .name-input {
-    font-size: 0.875rem;
+    font-size: 1rem;
     border: 1px solid #6b7280;
+    padding: 0.5rem;
 }
 
-/* Индикатор типа файла */
+/* Индикатор типа файла - компактный */
 .file-row .bg-gray-700.rounded-md {
     background-color: rgba(55, 65, 81, 0.8);
     border: 1px solid #4b5563;
+    min-width: 60px;
 }
 
-/* Кнопки действий */
-.file-row button {
-    transition: all 0.2s ease;
-}
-
-.file-row button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+/* Длительность */
+.file-row .text-gray-300 {
+    font-size: 0.875rem;
 }
 
 /* Кнопка удаления */
@@ -518,23 +521,33 @@ canvas#pdfCanvas {
     .file-row > div:first-child,
     .file-row > div:nth-child(4),
     .file-row > div:nth-child(5),
-    .file-row > div:nth-child(7) {
+    .file-row > div:last-child {
         text-align: left;
     }
     
     #filesGrid > div:first-child {
         display: none;
     }
+    
+    .name-display {
+        font-size: 1.125rem;
+    }
 }
 
 @media (max-width: 768px) {
-    .file-row .col-span-3 {
-        grid-column: span 12;
+    .file-row .col-span-5 {
+        grid-column: span 8;
     }
     
-    .file-row .col-span-3 > div {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
+    .file-row .col-span-2 {
+        grid-column: span 4;
+    }
+    
+    .file-row .text-gray-300.font-mono {
+        font-size: 0.75rem;
+    }
+    
+    .file-row .bg-gray-700.rounded-md span {
+        display: none;
     }
 }

@@ -132,10 +132,9 @@ async function loadFiles() {
                 <div class="grid grid-cols-12 gap-4 p-4 bg-gray-700 text-gray-200 font-medium border-b border-gray-600">
                     <div class="col-span-1 text-center">ID</div>
                     <div class="col-span-2">Превью</div>
-                    <div class="col-span-3">Имя файла</div>
+                    <div class="col-span-5">Имя файла</div>
                     <div class="col-span-1 text-center">Тип</div>
-                    <div class="col-span-1 text-center">Длительность</div>
-                    <div class="col-span-3 text-center">Действия</div>
+                    <div class="col-span-2 text-center">Длительность</div>
                     <div class="col-span-1 text-center">Удалить</div>
                 </div>
                 <div id="filesList"></div>
@@ -171,19 +170,16 @@ async function loadFiles() {
                 </div>
 
                 <!-- Имя файла -->
-                <div class="col-span-3">
+                <div class="col-span-5">
                     <div class="flex flex-col">
-                        <span class="name-display font-medium text-gray-200 truncate mb-1 cursor-pointer hover:text-blue-300 transition-colors"
+                        <span class="name-display font-medium text-gray-200 truncate mb-2 cursor-pointer hover:text-blue-300 transition-colors"
                               onclick="editFileName(this, ${file.id}, '${escapeHtml(file.name)}')">
                             ${escapeHtml(file.name)}
                         </span>
-                        <input type="text" class="name-input hidden w-full p-1 bg-gray-600 border border-gray-500 rounded text-sm text-gray-200" 
+                        <input type="text" class="name-input hidden w-full p-2 bg-gray-600 border border-gray-500 rounded text-sm text-gray-200" 
                                value="${escapeHtml(file.name)}" 
                                onblur="saveFileName(this, ${file.id})" 
                                onkeydown="if(event.key==='Enter') this.blur()">
-                        <div class="text-xs text-gray-400 truncate">
-                            ${file.file_url}
-                        </div>
                     </div>
                 </div>
 
@@ -191,28 +187,14 @@ async function loadFiles() {
                 <div class="col-span-1 text-center">
                     <div class="inline-flex items-center justify-center gap-1 px-2 py-1 bg-gray-700 rounded-md text-xs font-medium">
                         <i class="fas ${isVideo ? 'fa-video text-blue-400' : 'fa-file-pdf text-purple-400'}"></i>
-                        <span class="text-gray-300">${isVideo ? 'Видео' : 'PDF'}</span>
+                        <span class="text-gray-300 hidden md:inline">${isVideo ? 'Видео' : 'PDF'}</span>
                     </div>
                 </div>
 
                 <!-- Длительность -->
-                <div class="col-span-1 text-center">
+                <div class="col-span-2 text-center">
                     <div class="text-gray-300 font-mono text-sm">
                         ${formatDuration(duration) || '-'}
-                    </div>
-                </div>
-
-                <!-- Действия -->
-                <div class="col-span-3 text-center">
-                    <div class="flex flex-col gap-2">
-                        <button onclick="window.open('${file.file_url}', '_blank')" 
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors">
-                            <i class="fas fa-external-link-alt mr-1"></i> Открыть
-                        </button>
-                        <button onclick="copyToClipboard('${file.file_url}')" 
-                                class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm transition-colors">
-                            <i class="fas fa-copy mr-1"></i> Копировать ссылку
-                        </button>
                     </div>
                 </div>
 
@@ -232,16 +214,6 @@ async function loadFiles() {
         console.error('Ошибка загрузки файлов:', err);
         showNotification('Ошибка загрузки файлов', 'bg-red-500');
     }
-}
-
-// === КОПИРОВАНИЕ ССЫЛКИ В БУФЕР ===
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showNotification('Ссылка скопирована в буфер', 'bg-green-500');
-    }).catch(err => {
-        console.error('Ошибка копирования:', err);
-        showNotification('Не удалось скопировать ссылку', 'bg-red-500');
-    });
 }
 
 // === ЗАГРУЗКА ФАЙЛА ===
