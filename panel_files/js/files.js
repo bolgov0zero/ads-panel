@@ -129,9 +129,8 @@ async function loadFiles() {
         // Создаем таблицу
         container.innerHTML = `
             <div class="bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-                <div class="grid grid-cols-12 gap-4 p-4 bg-gray-700 text-gray-200 font-medium border-b border-gray-600">
-                    <div class="col-span-1 text-center">ID</div>
-                    <div class="col-span-2">Превью</div>
+                <div class="grid grid-cols-12 gap-4 p-3 bg-gray-700 text-gray-200 font-medium border-b border-gray-600 text-sm">
+                    <div class="col-span-3">Превью</div>
                     <div class="col-span-5">Имя файла</div>
                     <div class="col-span-1 text-center">Тип</div>
                     <div class="col-span-2 text-center">Длительность</div>
@@ -151,18 +150,13 @@ async function loadFiles() {
                 (isVideo ? '/assets/video-placeholder.jpg' : '/assets/pdf-placeholder.jpg');
 
             const row = document.createElement('div');
-            row.className = 'file-row grid grid-cols-12 gap-4 p-4 items-center border-b border-gray-700 hover:bg-gray-750 transition-colors';
+            row.className = 'file-row grid grid-cols-12 gap-4 p-3 items-center border-b border-gray-700 hover:bg-gray-750 transition-colors';
             row.setAttribute('data-id', file.id);
 
             row.innerHTML = `
-                <!-- ID -->
-                <div class="col-span-1 text-center text-gray-300 font-mono">
-                    ${file.id}
-                </div>
-
                 <!-- Превью -->
-                <div class="col-span-2">
-                    <div class="h-20 bg-gray-700 rounded-lg overflow-hidden border border-gray-600">
+                <div class="col-span-3">
+                    <div class="h-16 bg-gray-700 rounded-lg overflow-hidden border border-gray-600">
                         <img src="${thumbSrc}" alt="${escapeHtml(file.name)}" 
                              class="w-full h-full object-cover cursor-pointer transition-transform hover:scale-105" 
                              onclick="window.open('${file.file_url}', '_blank')">
@@ -172,11 +166,11 @@ async function loadFiles() {
                 <!-- Имя файла -->
                 <div class="col-span-5">
                     <div class="flex flex-col">
-                        <span class="name-display font-medium text-gray-200 truncate mb-2 cursor-pointer hover:text-blue-300 transition-colors"
+                        <span class="name-display font-medium text-gray-200 truncate cursor-pointer hover:text-blue-300 transition-colors text-sm"
                               onclick="editFileName(this, ${file.id}, '${escapeHtml(file.name)}')">
                             ${escapeHtml(file.name)}
                         </span>
-                        <input type="text" class="name-input hidden w-full p-2 bg-gray-600 border border-gray-500 rounded text-sm text-gray-200" 
+                        <input type="text" class="name-input hidden w-full p-1 bg-gray-600 border border-gray-500 rounded text-xs text-gray-200" 
                                value="${escapeHtml(file.name)}" 
                                onblur="saveFileName(this, ${file.id})" 
                                onkeydown="if(event.key==='Enter') this.blur()">
@@ -186,14 +180,13 @@ async function loadFiles() {
                 <!-- Тип -->
                 <div class="col-span-1 text-center">
                     <div class="inline-flex items-center justify-center gap-1 px-2 py-1 bg-gray-700 rounded-md text-xs font-medium">
-                        <i class="fas ${isVideo ? 'fa-video text-blue-400' : 'fa-file-pdf text-purple-400'}"></i>
-                        <span class="text-gray-300 hidden md:inline">${isVideo ? 'Видео' : 'PDF'}</span>
+                        <i class="fas ${isVideo ? 'fa-video text-blue-400 text-sm' : 'fa-file-pdf text-purple-400 text-sm'}"></i>
                     </div>
                 </div>
 
                 <!-- Длительность -->
                 <div class="col-span-2 text-center">
-                    <div class="text-gray-300 font-mono text-sm">
+                    <div class="text-gray-300 font-mono text-xs">
                         ${formatDuration(duration) || '-'}
                     </div>
                 </div>
@@ -201,8 +194,8 @@ async function loadFiles() {
                 <!-- Удалить -->
                 <div class="col-span-1 text-center">
                     <button onclick="deleteFile(${file.id})" 
-                            class="text-red-500 hover:text-red-400 transition text-lg p-2 hover:bg-red-500 hover:bg-opacity-10 rounded">
-                        <i class="fas fa-trash"></i>
+                            class="text-red-500 hover:text-red-400 transition p-1 hover:bg-red-500 hover:bg-opacity-10 rounded">
+                        <i class="fas fa-trash text-sm"></i>
                     </button>
                 </div>
             `;
