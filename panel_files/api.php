@@ -331,6 +331,50 @@ try {
             $stmt->execute();
             echo json_encode(['message' => 'Имя клиента обновлено']);
             break;
+            
+        case 'get_client_content_order':
+            $uuid = $_GET['uuid'] ?? '';
+            if (empty($uuid)) {
+                echo json_encode(['error' => 'UUID не указан']);
+                break;
+            }
+            $stmt = $db->prepare("
+                SELECT content_id, order_num 
+                FROM client_content 
+                WHERE uuid = :uuid 
+                ORDER BY order_num ASC
+            ");
+            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $result = $stmt->execute();
+            $orders = [];
+            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $orders[$row['content_id']] = $row['order_num'];
+            }
+            echo json_encode($orders);
+            break;
+        
+        case 'update_client_content_order':
+            $uuid = $input['uuid'] ?? '';
+            $content_id = $input['content_id'] ?? 0;
+            $order = $input['order'] ?? 0;
+            
+            if (empty($uuid) || $content_id <= 0) {
+                echo json_encode(['error' => 'Неверный UUID или content_id']);
+                break;
+            }
+            
+            $stmt = $db->prepare("
+                UPDATE client_content 
+                SET order_num = :order 
+                WHERE uuid = :uuid AND content_id = :content_id
+            ");
+            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $stmt->bindValue(':content_id', $content_id, SQLITE3_INTEGER);
+            $stmt->bindValue(':order', $order, SQLITE3_INTEGER);
+            $stmt->execute();
+            
+            echo json_encode(['message' => 'Порядок для устройства обновлён']);
+            break;
 
         case 'update_file_name':
             $id = $input['id'] ?? 0;
@@ -405,11 +449,11 @@ try {
                 break;
             }
             $stmt = $db->prepare("
-                SELECT f.id, f.file_url, f.name, f.order_num, f.type, f.duration
+                SELECT f.id, f.file_url, f.name, cc.order_num, f.type, f.duration
                 FROM files f
                 JOIN client_content cc ON f.id = cc.content_id AND cc.content_type = f.type
                 WHERE cc.uuid = :uuid AND f.is_default = 0
-                ORDER BY f.order_num ASC
+                ORDER BY cc.order_num ASC
             ");
             $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
             $result = $stmt->execute();
