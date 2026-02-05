@@ -416,3 +416,125 @@ canvas#pdfCanvas {
     font-family: 'Courier New', monospace;
     letter-spacing: 0.5px;
 }
+
+/* === СТИЛИ ДЛЯ ТАБЛИЦЫ ФАЙЛОВ === */
+
+/* Контейнер таблицы */
+#filesGrid {
+    background-color: #1f2937;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Шапка таблицы */
+#filesGrid > div:first-child {
+    background-color: #374151;
+    color: #e5e7eb;
+    font-weight: 500;
+    padding: 1rem;
+    border-bottom: 2px solid #4b5563;
+}
+
+/* Строки файлов */
+.file-row {
+    border-bottom: 1px solid #374151;
+    transition: background-color 0.2s ease;
+}
+
+.file-row:last-child {
+    border-bottom: none;
+}
+
+.file-row:hover {
+    background-color: rgba(55, 65, 81, 0.5);
+}
+
+/* Превью в строке */
+.file-row .h-20 {
+    height: 5rem;
+}
+
+.file-row img {
+    transition: transform 0.2s ease;
+}
+
+.file-row img:hover {
+    transform: scale(1.05);
+}
+
+/* Имя файла */
+.name-display {
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.name-display:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #93c5fd;
+}
+
+.name-input {
+    font-size: 0.875rem;
+    border: 1px solid #6b7280;
+}
+
+/* Индикатор типа файла */
+.file-row .bg-gray-700.rounded-md {
+    background-color: rgba(55, 65, 81, 0.8);
+    border: 1px solid #4b5563;
+}
+
+/* Кнопки действий */
+.file-row button {
+    transition: all 0.2s ease;
+}
+
+.file-row button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Кнопка удаления */
+.file-row .text-red-500:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Адаптивность для таблицы */
+@media (max-width: 1024px) {
+    .file-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .file-row > div {
+        grid-column: span 12;
+        text-align: left;
+    }
+    
+    .file-row > div:first-child,
+    .file-row > div:nth-child(4),
+    .file-row > div:nth-child(5),
+    .file-row > div:nth-child(7) {
+        text-align: left;
+    }
+    
+    #filesGrid > div:first-child {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .file-row .col-span-3 {
+        grid-column: span 12;
+    }
+    
+    .file-row .col-span-3 > div {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
