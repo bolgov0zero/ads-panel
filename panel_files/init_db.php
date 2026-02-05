@@ -112,12 +112,14 @@ try {
                     uuid TEXT NOT NULL,
                     content_id INTEGER NOT NULL,
                     content_type TEXT NOT NULL DEFAULT 'video',
+                    order_num INTEGER DEFAULT 0,
                     PRIMARY KEY (uuid, content_id, content_type)
                 )",
             'columns' => [
                 ['name' => 'uuid', 'type' => 'TEXT', 'constraints' => 'NOT NULL'],
                 ['name' => 'content_id', 'type' => 'INTEGER', 'constraints' => 'NOT NULL'],
                 ['name' => 'content_type', 'type' => 'TEXT', 'constraints' => 'NOT NULL DEFAULT \'video\''],
+                ['name' => 'order_num', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 0'],
             ],
             'initial_data' => null
         ],

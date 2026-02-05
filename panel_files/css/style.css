@@ -416,3 +416,340 @@ canvas#pdfCanvas {
     font-family: 'Courier New', monospace;
     letter-spacing: 0.5px;
 }
+
+/* === СТИЛИ ДЛЯ ФАЙЛОВ В ВИДЕ КАРТОЧЕК-СТРОК === */
+
+/* Контейнер файлов */
+#filesGrid {
+    background-color: #1f2937;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 1px solid #374151;
+}
+
+/* Заголовок таблицы */
+.files-header {
+    background: #374151
+    border-bottom: 2px solid #4b5563;
+}
+
+/* Список файлов */
+.files-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* Скроллбар для списка файлов */
+.files-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.files-list::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+.files-list::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 3px;
+}
+
+.files-list::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Строка файла (карточка) */
+.file-row {
+    border-bottom: 1px solid #374151;
+    transition: all 0.15s ease;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.file-row:hover {
+    background-color: rgba(55, 65, 81, 0.5);
+}
+
+.file-row:last-child {
+    border-bottom: none;
+}
+
+/* Имя файла */
+.name-display {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    padding: 0.25rem 0;
+}
+
+.name-display:hover {
+    color: #60a5fa;
+}
+
+.name-input {
+    font-size: 0.75rem;
+    border: 1px solid #6b7280;
+}
+
+/* Превью файла */
+.file-row .h-16 {
+    height: 4rem;
+}
+
+.file-row img {
+    transition: transform 0.2s ease;
+}
+
+.file-row img:hover {
+    transform: scale(1.05);
+}
+
+/* Бэдж типа файла */
+.file-row .bg-gray-700 {
+    background-color: rgba(55, 65, 81, 0.8);
+    backdrop-filter: blur(2px);
+    min-width: 80px;
+}
+
+/* Бэдж длительности */
+.file-row .font-mono {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px;
+}
+
+/* Кнопки действий */
+.file-row button {
+    transition: all 0.15s ease;
+    min-width: 28px;
+    min-height: 28px;
+}
+
+.file-row button:hover {
+    transform: scale(1.05);
+}
+
+/* Анимация появления */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+    .file-row .grid-cols-12 {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .file-row .col-span-4 {
+        grid-column: span 3;
+    }
+    
+    .file-row .col-span-2 {
+        grid-column: span 1;
+    }
+    
+    .file-row .col-span-2.text-center:last-child {
+        grid-column: span 2;
+    }
+    
+    .name-display {
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .files-header {
+        display: none;
+    }
+    
+    .file-row .grid-cols-12 {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .file-row > div {
+        grid-column: span 1;
+        text-align: left;
+    }
+    
+    .file-row .col-span-2.text-center,
+    .file-row .col-span-4 {
+        text-align: left;
+        grid-column: span 1;
+    }
+    
+    .file-row .col-span-2:last-child {
+        grid-column: span 1;
+        text-align: left;
+    }
+    
+    .file-row .h-16 {
+        height: 3.5rem;
+    }
+    
+    .file-row .bg-gray-700.rounded-lg {
+        display: inline-flex;
+        margin-right: 0.5rem;
+    }
+    
+    .file-row .font-mono {
+        display: inline-flex;
+        padding: 0.25rem 0.75rem;
+    }
+    
+    .file-row .flex.justify-center {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 640px) {
+    .file-row {
+        padding: 0.75rem;
+    }
+    
+    .name-display {
+        font-size: 0.8125rem;
+    }
+    
+    .file-row .text-xs {
+        font-size: 0.6875rem;
+    }
+}
+
+/* === КОМПАКТНЫЕ КАРТОЧКИ УСТРОЙСТВ === */
+
+/* Сетка карточек устройств */
+#clientsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.75rem;
+}
+
+/* Карточка устройства - компактная */
+.client-card {
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 0.5rem;
+    transition: all 0.15s ease;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+}
+
+.client-card:hover {
+    border-color: #4b5563;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Статус онлайн/офлайн */
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.status-online {
+    background-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.status-offline {
+    background-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+/* Имя устройства */
+.name-display {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 140px;
+    padding-left: 12px;
+}
+
+.name-display:hover {
+    color: #60a5fa;
+}
+
+/* UUID */
+.client-card .text-gray-400 {
+    font-size: 0.7rem;
+    line-height: 1.2;
+}
+
+/* Кнопки управления */
+.client-card button {
+    transition: all 0.1s ease;
+    min-width: 24px;
+    min-height: 24px;
+}
+
+.client-card button:hover {
+    transform: scale(1.05);
+}
+
+.client-card button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Нижняя панель */
+.client-card .text-xs {
+    font-size: 0.7rem;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+    #clientsGrid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    #clientsGrid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 0.5rem;
+    }
+    
+    .client-card {
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 640px) {
+    #clientsGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Анимация появления карточек */
+.client-card {
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Сообщение при отсутствии устройств */
+#noClientsMessage {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}

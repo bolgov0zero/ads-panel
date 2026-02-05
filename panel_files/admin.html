@@ -119,9 +119,9 @@
                 <input type="text" id="fileSearch" placeholder="Поиск по имени..." class="p-2 bg-gray-700 border border-gray-600 rounded-lg w-full text-gray-200 focus:ring-2 focus:ring-blue-500">
             </div>
     
-            <!-- Сетка карточек -->
-            <div id="filesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <!-- Карточки будут вставлены через JS -->
+            <!-- Файлы в виде карточек-строк -->
+            <div id="filesGrid" class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <!-- Содержимое будет заполнено через JS -->
             </div>
     
             <!-- Сообщение при пустом списке -->
@@ -136,8 +136,12 @@
     <div id="clientTab" class="tab-content hidden">
         <div class="mb-8">
             <h3 class="text-xl font-semibold mb-4 text-gray-100">Устройства</h3>
-            <div id="clientsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+            <div id="clientsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 <!-- Карточки устройств будут вставлены сюда через JS -->
+            </div>
+            <div id="noClientsMessage" class="text-center text-gray-400 py-8 hidden">
+                <i class="fas fa-tv text-4xl mb-3"></i>
+                <p>Устройства не найдены. Подключите первое устройство.</p>
             </div>
         </div>
     </div>
@@ -156,12 +160,11 @@
                 <table class="w-full bg-gray-800 rounded-xl shadow-lg">
                     <thead>
                     <tr class="bg-gray-700 text-gray-200">
-                        <th class="p-4 text-left rounded-tl-lg" style="width: 50px;"><center>ID</center></th>
-                        <th class="p-4 text-left">Имя файла</th>
-                        <th class="p-4 text-left" style="width: 50px;"><center>Тип</center></th>
-                        <th class="p-4 text-left" style="width: 100px;"><center>Использовать</center></th>
-                        <th class="p-4 text-left" style="width: 100px;"><center>Очередность</center></th>
-                        <th class="p-4 text-left rounded-tr-lg" style="width: 150px;"><center>Продолжительность</center></th>
+                        <th class="p-3 text-left rounded-tl-lg">Имя файла</th>
+                        <th class="p-3 text-left" style="width: 100px;"><center>Тип</center></th>
+                        <th class="p-3 text-left" style="width: 100px;"><center>Использовать</center></th>
+                        <th class="p-3 text-left" style="width: 100px;"><center>Очередность</center></th>
+                        <th class="p-3 text-left rounded-tr-lg" style="width: 150px;"><center>Продолжительность</center></th>
                     </tr>
                     </thead>
                     <tbody id="playlistTable" class="divide-y divide-gray-700"></tbody>
@@ -229,6 +232,7 @@
             <h3 class="text-xl font-semibold mb-4 text-gray-100">Настройки</h3>
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg mb-6">
                 <h4 class="text-lg font-semibold mb-4 text-gray-100">Имя системы</h4>
+                <label class="block mb-1 text-gray-200 text-sm">После переименования перезапустите систему</label>
                 <div class="flex flex-col space-y-4">
                     <div>
                         <label class="block mb-1 text-gray-200 text-sm">Идентификатор:</label>
