@@ -429,7 +429,7 @@ canvas#pdfCanvas {
 
 /* Заголовок таблицы */
 .files-header {
-    background: linear-gradient(to bottom, #374151, #1f2937);
+    background: #374151
     border-bottom: 2px solid #4b5563;
 }
 
@@ -671,6 +671,7 @@ canvas#pdfCanvas {
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 140px;
+    padding-left: 12px;
 }
 
 .name-display:hover {
