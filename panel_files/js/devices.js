@@ -8,7 +8,7 @@ async function loadClients() {
         const grid = document.getElementById('clientsGrid');
         const clientSelect = document.getElementById('clientSelect');
 
-        // Очищаем сетку клиентов (но сохраняем DOM для оптимизации)
+        // Очищаем сетку клиентов
         const existingCards = Array.from(grid.querySelectorAll('.client-card'));
         const existingUuids = new Set(existingCards.map(card => card.getAttribute('data-uuid')));
         const newUuids = new Set(clientsData.map(client => client.uuid));
@@ -20,7 +20,7 @@ async function loadClients() {
             if (!card) {
                 // Создаем новую карточку
                 card = document.createElement('div');
-                card.className = 'client-card bg-gray-800 rounded-xl p-5 shadow-lg relative';
+                card.className = 'client-card bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-700 hover:border-gray-600 transition-all duration-200 relative group';
                 card.setAttribute('data-uuid', client.uuid);
                 grid.appendChild(card);
             }
@@ -46,35 +46,73 @@ async function loadClients() {
     }
 }
 
-// Функция обновления карточки клиента
+// Функция обновления карточки клиента (компактный стиль)
 function updateClientCard(card, client) {
+    const isOnline = client.status === 'online';
+    const isPlaying = client.playback_status === 'playing';
+    
     card.innerHTML = `
+        <!-- Верхняя панель: статус и кнопки -->
         <div class="flex justify-between items-start mb-3">
-            <div class="flex items-center gap-2">
-                <div class="status-dot ${client.status === 'online' ? 'status-online' : 'status-offline'}"></div>
-                <span class="text-sm text-gray-400 status-text">${formatLastSeen(client.last_seen)}</span>
+            <!-- Статус и имя -->
+            <div class="flex items-center gap-2 min-w-0">
+                <div class="flex-shrink-0">
+                    <div class="relative">
+                        <div class="status-dot ${isOnline ? 'status-online' : 'status-offline'}"></div>
+                        ${isOnline ? '<div class="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-ping"></div>' : ''}
+                    </div>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-sm font-medium text-gray-100 truncate name-display cursor-pointer hover:text-blue-300 transition-colors" 
+                         onclick="editName(this, '${client.uuid}')" title="${client.name}">
+                        ${client.name}
+                    </div>
+                    <div class="text-xs text-gray-500 mt-0.5">
+                        ${formatLastSeen(client.last_seen)}
+                    </div>
+                </div>
             </div>
-            <div class="flex items-center gap-2">
-                <button class="play-button p-1" ${client.playback_status === 'playing' ? 'disabled' : ''} onclick="restartPlayback('${client.uuid}')">
-                    <i class="fas ${client.playback_status === 'playing' ? 'fa-play' : 'fa-stop'} ${client.playback_status === 'playing' ? 'text-green-400' : 'text-red-500'}"></i>
+            
+            <!-- Кнопки управления -->
+            <div class="flex items-center gap-1 flex-shrink-0">
+                <button class="p-1.5 rounded-lg hover:bg-gray-700 transition-colors ${isPlaying ? 'bg-gray-700' : 'hover:bg-red-900'}" 
+                        ${isPlaying ? 'disabled' : ''} 
+                        onclick="restartPlayback('${client.uuid}')"
+                        title="${isPlaying ? 'Воспроизводится' : 'Перезапустить'}">
+                    <i class="fas ${isPlaying ? 'fa-play text-green-400' : 'fa-stop text-red-400'} text-sm"></i>
                 </button>
-                <button onclick="toggleShowInfo('${client.uuid}')" class="p-1 eye-toggle">
-                    <i class="fas fa-eye${client.show_info ? '' : '-slash'} ${client.show_info ? 'text-green-400' : 'text-gray-500'}"></i>
+                <button class="p-1.5 rounded-lg hover:bg-gray-700 transition-colors" 
+                        onclick="toggleShowInfo('${client.uuid}')"
+                        title="${client.show_info ? 'Скрыть UUID' : 'Показать UUID'}">
+                    <i class="fas fa-eye${client.show_info ? '' : '-slash'} ${client.show_info ? 'text-green-400' : 'text-gray-400'} text-sm"></i>
                 </button>
             </div>
         </div>
-        <div class="mb-2">
-            <div class="text-lg font-medium text-gray-100 name-display cursor-pointer hover:text-blue-300 transition-colors" 
-                 onclick="editName(this, '${client.uuid}')">${client.name}</div>
-            <input type="text" class="hidden name-input w-full p-1 bg-gray-700 border border-gray-600 rounded text-gray-100" 
-                   value="${client.name}" 
-                   onblur="saveName(this, '${client.uuid}')" 
-                   onkeydown="if(event.key==='Enter') this.blur()">
+        
+        <!-- UUID (показывается только если включено) -->
+        ${client.show_info ? `
+        <div class="mb-3 p-2 bg-gray-900 rounded-lg border border-gray-700">
+            <div class="text-xs text-gray-400 font-mono truncate select-all" title="${client.uuid}">
+                ${client.uuid}
+            </div>
         </div>
-        <div class="text-xs text-gray-500 font-mono break-all mb-6">${client.uuid}</div>
-        <div class="absolute bottom-3 right-3">
+        ` : ''}
+        
+        <!-- Поле редактирования имени -->
+        <input type="text" class="hidden name-input w-full p-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-gray-100 mb-2" 
+               value="${client.name}" 
+               onblur="saveName(this, '${client.uuid}')" 
+               onkeydown="if(event.key==='Enter') this.blur()">
+        
+        <!-- Нижняя панель: кнопка удаления -->
+        <div class="flex justify-between items-center mt-2 pt-2 border-t border-gray-700">
+            <div class="text-xs text-gray-500">
+                <i class="fas ${client.playback_status === 'playing' ? 'fa-circle-play text-green-500' : 'fa-circle-stop text-red-500'} mr-1"></i>
+                ${client.playback_status === 'playing' ? 'Воспроизведение' : 'Остановлено'}
+            </div>
             <button onclick="deleteClient('${client.uuid}')" 
-                    class="text-red-500 hover:text-red-400 text-sm p-1 hover:bg-red-500 hover:bg-opacity-10 rounded">
+                    class="text-gray-500 hover:text-red-500 text-xs p-1 hover:bg-red-500 hover:bg-opacity-10 rounded transition-colors"
+                    title="Удалить устройство">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
@@ -102,7 +140,8 @@ function updateClientSelect(select) {
     clientsData.forEach(client => {
         const option = document.createElement('option');
         option.value = client.uuid;
-        option.textContent = `${client.name} (${client.status === 'online' ? '🟢 онлайн' : '⚫ офлайн'})`;
+        const statusIcon = client.status === 'online' ? '🟢' : '⚫';
+        option.textContent = `${client.name} ${statusIcon}`;
         select.appendChild(option);
     });
     
@@ -117,7 +156,7 @@ async function toggleShowInfo(uuid) {
     const card = document.querySelector(`.client-card[data-uuid="${uuid}"]`);
     if (!card) return;
 
-    const eyeBtn = card.querySelector('.eye-toggle');
+    const eyeBtn = card.querySelectorAll('button')[1];
     const icon = eyeBtn.querySelector('i');
     const isCurrentlyOn = icon.classList.contains('fa-eye');
 
@@ -133,18 +172,11 @@ async function toggleShowInfo(uuid) {
         });
         const result = await response.json();
         if (!result.error) {
-            if (isCurrentlyOn) {
-                icon.classList.remove('fa-eye', 'text-green-400');
-                icon.classList.add('fa-eye-slash', 'text-gray-500');
-            } else {
-                icon.classList.remove('fa-eye-slash', 'text-gray-500');
-                icon.classList.add('fa-eye', 'text-green-400');
-            }
-            
             // Обновляем данные клиента
             const client = clientsData.find(c => c.uuid === uuid);
             if (client) {
                 client.show_info = isCurrentlyOn ? 0 : 1;
+                updateClientCard(card, client);
             }
         }
     } catch (err) {
@@ -175,14 +207,13 @@ async function restartPlayback(uuid) {
         showNotification('Команда перезапуска отправлена', 'bg-green-500');
 
         // Обновляем UI локально
-        const card = document.querySelector(`.client-card[data-uuid="${uuid}"]`);
-        if (card) {
-            const playButton = card.querySelector('.play-button');
-            const playIcon = playButton.querySelector('i');
-
-            playButton.disabled = true;
-            playIcon.classList.remove('fa-stop', 'text-red-500');
-            playIcon.classList.add('fa-play', 'text-green-400');
+        const client = clientsData.find(c => c.uuid === uuid);
+        if (client) {
+            client.playback_status = 'playing';
+            const card = document.querySelector(`.client-card[data-uuid="${uuid}"]`);
+            if (card) {
+                updateClientCard(card, client);
+            }
         }
 
         // Принудительно обновляем статусы через 1 секунду
@@ -198,7 +229,7 @@ async function restartPlayback(uuid) {
 
 function editName(element, uuid) {
     const display = element;
-    const input = display.nextElementSibling;
+    const input = element.closest('.client-card').querySelector('.name-input');
     display.classList.add('hidden');
     input.classList.remove('hidden');
     input.focus();
@@ -207,8 +238,10 @@ function editName(element, uuid) {
 
 async function saveName(input, uuid) {
     const newName = input.value.trim() || 'Без имени';
-    const display = input.previousElementSibling;
+    const card = input.closest('.client-card');
+    const display = card.querySelector('.name-display');
     display.textContent = newName;
+    display.title = newName;
     input.classList.add('hidden');
     display.classList.remove('hidden');
 
@@ -292,7 +325,7 @@ function formatLastSeen(last_seen) {
     const now = Math.floor(Date.now() / 1000);
     const diff = now - parsed;
     
-    if (diff <= 60) return 'в сети';
+    if (diff <= 10) return 'только что';
     if (diff < 60) return `${diff} сек. назад`;
     if (diff < 3600) {
         const m = Math.floor(diff / 60);
@@ -311,8 +344,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Загружаем клиентов при загрузке страницы
     loadClients();
     
-    // Устанавливаем интервал обновления статусов (каждые 30 секунд)
-    setInterval(updateClientStatuses, 30000);
+    // Устанавливаем интервал обновления статусов (каждые 20 секунд)
+    setInterval(updateClientStatuses, 20000);
     
     // Обновляем при переходе на вкладку "Устройства"
     document.querySelector('[onclick*="clientTab"]')?.addEventListener('click', () => {
