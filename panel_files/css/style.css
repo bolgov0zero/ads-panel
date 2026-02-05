@@ -417,43 +417,80 @@ canvas#pdfCanvas {
     letter-spacing: 0.5px;
 }
 
-/* === СТИЛИ ДЛЯ ТАБЛИЦЫ ФАЙЛОВ === */
+/* === СТИЛИ ДЛЯ ФАЙЛОВ В ВИДЕ КАРТОЧЕК-СТРОК === */
 
-/* Контейнер таблицы */
+/* Контейнер файлов */
 #filesGrid {
     background-color: #1f2937;
-    border-radius: 0.75rem;
+    border-radius: 0.5rem;
     overflow: hidden;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #374151;
 }
 
-/* Шапка таблицы - компактная */
-#filesGrid > div:first-child {
-    background-color: #374151;
-    color: #e5e7eb;
-    font-weight: 500;
-    padding: 0.75rem 1rem;
+/* Заголовок таблицы */
+.files-header {
+    background: linear-gradient(to bottom, #374151, #1f2937);
     border-bottom: 2px solid #4b5563;
-    font-size: 0.875rem;
 }
 
-/* Строки файлов - компактные */
+/* Список файлов */
+.files-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* Скроллбар для списка файлов */
+.files-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.files-list::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+.files-list::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 3px;
+}
+
+.files-list::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Строка файла (карточка) */
 .file-row {
     border-bottom: 1px solid #374151;
-    transition: background-color 0.2s ease;
-    min-height: 72px;
-    padding: 0.75rem 1rem;
-}
-
-.file-row:last-child {
-    border-bottom: none;
+    transition: all 0.15s ease;
+    animation: fadeIn 0.2s ease-out;
 }
 
 .file-row:hover {
     background-color: rgba(55, 65, 81, 0.5);
 }
 
-/* Превью в строке - компактное */
+.file-row:last-child {
+    border-bottom: none;
+}
+
+/* Имя файла */
+.name-display {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    padding: 0.25rem 0;
+}
+
+.name-display:hover {
+    color: #60a5fa;
+}
+
+.name-input {
+    font-size: 0.75rem;
+    border: 1px solid #6b7280;
+}
+
+/* Превью файла */
 .file-row .h-16 {
     height: 4rem;
 }
@@ -466,132 +503,122 @@ canvas#pdfCanvas {
     transform: scale(1.05);
 }
 
-/* Имя файла - компактное */
-.file-row .col-span-5 {
-    padding-right: 0.5rem;
-}
-
-.name-display {
-    cursor: pointer;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    transition: all 0.2s ease;
-    font-size: 0.875rem;
-    line-height: 1.4;
-}
-
-.name-display:hover {
-    background-color: rgba(59, 130, 246, 0.1);
-    color: #93c5fd;
-}
-
-.name-input {
-    font-size: 0.875rem;
-    border: 1px solid #6b7280;
-    padding: 0.375rem;
-}
-
-/* Индикатор типа файла - очень компактный */
-.file-row .bg-gray-700.rounded-md {
+/* Бэдж типа файла */
+.file-row .bg-gray-700 {
     background-color: rgba(55, 65, 81, 0.8);
-    border: 1px solid #4b5563;
-    min-width: 32px;
-    padding: 0.25rem;
+    backdrop-filter: blur(2px);
+    min-width: 80px;
 }
 
-/* Длительность - компактная */
-.file-row .text-gray-300 {
-    font-size: 0.75rem;
+/* Бэдж длительности */
+.file-row .font-mono {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px;
 }
 
-/* Кнопка удаления - компактная */
-.file-row .text-red-500:hover {
-    background-color: rgba(239, 68, 68, 0.1);
-}
-
+/* Кнопки действий */
 .file-row button {
-    padding: 0.25rem;
+    transition: all 0.15s ease;
+    min-width: 28px;
+    min-height: 28px;
 }
 
-/* Адаптивность для компактной таблицы */
+.file-row button:hover {
+    transform: scale(1.05);
+}
+
+/* Анимация появления */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Адаптивность */
 @media (max-width: 1024px) {
-    .file-row {
-        grid-template-columns: 1fr;
+    .file-row .grid-cols-12 {
+        grid-template-columns: repeat(6, 1fr);
         gap: 0.75rem;
-        padding: 0.75rem;
-        min-height: auto;
     }
     
-    .file-row > div {
-        grid-column: span 12;
-        text-align: left;
+    .file-row .col-span-4 {
+        grid-column: span 3;
     }
     
-    .file-row > div:first-child,
-    .file-row > div:nth-child(3),
-    .file-row > div:nth-child(4),
-    .file-row > div:last-child {
-        text-align: left;
+    .file-row .col-span-2 {
+        grid-column: span 1;
     }
     
-    #filesGrid > div:first-child {
-        display: none;
+    .file-row .col-span-2.text-center:last-child {
+        grid-column: span 2;
     }
     
     .name-display {
-        font-size: 1rem;
-    }
-    
-    .file-row .h-16 {
-        height: 5rem;
+        font-size: 0.875rem;
     }
 }
 
 @media (max-width: 768px) {
-    .file-row {
+    .files-header {
+        display: none;
+    }
+    
+    .file-row .grid-cols-12 {
+        grid-template-columns: 1fr;
         gap: 0.5rem;
-        padding: 0.5rem;
     }
     
-    .file-row .col-span-3 {
-        grid-column: span 4;
+    .file-row > div {
+        grid-column: span 1;
+        text-align: left;
     }
     
-    .file-row .col-span-5 {
-        grid-column: span 8;
+    .file-row .col-span-2.text-center,
+    .file-row .col-span-4 {
+        text-align: left;
+        grid-column: span 1;
     }
     
-    .file-row .text-gray-300.font-mono {
-        font-size: 0.6875rem;
+    .file-row .col-span-2:last-child {
+        grid-column: span 1;
+        text-align: left;
     }
     
-    .file-row .bg-gray-700.rounded-md {
-        min-width: 28px;
+    .file-row .h-16 {
+        height: 3.5rem;
+    }
+    
+    .file-row .bg-gray-700.rounded-lg {
+        display: inline-flex;
+        margin-right: 0.5rem;
+    }
+    
+    .file-row .font-mono {
+        display: inline-flex;
+        padding: 0.25rem 0.75rem;
+    }
+    
+    .file-row .flex.justify-center {
+        justify-content: flex-start;
     }
 }
 
 @media (max-width: 640px) {
     .file-row {
-        grid-template-columns: repeat(2, 1fr);
+        padding: 0.75rem;
     }
     
-    .file-row .col-span-3 {
-        grid-column: span 2;
-        margin-bottom: 0.5rem;
+    .name-display {
+        font-size: 0.8125rem;
     }
     
-    .file-row .col-span-5 {
-        grid-column: span 1;
-    }
-    
-    .file-row .col-span-1,
-    .file-row .col-span-2 {
-        grid-column: span 1;
-        text-align: center;
-    }
-    
-    .file-row .h-16 {
-        height: 3.5rem;
+    .file-row .text-xs {
+        font-size: 0.6875rem;
     }
 }
 

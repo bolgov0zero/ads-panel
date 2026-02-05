@@ -9,7 +9,7 @@ function escapeHtml(text) {
 
 // Форматирует секунды в MM:SS
 function formatDuration(seconds) {
-    if (!seconds || seconds <= 0) return '';
+    if (!seconds || seconds <= 0) return '-';
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -126,18 +126,21 @@ async function loadFiles() {
             noFilesMsg.classList.add('hidden');
         }
 
-        // Создаем таблицу
+        // Создаем контейнер для файлов
         container.innerHTML = `
-            <div class="bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-                <div class="grid grid-cols-12 gap-4 p-3 bg-gray-700 text-gray-200 font-medium border-b border-gray-600 text-sm">
-                    <div class="col-span-3">Превью</div>
-                    <div class="col-span-5">Имя файла</div>
-                    <div class="col-span-1 text-center">Тип</div>
+            <!-- Заголовок -->
+            <div class="files-header bg-gray-800 rounded-t-lg border-b border-gray-700 p-3">
+                <div class="grid grid-cols-12 gap-3 text-gray-300 text-xs font-medium">
+                    <div class="col-span-4">Имя файла</div>
+                    <div class="col-span-2">Превью</div>
+                    <div class="col-span-2 text-center">Тип</div>
                     <div class="col-span-2 text-center">Длительность</div>
-                    <div class="col-span-1 text-center">Удалить</div>
+                    <div class="col-span-2 text-center">Действия</div>
                 </div>
-                <div id="filesList"></div>
             </div>
+            
+            <!-- Список файлов -->
+            <div id="filesList" class="files-list rounded-b-lg"></div>
         `;
 
         const filesList = document.getElementById('filesList');
@@ -150,53 +153,70 @@ async function loadFiles() {
                 (isVideo ? '/assets/video-placeholder.jpg' : '/assets/pdf-placeholder.jpg');
 
             const row = document.createElement('div');
-            row.className = 'file-row grid grid-cols-12 gap-4 p-3 items-center border-b border-gray-700 hover:bg-gray-750 transition-colors';
+            row.className = 'file-row bg-gray-800 border-b border-gray-700 last:border-b-0 hover:bg-gray-750 transition-colors';
             row.setAttribute('data-id', file.id);
 
             row.innerHTML = `
-                <!-- Превью -->
-                <div class="col-span-3">
-                    <div class="h-16 bg-gray-700 rounded-lg overflow-hidden border border-gray-600">
-                        <img src="${thumbSrc}" alt="${escapeHtml(file.name)}" 
-                             class="w-full h-full object-cover cursor-pointer transition-transform hover:scale-105" 
-                             onclick="window.open('${file.file_url}', '_blank')">
+                <!-- Строка файла -->
+                <div class="grid grid-cols-12 gap-3 p-3 items-center">
+                    <!-- Имя файла -->
+                    <div class="col-span-4">
+                        <div class="flex flex-col">
+                            <span class="name-display font-medium text-gray-200 truncate cursor-pointer hover:text-blue-300 transition-colors text-sm"
+                                  onclick="editFileName(this, ${file.id}, '${escapeHtml(file.name)}')"
+                                  title="${escapeHtml(file.name)}">
+                                ${escapeHtml(file.name)}
+                            </span>
+                            <input type="text" class="name-input hidden w-full p-1.5 bg-gray-700 border border-gray-600 rounded text-xs text-gray-200 mt-1" 
+                                   value="${escapeHtml(file.name)}" 
+                                   onblur="saveFileName(this, ${file.id})" 
+                                   onkeydown="if(event.key==='Enter') this.blur()">
+                            <div class="text-xs text-gray-500 truncate mt-0.5">
+                                ${file.file_url}
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Имя файла -->
-                <div class="col-span-5">
-                    <div class="flex flex-col">
-                        <span class="name-display font-medium text-gray-200 truncate cursor-pointer hover:text-blue-300 transition-colors text-sm"
-                              onclick="editFileName(this, ${file.id}, '${escapeHtml(file.name)}')">
-                            ${escapeHtml(file.name)}
-                        </span>
-                        <input type="text" class="name-input hidden w-full p-1 bg-gray-600 border border-gray-500 rounded text-xs text-gray-200" 
-                               value="${escapeHtml(file.name)}" 
-                               onblur="saveFileName(this, ${file.id})" 
-                               onkeydown="if(event.key==='Enter') this.blur()">
+                    <!-- Превью -->
+                    <div class="col-span-2">
+                        <div class="h-16 bg-gray-700 rounded overflow-hidden border border-gray-600">
+                            <img src="${thumbSrc}" alt="${escapeHtml(file.name)}" 
+                                 class="w-full h-full object-cover cursor-pointer transition-transform hover:scale-105" 
+                                 onclick="window.open('${file.file_url}', '_blank')"
+                                 title="Открыть файл">
+                        </div>
                     </div>
-                </div>
 
-                <!-- Тип -->
-                <div class="col-span-1 text-center">
-                    <div class="inline-flex items-center justify-center gap-1 px-2 py-1 bg-gray-700 rounded-md text-xs font-medium">
-                        <i class="fas ${isVideo ? 'fa-video text-blue-400 text-sm' : 'fa-file-pdf text-purple-400 text-sm'}"></i>
+                    <!-- Тип -->
+                    <div class="col-span-2 text-center">
+                        <div class="inline-flex items-center justify-center gap-1.5 px-3 py-1 bg-gray-700 rounded-lg border border-gray-600">
+                            <i class="fas ${isVideo ? 'fa-video text-blue-400' : 'fa-file-pdf text-purple-400'} text-xs"></i>
+                            <span class="text-gray-300 text-xs">${isVideo ? 'Видео' : 'PDF'}</span>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Длительность -->
-                <div class="col-span-2 text-center">
-                    <div class="text-gray-300 font-mono text-xs">
-                        ${formatDuration(duration) || '-'}
+                    <!-- Длительность -->
+                    <div class="col-span-2 text-center">
+                        <div class="text-gray-300 font-mono text-sm bg-gray-700 rounded-lg py-1 border border-gray-600">
+                            ${formatDuration(duration)}
+                        </div>
                     </div>
-                </div>
 
-                <!-- Удалить -->
-                <div class="col-span-1 text-center">
-                    <button onclick="deleteFile(${file.id})" 
-                            class="text-red-500 hover:text-red-400 transition p-1 hover:bg-red-500 hover:bg-opacity-10 rounded">
-                        <i class="fas fa-trash text-sm"></i>
-                    </button>
+                    <!-- Действия -->
+                    <div class="col-span-2 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            <button onclick="window.open('${file.file_url}', '_blank')" 
+                                    class="text-blue-400 hover:text-blue-300 p-1.5 hover:bg-blue-500 hover:bg-opacity-10 rounded transition-colors"
+                                    title="Открыть файл">
+                                <i class="fas fa-external-link-alt text-xs"></i>
+                            </button>
+                            <button onclick="deleteFile(${file.id})" 
+                                    class="text-red-500 hover:text-red-400 p-1.5 hover:bg-red-500 hover:bg-opacity-10 rounded transition-colors"
+                                    title="Удалить файл">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             `;
             filesList.appendChild(row);
