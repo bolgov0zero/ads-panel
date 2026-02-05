@@ -176,27 +176,3 @@ async function updateFileDuration(id, duration) {
         showNotification('Ошибка обновления продолжительности', 'bg-red-500');
     }
 }
-
-// Функция для загрузки списка клиентов в select
-async function loadClients() {
-    try {
-        const response = await fetch('api.php?action=list_clients');
-        const clients = await response.json();
-        const select = document.getElementById('clientSelect');
-        
-        select.innerHTML = '<option value="">-- Выберите устройство --</option>';
-        clients.forEach(client => {
-            const option = document.createElement('option');
-            option.value = client.uuid;
-            option.textContent = `${client.name} (${client.status === 'online' ? '🟢 онлайн' : '⚫ офлайн'})`;
-            select.appendChild(option);
-        });
-    } catch (err) {
-        console.error('Ошибка загрузки клиентов:', err);
-    }
-}
-
-// Инициализация при загрузке
-document.addEventListener('DOMContentLoaded', () => {
-    loadClients();
-});
