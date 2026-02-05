@@ -116,7 +116,7 @@ function updateClientCard(card, client) {
     `;
 }
 
-// Функция обновления селектора клиентов
+// Функция обновления селектора клиентов (без индикаторов статуса)
 function updateClientSelect(select) {
     // Сохраняем текущее значение
     const currentValue = select.value;
@@ -133,12 +133,11 @@ function updateClientSelect(select) {
         select.appendChild(defaultOption);
     }
     
-    // Добавляем опции для всех клиентов
+    // Добавляем опции для всех клиентов (без индикаторов статуса)
     clientsData.forEach(client => {
         const option = document.createElement('option');
         option.value = client.uuid;
-        const statusIcon = client.status === 'online' ? '🟢' : '🔴';
-        option.textContent = `${client.name} ${statusIcon}`;
+        option.textContent = client.name; // Только имя, без индикатора
         select.appendChild(option);
     });
     
