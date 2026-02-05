@@ -600,35 +600,32 @@ canvas#pdfCanvas {
 /* Сетка карточек устройств */
 #clientsGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.75rem;
 }
 
 /* Карточка устройства - компактная */
 .client-card {
-    background: linear-gradient(145deg, #1f2937, #111827);
+    background: #1f2937;
     border: 1px solid #374151;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-    min-height: 140px;
+    border-radius: 0.5rem;
+    transition: all 0.15s ease;
+    min-height: 100px;
     display: flex;
     flex-direction: column;
 }
 
 .client-card:hover {
-    transform: translateY(-2px);
     border-color: #4b5563;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Статус онлайн с анимацией */
+/* Статус онлайн/офлайн */
 .status-dot {
     display: inline-block;
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    position: relative;
-    z-index: 2;
 }
 
 .status-online {
@@ -637,32 +634,37 @@ canvas#pdfCanvas {
 }
 
 .status-offline {
-    background-color: #6b7280;
-    box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.2);
+    background-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
 
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 0.5;
-        transform: scale(1.2);
-    }
+/* Имя устройства */
+.name-display {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 140px;
 }
 
-.animate-ping {
-    animation: pulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+.name-display:hover {
+    color: #60a5fa;
+}
+
+/* UUID */
+.client-card .text-gray-400 {
+    font-size: 0.7rem;
+    line-height: 1.2;
 }
 
 /* Кнопки управления */
 .client-card button {
-    transition: all 0.2s ease;
+    transition: all 0.1s ease;
+    min-width: 24px;
+    min-height: 24px;
 }
 
 .client-card button:hover {
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 .client-card button:disabled {
@@ -671,45 +673,22 @@ canvas#pdfCanvas {
     transform: none;
 }
 
-/* Имя устройства */
-.name-display {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 160px;
-}
-
-.name-display:hover {
-    color: #60a5fa;
-}
-
-/* Поле UUID */
-.client-card .bg-gray-900 {
-    background-color: rgba(17, 24, 39, 0.8);
-    backdrop-filter: blur(4px);
-}
-
 /* Нижняя панель */
-.client-card .border-t {
-    border-top-color: #374151;
-}
-
-/* Кнопка удаления */
-.client-card .text-gray-500:hover {
-    background-color: rgba(239, 68, 68, 0.1);
+.client-card .text-xs {
+    font-size: 0.7rem;
 }
 
 /* Адаптивность */
 @media (max-width: 1024px) {
     #clientsGrid {
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     }
 }
 
 @media (max-width: 768px) {
     #clientsGrid {
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 0.5rem;
     }
     
     .client-card {
@@ -720,15 +699,18 @@ canvas#pdfCanvas {
 @media (max-width: 640px) {
     #clientsGrid {
         grid-template-columns: 1fr;
-        gap: 0.75rem;
     }
 }
 
 /* Анимация появления карточек */
-@keyframes fadeInUp {
+.client-card {
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(5px);
     }
     to {
         opacity: 1;
@@ -736,6 +718,10 @@ canvas#pdfCanvas {
     }
 }
 
-.client-card {
-    animation: fadeInUp 0.3s ease-out;
+/* Сообщение при отсутствии устройств */
+#noClientsMessage {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
 }

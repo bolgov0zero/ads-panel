@@ -1,8 +1,11 @@
 // Глобальная переменная для хранения данных о клиентах
 let clientsData = [];
+let isEditingName = false; // Флаг для отслеживания редактирования имени
 
 async function loadClients() {
     try {
+        if (isEditingName) return; // Не обновляем во время редактирования
+        
         const response = await fetch('api.php?action=list_clients');
         clientsData = await response.json();
         const grid = document.getElementById('clientsGrid');
@@ -20,7 +23,7 @@ async function loadClients() {
             if (!card) {
                 // Создаем новую карточку
                 card = document.createElement('div');
-                card.className = 'client-card bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-700 hover:border-gray-600 transition-all duration-200 relative group';
+                card.className = 'client-card bg-gray-800 rounded-lg p-3 shadow border border-gray-700 hover:border-gray-600 transition-all duration-150';
                 card.setAttribute('data-uuid', client.uuid);
                 grid.appendChild(card);
             }
@@ -42,7 +45,6 @@ async function loadClients() {
 
     } catch (err) {
         console.error('Ошибка загрузки клиентов:', err);
-        showNotification('Ошибка загрузки устройств', 'bg-red-500');
     }
 }
 
@@ -53,50 +55,42 @@ function updateClientCard(card, client) {
     
     card.innerHTML = `
         <!-- Верхняя панель: статус и кнопки -->
-        <div class="flex justify-between items-start mb-3">
+        <div class="flex justify-between items-center mb-2">
             <!-- Статус и имя -->
-            <div class="flex items-center gap-2 min-w-0">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
                 <div class="flex-shrink-0">
-                    <div class="relative">
-                        <div class="status-dot ${isOnline ? 'status-online' : 'status-offline'}"></div>
-                        ${isOnline ? '<div class="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-ping"></div>' : ''}
-                    </div>
+                    <div class="status-dot ${isOnline ? 'status-online' : 'status-offline'}"></div>
                 </div>
-                <div class="min-w-0">
+                <div class="min-w-0 flex-1">
                     <div class="text-sm font-medium text-gray-100 truncate name-display cursor-pointer hover:text-blue-300 transition-colors" 
                          onclick="editName(this, '${client.uuid}')" title="${client.name}">
                         ${client.name}
-                    </div>
-                    <div class="text-xs text-gray-500 mt-0.5">
-                        ${formatLastSeen(client.last_seen)}
                     </div>
                 </div>
             </div>
             
             <!-- Кнопки управления -->
             <div class="flex items-center gap-1 flex-shrink-0">
-                <button class="p-1.5 rounded-lg hover:bg-gray-700 transition-colors ${isPlaying ? 'bg-gray-700' : 'hover:bg-red-900'}" 
+                <button class="p-1 rounded hover:bg-gray-700 transition-colors ${isPlaying ? 'text-green-400' : 'text-red-400 hover:bg-red-900'}" 
                         ${isPlaying ? 'disabled' : ''} 
                         onclick="restartPlayback('${client.uuid}')"
                         title="${isPlaying ? 'Воспроизводится' : 'Перезапустить'}">
-                    <i class="fas ${isPlaying ? 'fa-play text-green-400' : 'fa-stop text-red-400'} text-sm"></i>
+                    <i class="fas ${isPlaying ? 'fa-play' : 'fa-stop'} text-xs"></i>
                 </button>
-                <button class="p-1.5 rounded-lg hover:bg-gray-700 transition-colors" 
+                <button class="p-1 rounded hover:bg-gray-700 transition-colors" 
                         onclick="toggleShowInfo('${client.uuid}')"
                         title="${client.show_info ? 'Скрыть UUID' : 'Показать UUID'}">
-                    <i class="fas fa-eye${client.show_info ? '' : '-slash'} ${client.show_info ? 'text-green-400' : 'text-gray-400'} text-sm"></i>
+                    <i class="fas fa-eye${client.show_info ? '' : '-slash'} ${client.show_info ? 'text-green-400' : 'text-gray-400'} text-xs"></i>
                 </button>
             </div>
         </div>
         
-        <!-- UUID (показывается только если включено) -->
-        ${client.show_info ? `
-        <div class="mb-3 p-2 bg-gray-900 rounded-lg border border-gray-700">
+        <!-- UUID -->
+        <div class="mb-2">
             <div class="text-xs text-gray-400 font-mono truncate select-all" title="${client.uuid}">
                 ${client.uuid}
             </div>
         </div>
-        ` : ''}
         
         <!-- Поле редактирования имени -->
         <input type="text" class="hidden name-input w-full p-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-gray-100 mb-2" 
@@ -104,16 +98,19 @@ function updateClientCard(card, client) {
                onblur="saveName(this, '${client.uuid}')" 
                onkeydown="if(event.key==='Enter') this.blur()">
         
-        <!-- Нижняя панель: кнопка удаления -->
-        <div class="flex justify-between items-center mt-2 pt-2 border-t border-gray-700">
-            <div class="text-xs text-gray-500">
-                <i class="fas ${client.playback_status === 'playing' ? 'fa-circle-play text-green-500' : 'fa-circle-stop text-red-500'} mr-1"></i>
-                ${client.playback_status === 'playing' ? 'Воспроизведение' : 'Остановлено'}
+        <!-- Нижняя панель: статус и время -->
+        <div class="flex justify-between items-center text-xs">
+            <div class="flex items-center gap-1">
+                <span class="text-gray-500">${formatLastSeen(client.last_seen)}</span>
+                <span class="text-gray-600">•</span>
+                <span class="${isPlaying ? 'text-green-500' : 'text-red-500'}">
+                    ${isPlaying ? '▶ Воспр.' : '⏹ Стоп'}
+                </span>
             </div>
             <button onclick="deleteClient('${client.uuid}')" 
-                    class="text-gray-500 hover:text-red-500 text-xs p-1 hover:bg-red-500 hover:bg-opacity-10 rounded transition-colors"
+                    class="text-gray-500 hover:text-red-500 p-0.5 hover:bg-red-500 hover:bg-opacity-10 rounded transition-colors"
                     title="Удалить устройство">
-                <i class="fas fa-trash"></i>
+                <i class="fas fa-trash text-xs"></i>
             </button>
         </div>
     `;
@@ -140,7 +137,7 @@ function updateClientSelect(select) {
     clientsData.forEach(client => {
         const option = document.createElement('option');
         option.value = client.uuid;
-        const statusIcon = client.status === 'online' ? '🟢' : '⚫';
+        const statusIcon = client.status === 'online' ? '🟢' : '🔴';
         option.textContent = `${client.name} ${statusIcon}`;
         select.appendChild(option);
     });
@@ -151,33 +148,36 @@ function updateClientSelect(select) {
     }
 }
 
-// Переключение show_info
+// Переключение show_info (теперь отвечает только за показ на экране клиента)
 async function toggleShowInfo(uuid) {
-    const card = document.querySelector(`.client-card[data-uuid="${uuid}"]`);
-    if (!card) return;
-
-    const eyeBtn = card.querySelectorAll('button')[1];
-    const icon = eyeBtn.querySelector('i');
-    const isCurrentlyOn = icon.classList.contains('fa-eye');
-
     try {
+        const client = clientsData.find(c => c.uuid === uuid);
+        if (!client) return;
+
+        const newShowInfo = client.show_info ? 0 : 1;
+        
         const response = await fetch('api.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 action: 'update_client_show_info',
                 uuid,
-                show_info: isCurrentlyOn ? 0 : 1
+                show_info: newShowInfo
             })
         });
+        
         const result = await response.json();
         if (!result.error) {
             // Обновляем данные клиента
-            const client = clientsData.find(c => c.uuid === uuid);
-            if (client) {
-                client.show_info = isCurrentlyOn ? 0 : 1;
+            client.show_info = newShowInfo;
+            
+            // Обновляем карточку
+            const card = document.querySelector(`.client-card[data-uuid="${uuid}"]`);
+            if (card) {
                 updateClientCard(card, client);
             }
+            
+            showNotification(`UUID ${newShowInfo ? 'показывается' : 'скрыт'} на устройстве`);
         }
     } catch (err) {
         console.error('Ошибка переключения:', err);
@@ -216,11 +216,6 @@ async function restartPlayback(uuid) {
             }
         }
 
-        // Принудительно обновляем статусы через 1 секунду
-        setTimeout(async () => {
-            await updateClientStatuses();
-        }, 1000);
-
     } catch (err) {
         console.error('Ошибка перезапуска:', err);
         showNotification('Ошибка перезапуска: ' + err.message, 'bg-red-500');
@@ -228,6 +223,7 @@ async function restartPlayback(uuid) {
 }
 
 function editName(element, uuid) {
+    isEditingName = true;
     const display = element;
     const input = element.closest('.client-card').querySelector('.name-input');
     display.classList.add('hidden');
@@ -237,6 +233,7 @@ function editName(element, uuid) {
 }
 
 async function saveName(input, uuid) {
+    isEditingName = false;
     const newName = input.value.trim() || 'Без имени';
     const card = input.closest('.client-card');
     const display = card.querySelector('.name-display');
@@ -305,14 +302,10 @@ async function deleteClient(uuid) {
 
 async function updateClientStatuses() {
     try {
+        if (isEditingName) return; // Не обновляем во время редактирования
+        
         // Загружаем свежие данные
         await loadClients();
-        
-        // Обновляем селектор в плейлистах
-        const select = document.getElementById('clientSelect');
-        if (select) {
-            updateClientSelect(select);
-        }
         
     } catch (err) {
         console.error('Ошибка обновления статусов:', err);
@@ -321,22 +314,22 @@ async function updateClientStatuses() {
 
 function formatLastSeen(last_seen) {
     const parsed = parseInt(last_seen, 10);
-    if (isNaN(parsed) || parsed <= 0) return 'никогда не подключался';
+    if (isNaN(parsed) || parsed <= 0) return 'никогда';
     const now = Math.floor(Date.now() / 1000);
     const diff = now - parsed;
     
     if (diff <= 10) return 'только что';
-    if (diff < 60) return `${diff} сек. назад`;
+    if (diff < 60) return `${diff}с`;
     if (diff < 3600) {
         const m = Math.floor(diff / 60);
-        return `${m} мин. назад`;
+        return `${m}м`;
     }
     if (diff < 86400) {
         const h = Math.floor(diff / 3600);
-        return `${h} ч. назад`;
+        return `${h}ч`;
     }
     const d = Math.floor(diff / 86400);
-    return `${d} дн. назад`;
+    return `${d}д`;
 }
 
 // Инициализация
@@ -344,11 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Загружаем клиентов при загрузке страницы
     loadClients();
     
-    // Устанавливаем интервал обновления статусов (каждые 20 секунд)
-    setInterval(updateClientStatuses, 20000);
-    
-    // Обновляем при переходе на вкладку "Устройства"
-    document.querySelector('[onclick*="clientTab"]')?.addEventListener('click', () => {
-        updateClientStatuses();
-    });
+    // Устанавливаем интервал обновления статусов (каждые 10 секунд, но с проверкой редактирования)
+    setInterval(updateClientStatuses, 10000);
 });
