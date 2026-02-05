@@ -171,9 +171,6 @@ async function loadFiles() {
                                    value="${escapeHtml(file.name)}" 
                                    onblur="saveFileName(this, ${file.id})" 
                                    onkeydown="if(event.key==='Enter') this.blur()">
-                            <div class="text-xs text-gray-500 truncate mt-0.5">
-                                ${file.file_url}
-                            </div>
                         </div>
                     </div>
 
@@ -205,11 +202,6 @@ async function loadFiles() {
                     <!-- Действия -->
                     <div class="col-span-2 text-center">
                         <div class="flex items-center justify-center gap-2">
-                            <button onclick="window.open('${file.file_url}', '_blank')" 
-                                    class="text-blue-400 hover:text-blue-300 p-1.5 hover:bg-blue-500 hover:bg-opacity-10 rounded transition-colors"
-                                    title="Открыть файл">
-                                <i class="fas fa-external-link-alt text-xs"></i>
-                            </button>
                             <button onclick="deleteFile(${file.id})" 
                                     class="text-red-500 hover:text-red-400 p-1.5 hover:bg-red-500 hover:bg-opacity-10 rounded transition-colors"
                                     title="Удалить файл">
