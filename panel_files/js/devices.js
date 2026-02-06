@@ -281,12 +281,11 @@ function updateClientCard(card, client) {
                            title="Разрешение неизвестно"></i>
                     ` : ''}
                 </div>
+                <div class="text-xs text-gray-500 text-center italic">
+                    Мин: ${minResolutionText}
+                </div>
             </div>
             
-            <!-- Подсказка под разрешением -->
-            <div class="text-xs text-gray-500 text-center italic">
-                Мин: ${minResolutionText}
-            </div>
         </div>
     `;
 }
