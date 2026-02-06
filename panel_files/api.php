@@ -8,19 +8,6 @@ function logMessage($message) {
     error_log(date('[Y-m-d H:i:s] ') . $message . "\n", 3, '/var/log/ads_api.log');
 }
 
-// Вспомогательная функция (добавьте в начало api.php)
-function getResolutionSettings($db) {
-    $stmt = $db->prepare("SELECT min_width, min_height FROM resolution_settings WHERE id = 1");
-    $result = $stmt->execute();
-    if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-        return [
-            'min_width' => $row['min_width'] ?? 1920,
-            'min_height' => $row['min_height'] ?? 1080
-        ];
-    }
-    return ['min_width' => 1920, 'min_height' => 1080];
-}
-
 try {
     // Подключение к SQLite3
     $db = new SQLite3('/data/ads.db');
@@ -81,6 +68,19 @@ try {
             return ['error' => 'Ошибка отправки: ' . $errorMsg];
         }
         return json_decode($response, true);
+    }
+
+    // Функция для получения настроек минимального разрешения
+    function getResolutionSettings($db) {
+        $stmt = $db->prepare("SELECT min_width, min_height FROM resolution_settings WHERE id = 1");
+        $result = $stmt->execute();
+        if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+            return [
+                'min_width' => $row['min_width'] ?? 1920,
+                'min_height' => $row['min_height'] ?? 1080
+            ];
+        }
+        return ['min_width' => 1920, 'min_height' => 1080];
     }
 
     // Обработка запросов
@@ -201,211 +201,6 @@ try {
             $stmt->bindValue(':show_info', $show_info, SQLITE3_INTEGER);
             $stmt->execute();
             echo json_encode(['message' => 'Отображение UUID обновлено']);
-            break;
-            
-        case 'update_window_size':
-            $uuid = $input['uuid'] ?? '';
-            $width = isset($input['width']) ? (int)$input['width'] : 0;
-            $height = isset($input['height']) ? (int)$input['height'] : 0;
-            $resolution = $input['resolution'] ?? '';
-            
-            if (empty($uuid)) {
-                echo json_encode(['error' => 'UUID не указан']);
-                break;
-            }
-            
-            // Сохраняем в отдельной таблице или добавляем поля в clients
-            $stmt = $db->prepare("
-                INSERT OR REPLACE INTO client_window_sizes 
-                (uuid, width, height, resolution, last_updated) 
-                VALUES (:uuid, :width, :height, :resolution, :timestamp)
-            ");
-            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
-            $stmt->bindValue(':width', $width, SQLITE3_INTEGER);
-            $stmt->bindValue(':height', $height, SQLITE3_INTEGER);
-            $stmt->bindValue(':resolution', $resolution, SQLITE3_TEXT);
-            $stmt->bindValue(':timestamp', time(), SQLITE3_INTEGER);
-            $stmt->execute();
-            
-            echo json_encode(['message' => 'Размеры окна сохранены']);
-            break;
-        
-        case 'get_window_sizes':
-            $result = $db->query("
-                SELECT c.uuid, c.name, c.status, 
-                       COALESCE(ws.width, 0) as width, 
-                       COALESCE(ws.height, 0) as height,
-                       COALESCE(ws.resolution, 'Неизвестно') as resolution
-                FROM clients c
-                LEFT JOIN client_window_sizes ws ON c.uuid = ws.uuid
-                ORDER BY ws.last_updated DESC
-            ");
-            $sizes = [];
-            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $sizes[] = $row;
-            }
-            echo json_encode($sizes);
-            break;
-            
-        case 'list_clients_with_sizes':
-            $result = $db->query("
-                SELECT 
-                    c.uuid, 
-                    c.name, 
-                    c.show_info, 
-                    c.last_seen, 
-                    c.playback_status,
-                    COALESCE(ws.width, 0) as width,
-                    COALESCE(ws.height, 0) as height,
-                    COALESCE(ws.resolution, '') as resolution
-                FROM clients c
-                LEFT JOIN client_window_sizes ws ON c.uuid = ws.uuid
-                ORDER BY c.last_seen DESC
-            ");
-            
-            $clients = [];
-            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $row['status'] = (time() - $row['last_seen']) <= 60 ? 'online' : 'offline';
-                $clients[] = $row;
-            }
-            echo json_encode($clients);
-            break;
-            
-        // Добавьте в switch блок:
-        case 'get_resolution_settings':
-            $stmt = $db->prepare("SELECT min_width, min_height FROM resolution_settings WHERE id = 1");
-            $result = $stmt->execute();
-            if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                echo json_encode($row);
-            } else {
-                echo json_encode(['min_width' => 1920, 'min_height' => 1080]);
-            }
-            break;
-        
-        case 'update_resolution_settings':
-            $min_width = isset($input['min_width']) ? (int)$input['min_width'] : 1920;
-            $min_height = isset($input['min_height']) ? (int)$input['min_height'] : 1080;
-            
-            // Валидация
-            if ($min_width <= 0 || $min_height <= 0) {
-                echo json_encode(['error' => 'Некорректные значения разрешения']);
-                break;
-            }
-            
-            $stmt = $db->prepare("
-                INSERT OR REPLACE INTO resolution_settings 
-                (id, min_width, min_height, updated_at) 
-                VALUES (1, :width, :height, :timestamp)
-            ");
-            $stmt->bindValue(':width', $min_width, SQLITE3_INTEGER);
-            $stmt->bindValue(':height', $min_height, SQLITE3_INTEGER);
-            $stmt->bindValue(':timestamp', time(), SQLITE3_INTEGER);
-            $stmt->execute();
-            
-            echo json_encode(['message' => 'Настройки разрешения обновлены']);
-            break;
-            
-        case 'force_resolution_check':
-            try {
-                // Получаем настройки Telegram
-                $stmt = $db->prepare("SELECT bot_token, chat_id FROM telegram_settings WHERE id = 1");
-                $result = $stmt->execute();
-                $telegram_settings = $result->fetchArray(SQLITE3_ASSOC);
-                $bot_token = $telegram_settings['bot_token'] ?? '';
-                $chat_id = $telegram_settings['chat_id'] ?? '';
-                
-                // Получаем имя системы
-                $stmt = $db->prepare("SELECT system_name FROM system_settings WHERE id = 1");
-                $result = $stmt->execute();
-                $system_settings = $result->fetchArray(SQLITE3_ASSOC);
-                $system_name = $system_settings['system_name'] ?? 'Ads Panel';
-                
-                if (empty($bot_token) || empty($chat_id)) {
-                    echo json_encode(['error' => 'Настройки Telegram не заполнены']);
-                    break;
-                }
-                
-                // Вызываем функцию проверки разрешений
-                $resolution_settings = getResolutionSettings($db);
-                $min_width = $resolution_settings['min_width'];
-                $min_height = $resolution_settings['min_height'];
-                
-                $low_res_devices = [];
-                
-                // Получаем устройства с низким разрешением
-                $stmt = $db->prepare("
-                    SELECT 
-                        c.uuid, 
-                        c.name, 
-                        COALESCE(ws.width, 0) as width, 
-                        COALESCE(ws.height, 0) as height,
-                        COALESCE(ws.resolution, '') as resolution
-                    FROM clients c
-                    LEFT JOIN client_window_sizes ws ON c.uuid = ws.uuid
-                    WHERE c.last_seen > :online_threshold
-                    AND (ws.width < :min_width OR ws.height < :min_height)
-                    AND ws.width > 0 AND ws.height > 0
-                ");
-                $online_threshold = time() - 60;
-                $stmt->bindValue(':online_threshold', $online_threshold, SQLITE3_INTEGER);
-                $stmt->bindValue(':min_width', $min_width, SQLITE3_INTEGER);
-                $stmt->bindValue(':min_height', $min_height, SQLITE3_INTEGER);
-                $result = $stmt->execute();
-                
-                while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                    $low_res_devices[] = $row;
-                }
-                
-                if (empty($low_res_devices)) {
-                    echo json_encode(['message' => 'Все устройства соответствуют минимальному разрешению']);
-                } else {
-                    // Отправляем сводное уведомление
-                    $message = "<b>📊 Проверка разрешений</b>\n\n";
-                    $message .= "<b>Система:</b> <i>$system_name</i>\n";
-                    $message .= "<b>Минимальное разрешение:</b> <code>{$min_width}×{$min_height}</code>\n\n";
-                    $message .= "<b>Устройства с низким разрешением:</b>\n";
-                    
-                    foreach ($low_res_devices as $device) {
-                        $message .= "• <i>{$device['name']}</i>: <code>{$device['width']}×{$device['height']}</code>\n";
-                    }
-                    
-                    $message .= "\nВсего: " . count($low_res_devices) . " устройств";
-                    
-                    if (sendTelegramMessage($bot_token, $chat_id, $message)) {
-                        echo json_encode(['message' => 'Отчет о разрешениях отправлен', 'count' => count($low_res_devices)]);
-                    } else {
-                        echo json_encode(['error' => 'Ошибка отправки отчета']);
-                    }
-                }
-                
-            } catch (Exception $e) {
-                echo json_encode(['error' => 'Ошибка проверки разрешений: ' . $e->getMessage()]);
-            }
-            break;
-        
-        case 'list_clients_with_sizes':
-            $result = $db->query("
-                SELECT 
-                    c.uuid, 
-                    c.name, 
-                    c.show_info, 
-                    c.last_seen, 
-                    c.playback_status,
-                    COALESCE(ws.width, 0) as width,
-                    COALESCE(ws.height, 0) as height,
-                    COALESCE(ws.resolution, '') as resolution,
-                    ws.last_updated as resolution_updated
-                FROM clients c
-                LEFT JOIN client_window_sizes ws ON c.uuid = ws.uuid
-                ORDER BY c.last_seen DESC
-            ");
-            
-            $clients = [];
-            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                $row['status'] = (time() - $row['last_seen']) <= 60 ? 'online' : 'offline';
-                $clients[] = $row;
-            }
-            echo json_encode($clients);
             break;
 
         case 'scan_files':
@@ -734,6 +529,8 @@ try {
             }
             $db->exec("DELETE FROM clients WHERE uuid = '$uuid'");
             $db->exec("DELETE FROM client_content WHERE uuid = '$uuid'");
+            $db->exec("DELETE FROM client_window_sizes WHERE uuid = '$uuid'");
+            $db->exec("DELETE FROM resolution_notifications WHERE uuid = '$uuid'");
             echo json_encode(['message' => 'Клиент удалён']);
             break;
 
@@ -924,6 +721,172 @@ try {
             $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
             $stmt->execute();
             echo json_encode(['message' => 'Флаг перезапуска сброшен']);
+            break;
+
+        case 'get_resolution_settings':
+            $stmt = $db->prepare("SELECT min_width, min_height FROM resolution_settings WHERE id = 1");
+            $result = $stmt->execute();
+            if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                echo json_encode($row);
+            } else {
+                echo json_encode(['min_width' => 1920, 'min_height' => 1080]);
+            }
+            break;
+
+        case 'update_resolution_settings':
+            $min_width = isset($input['min_width']) ? (int)$input['min_width'] : 1920;
+            $min_height = isset($input['min_height']) ? (int)$input['min_height'] : 1080;
+            
+            // Валидация
+            if ($min_width <= 0 || $min_height <= 0) {
+                echo json_encode(['error' => 'Некорректные значения разрешения']);
+                break;
+            }
+            
+            $stmt = $db->prepare("
+                INSERT OR REPLACE INTO resolution_settings 
+                (id, min_width, min_height, updated_at) 
+                VALUES (1, :width, :height, :timestamp)
+            ");
+            $stmt->bindValue(':width', $min_width, SQLITE3_INTEGER);
+            $stmt->bindValue(':height', $min_height, SQLITE3_INTEGER);
+            $stmt->bindValue(':timestamp', time(), SQLITE3_INTEGER);
+            $stmt->execute();
+            
+            echo json_encode(['message' => 'Настройки разрешения обновлены']);
+            break;
+
+        case 'update_window_size':
+            $uuid = $input['uuid'] ?? '';
+            $width = isset($input['width']) ? (int)$input['width'] : 0;
+            $height = isset($input['height']) ? (int)$input['height'] : 0;
+            $resolution = $input['resolution'] ?? '';
+            
+            if (empty($uuid)) {
+                echo json_encode(['error' => 'UUID не указан']);
+                break;
+            }
+            
+            $stmt = $db->prepare("
+                INSERT OR REPLACE INTO client_window_sizes 
+                (uuid, width, height, resolution, last_updated) 
+                VALUES (:uuid, :width, :height, :resolution, :timestamp)
+            ");
+            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $stmt->bindValue(':width', $width, SQLITE3_INTEGER);
+            $stmt->bindValue(':height', $height, SQLITE3_INTEGER);
+            $stmt->bindValue(':resolution', $resolution, SQLITE3_TEXT);
+            $stmt->bindValue(':timestamp', time(), SQLITE3_INTEGER);
+            $stmt->execute();
+            
+            echo json_encode(['message' => 'Размеры окна сохранены']);
+            break;
+
+        case 'list_clients_with_sizes':
+            $result = $db->query("
+                SELECT 
+                    c.uuid, 
+                    c.name, 
+                    c.show_info, 
+                    c.last_seen, 
+                    c.playback_status,
+                    COALESCE(ws.width, 0) as width,
+                    COALESCE(ws.height, 0) as height,
+                    COALESCE(ws.resolution, '') as resolution,
+                    ws.last_updated as resolution_updated
+                FROM clients c
+                LEFT JOIN client_window_sizes ws ON c.uuid = ws.uuid
+                ORDER BY c.last_seen DESC
+            ");
+            
+            $clients = [];
+            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $row['status'] = (time() - $row['last_seen']) <= 60 ? 'online' : 'offline';
+                $clients[] = $row;
+            }
+            echo json_encode($clients);
+            break;
+
+        case 'force_resolution_check':
+            try {
+                // Получаем настройки Telegram
+                $stmt = $db->prepare("SELECT bot_token, chat_id FROM telegram_settings WHERE id = 1");
+                $result = $stmt->execute();
+                $telegram_settings = $result->fetchArray(SQLITE3_ASSOC);
+                $bot_token = $telegram_settings['bot_token'] ?? '';
+                $chat_id = $telegram_settings['chat_id'] ?? '';
+                
+                // Получаем имя системы
+                $stmt = $db->prepare("SELECT system_name FROM system_settings WHERE id = 1");
+                $result = $stmt->execute();
+                $system_settings = $result->fetchArray(SQLITE3_ASSOC);
+                $system_name = $system_settings['system_name'] ?? 'Ads Panel';
+                
+                if (empty($bot_token) || empty($chat_id)) {
+                    echo json_encode(['error' => 'Настройки Telegram не заполнены']);
+                    break;
+                }
+                
+                // Получаем настройки минимального разрешения
+                $stmt = $db->prepare("SELECT min_width, min_height FROM resolution_settings WHERE id = 1");
+                $result = $stmt->execute();
+                $resolution_settings = $result->fetchArray(SQLITE3_ASSOC);
+                $min_width = $resolution_settings['min_width'] ?? 1920;
+                $min_height = $resolution_settings['min_height'] ?? 1080;
+                
+                $low_res_devices = [];
+                
+                // Получаем устройства с низким разрешением
+                $stmt = $db->prepare("
+                    SELECT 
+                        c.uuid, 
+                        c.name, 
+                        COALESCE(ws.width, 0) as width, 
+                        COALESCE(ws.height, 0) as height,
+                        COALESCE(ws.resolution, '') as resolution
+                    FROM clients c
+                    LEFT JOIN client_window_sizes ws ON c.uuid = ws.uuid
+                    WHERE c.last_seen > :online_threshold
+                    AND (ws.width < :min_width OR ws.height < :min_height)
+                    AND ws.width > 0 AND ws.height > 0
+                ");
+                $online_threshold = time() - 60;
+                $stmt->bindValue(':online_threshold', $online_threshold, SQLITE3_INTEGER);
+                $stmt->bindValue(':min_width', $min_width, SQLITE3_INTEGER);
+                $stmt->bindValue(':min_height', $min_height, SQLITE3_INTEGER);
+                $result = $stmt->execute();
+                
+                while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                    $low_res_devices[] = $row;
+                }
+                
+                if (empty($low_res_devices)) {
+                    echo json_encode(['message' => 'Все устройства соответствуют минимальному разрешению']);
+                } else {
+                    // Отправляем сводное уведомление
+                    $message = "<b>📊 Проверка разрешений</b>\n\n";
+                    $message .= "<b>Система:</b> <i>$system_name</i>\n";
+                    $message .= "<b>Минимальное разрешение:</b> <code>{$min_width}×{$min_height}</code>\n\n";
+                    $message .= "<b>Устройства с низким разрешением:</b>\n";
+                    
+                    foreach ($low_res_devices as $device) {
+                        $message .= "• <i>{$device['name']}</i>: <code>{$device['width']}×{$device['height']}</code>\n";
+                    }
+                    
+                    $message .= "\nВсего: " . count($low_res_devices) . " устройств";
+                    
+                    // Используем существующую функцию sendTelegramMessage
+                    $result = sendTelegramMessage($bot_token, $chat_id, $message);
+                    if (isset($result['error'])) {
+                        echo json_encode(['error' => 'Ошибка отправки отчета: ' . $result['error']]);
+                    } else {
+                        echo json_encode(['message' => 'Отчет о разрешениях отправлен', 'count' => count($low_res_devices)]);
+                    }
+                }
+                
+            } catch (Exception $e) {
+                echo json_encode(['error' => 'Ошибка проверки разрешений: ' . $e->getMessage()]);
+            }
             break;
 
         default:

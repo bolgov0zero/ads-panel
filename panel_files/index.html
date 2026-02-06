@@ -49,6 +49,38 @@ if (!uuid) {
     }).then(() => loadClientInfo()).catch(err => console.error('Ошибка регистрации клиента:', err));
 }
 
+// Функция для отправки размеров окна на сервер
+async function updateWindowSize() {
+    try {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        const resolution = `${width}×${height}`;
+        
+        await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'update_window_size',
+                uuid,
+                width: width,
+                height: height,
+                resolution: resolution
+            })
+        });
+        
+        console.log('Размеры окна отправлены:', resolution);
+    } catch (err) {
+        console.error('Ошибка отправки размеров окна:', err);
+    }
+}
+
+// Отправляем размеры при загрузке и изменении размера окна
+window.addEventListener('load', updateWindowSize);
+window.addEventListener('resize', updateWindowSize);
+
+// Периодическая отправка (каждые 30 секунд)
+setInterval(updateWindowSize, 30000);
+
 const video = document.getElementById('adVideo');
 const pdfCanvas = document.getElementById('pdfCanvas');
 const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -211,38 +243,6 @@ async function showPDF(url, duration) {
     }, displayDuration);
     console.log('Показан новый PDF:', url, 'Длительность:', displayDuration);
 }
-
-// Функция для отправки размеров окна на сервер
-async function updateWindowSize() {
-    try {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        const resolution = `${width}x${height}`;
-        
-        await fetch('api.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'update_window_size',
-                uuid: uuid,
-                width: width,
-                height: height,
-                resolution: resolution
-            })
-        });
-        
-        console.log('Размеры окна отправлены:', resolution);
-    } catch (err) {
-        console.error('Ошибка отправки размеров окна:', err);
-    }
-}
-
-// Отправляем размеры при загрузке и изменении размера окна
-window.addEventListener('load', updateWindowSize);
-window.addEventListener('resize', updateWindowSize);
-
-// Периодическая отправка (каждые 30 секунд)
-setInterval(updateWindowSize, 30000);
 
 // Обработчик окончания видео
 video.addEventListener('ended', () => {

@@ -43,6 +43,19 @@ function sendTelegramMessage($botToken, $chatId, $message) {
     return true;
 }
 
+// Функция для получения настроек минимального разрешения
+function getResolutionSettings($db) {
+    $stmt = $db->prepare("SELECT min_width, min_height FROM resolution_settings WHERE id = 1");
+    $result = $stmt->execute();
+    if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        return [
+            'min_width' => $row['min_width'] ?? 1920,
+            'min_height' => $row['min_height'] ?? 1080
+        ];
+    }
+    return ['min_width' => 1920, 'min_height' => 1080];
+}
+
 // Функция проверки разрешения и отправки уведомлений
 function checkResolutionAndNotify($db, $bot_token, $chat_id, $system_name) {
     global $log_file, $resolution_check_interval, $last_resolution_check;
@@ -59,6 +72,8 @@ function checkResolutionAndNotify($db, $bot_token, $chat_id, $system_name) {
         $resolution_settings = getResolutionSettings($db);
         $min_width = $resolution_settings['min_width'];
         $min_height = $resolution_settings['min_height'];
+        
+        logMessage("Проверка разрешений: мин. {$min_width}×{$min_height}");
         
         // Получаем все устройства с их разрешениями
         $stmt = $db->prepare("
@@ -77,17 +92,24 @@ function checkResolutionAndNotify($db, $bot_token, $chat_id, $system_name) {
         $stmt->bindValue(':online_threshold', $online_threshold, SQLITE3_INTEGER);
         $result = $stmt->execute();
         
+        $low_res_count = 0;
+        
         while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
             $width = $row['width'] ?? 0;
             $height = $row['height'] ?? 0;
             
             // Пропускаем устройства с неизвестным разрешением
             if ($width <= 0 || $height <= 0) {
+                logMessage("Устройство {$row['name']} ({$row['uuid']}): разрешение неизвестно");
                 continue;
             }
             
+            logMessage("Проверка {$row['name']}: {$width}×{$height} (требуется: {$min_width}×{$min_height})");
+            
             // Проверяем соответствие минимальному разрешению
             if ($width < $min_width || $height < $min_height) {
+                $low_res_count++;
+                
                 // Проверяем, не отправляли ли уже уведомление для этого устройства
                 $notification_key = "low_res_{$row['uuid']}_{$min_width}_{$min_height}";
                 $stmt_check = $db->prepare("SELECT COUNT(*) FROM resolution_notifications WHERE notification_key = :key");
@@ -104,6 +126,7 @@ function checkResolutionAndNotify($db, $bot_token, $chat_id, $system_name) {
                     $message .= "<b>UUID:</b> <code>{$row['uuid']}</code></blockquote>";
                     
                     if (!empty($bot_token) && !empty($chat_id)) {
+                        logMessage("Отправка уведомления о низком разрешении для {$row['uuid']}");
                         if (sendTelegramMessage($bot_token, $chat_id, $message)) {
                             // Запоминаем, что отправили уведомление
                             $stmt_insert = $db->prepare("
@@ -118,13 +141,16 @@ function checkResolutionAndNotify($db, $bot_token, $chat_id, $system_name) {
                             logMessage("Уведомление о низком разрешении отправлено для {$row['uuid']}");
                         }
                     }
+                } else {
+                    logMessage("Уведомление для {$row['uuid']} уже отправлено ранее");
                 }
             } else {
                 // Если разрешение теперь соответствует требованиям, удаляем запись об уведомлении
                 $notification_key = "low_res_{$row['uuid']}_{$min_width}_{$min_height}";
                 $stmt_delete = $db->prepare("DELETE FROM resolution_notifications WHERE notification_key = :key");
                 $stmt_delete->bindValue(':key', $notification_key, SQLITE3_TEXT);
-                $stmt_delete->execute();
+                $deleted = $stmt_delete->execute();
+                logMessage("Устройство {$row['name']} соответствует требованиям разрешения");
             }
         }
         
@@ -132,7 +158,9 @@ function checkResolutionAndNotify($db, $bot_token, $chat_id, $system_name) {
         $cleanup_time = $current_time - (24 * 3600);
         $stmt_cleanup = $db->prepare("DELETE FROM resolution_notifications WHERE sent_at < :time");
         $stmt_cleanup->bindValue(':time', $cleanup_time, SQLITE3_INTEGER);
-        $stmt_cleanup->execute();
+        $cleaned = $stmt_cleanup->execute();
+        
+        logMessage("Проверка разрешений завершена. Устройств с низким разрешением: $low_res_count");
         
     } catch (Exception $e) {
         logMessage("Ошибка в checkResolutionAndNotify: " . $e->getMessage());
@@ -233,6 +261,8 @@ try {
         logMessage("=== Цикл проверки ===");
 
         checkForNewVersion($db, $bot_token, $chat_id);
+        
+        // Проверка разрешений и отправка уведомлений
         checkResolutionAndNotify($db, $bot_token, $chat_id, $system_name);
 
         // Получаем всех клиентов

@@ -207,25 +207,6 @@ try {
                 }
             }
         ],
-        'client_window_sizes' => [
-            'create' => "
-                CREATE TABLE client_window_sizes (
-                    uuid TEXT PRIMARY KEY,
-                    width INTEGER DEFAULT 0,
-                    height INTEGER DEFAULT 0,
-                    resolution TEXT DEFAULT '',
-                    last_updated INTEGER DEFAULT 0,
-                    FOREIGN KEY (uuid) REFERENCES clients(uuid) ON DELETE CASCADE
-                )",
-            'columns' => [
-                ['name' => 'uuid', 'type' => 'TEXT', 'constraints' => 'PRIMARY KEY'],
-                ['name' => 'width', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 0'],
-                ['name' => 'height', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 0'],
-                ['name' => 'resolution', 'type' => 'TEXT', 'constraints' => 'DEFAULT \'\''],
-                ['name' => 'last_updated', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 0'],
-            ],
-            'initial_data' => null
-        ],
         'resolution_settings' => [
             'create' => "
                 CREATE TABLE resolution_settings (
@@ -246,6 +227,25 @@ try {
                     $db->exec("INSERT INTO resolution_settings (id, min_width, min_height, updated_at) VALUES (1, 1920, 1080, 0)");
                 }
             }
+        ],
+        'client_window_sizes' => [
+            'create' => "
+                CREATE TABLE client_window_sizes (
+                    uuid TEXT PRIMARY KEY,
+                    width INTEGER DEFAULT 0,
+                    height INTEGER DEFAULT 0,
+                    resolution TEXT DEFAULT '',
+                    last_updated INTEGER DEFAULT 0,
+                    FOREIGN KEY (uuid) REFERENCES clients(uuid) ON DELETE CASCADE
+                )",
+            'columns' => [
+                ['name' => 'uuid', 'type' => 'TEXT', 'constraints' => 'PRIMARY KEY'],
+                ['name' => 'width', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 0'],
+                ['name' => 'height', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 0'],
+                ['name' => 'resolution', 'type' => 'TEXT', 'constraints' => 'DEFAULT \'\''],
+                ['name' => 'last_updated', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 0'],
+            ],
+            'initial_data' => null
         ],
         'resolution_notifications' => [
             'create' => "
