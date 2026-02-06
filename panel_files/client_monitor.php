@@ -5,7 +5,7 @@ $check_interval = 10; // Интервал проверки в секундах
 $offline_threshold = 60; // Порог для оффлайн-статуса в секундах
 $log_file = '/var/log/client-monitor.log';
 $version_check_interval = 60;
-$resolution_check_interval = 30; // Проверять разрешение каждые 30 секунд
+$resolution_check_interval = 10; // Проверять разрешение
 $last_resolution_check = 0;
 
 // Функция логирования
