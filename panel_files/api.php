@@ -869,7 +869,7 @@ try {
                 }
                 
                 // Отправляем сводное уведомление
-                $message = "<b>Отчет по разрешениям</b>\n\n";
+                $message = "<b>Отчет по разрешениям</b>\n";
                 $message .= "<blockquote><b>Система:</b> <i>$system_name</i>\n";
                 $message .= "<b>Минимальное разрешение:</b> <code>{$min_width}×{$min_height}</code></blockquote>\n\n";
                 
@@ -878,7 +878,7 @@ try {
                     foreach ($low_res_devices as $device) {
                         $message .= "• <i>{$device['name']}</i>: <code>{$device['width']}×{$device['height']}</code>\n";
                     }
-                    $message .= "</blockquote>\n";
+                    $message .= "</blockquote>\n\n";
                 }
                 
                 if (!empty($good_res_devices)) {
@@ -886,7 +886,7 @@ try {
                     foreach ($good_res_devices as $device) {
                         $message .= "• <i>{$device['name']}</i>: <code>{$device['width']}×{$device['height']}</code>\n";
                     }
-                    $message .= "</blockquote>\n";
+                    $message .= "</blockquote>\n\n";
                 }
                 
                 if (!empty($unknown_res_devices)) {
@@ -894,7 +894,7 @@ try {
                     foreach ($unknown_res_devices as $device) {
                         $message .= "• <i>{$device['name']}</i>\n";
                     }
-                    $message .= "</blockquote>\n";
+                    $message .= "</blockquote>\n\n";
                 }
                 
                 $message .= "<b>Статистика:</b>\n";
