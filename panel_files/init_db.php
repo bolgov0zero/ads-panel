@@ -246,6 +246,22 @@ try {
                     $db->exec("INSERT INTO resolution_settings (id, min_width, min_height, updated_at) VALUES (1, 1920, 1080, 0)");
                 }
             }
+        ],
+        'resolution_notifications' => [
+            'create' => "
+                CREATE TABLE resolution_notifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    uuid TEXT NOT NULL,
+                    notification_key TEXT NOT NULL UNIQUE,
+                    sent_at INTEGER DEFAULT 0,
+                    FOREIGN KEY (uuid) REFERENCES clients(uuid) ON DELETE CASCADE
+                )",
+            'columns' => [
+                ['name' => 'uuid', 'type' => 'TEXT', 'constraints' => 'NOT NULL'],
+                ['name' => 'notification_key', 'type' => 'TEXT', 'constraints' => 'NOT NULL UNIQUE'],
+                ['name' => 'sent_at', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 0'],
+            ],
+            'initial_data' => null
         ]
     ];
 

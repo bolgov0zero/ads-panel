@@ -57,3 +57,23 @@ async function sendTestTelegramMessage() {
         showNotification('Ошибка отправки тестового сообщения', 'bg-red-500');
     }
 }
+
+async function forceResolutionCheck() {
+    try {
+        const response = await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'force_resolution_check' })
+        });
+        const result = await response.json();
+        if (result.error) {
+            console.error(result.error);
+            showNotification(result.error, 'bg-red-500');
+        } else {
+            showNotification(result.message);
+        }
+    } catch (err) {
+        console.error('Ошибка проверки разрешений:', err);
+        showNotification('Ошибка проверки разрешений', 'bg-red-500');
+    }
+}

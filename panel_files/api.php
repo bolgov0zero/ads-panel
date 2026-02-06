@@ -8,6 +8,19 @@ function logMessage($message) {
     error_log(date('[Y-m-d H:i:s] ') . $message . "\n", 3, '/var/log/ads_api.log');
 }
 
+// Вспомогательная функция (добавьте в начало api.php)
+function getResolutionSettings($db) {
+    $stmt = $db->prepare("SELECT min_width, min_height FROM resolution_settings WHERE id = 1");
+    $result = $stmt->execute();
+    if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        return [
+            'min_width' => $row['min_width'] ?? 1920,
+            'min_height' => $row['min_height'] ?? 1080
+        ];
+    }
+    return ['min_width' => 1920, 'min_height' => 1080];
+}
+
 try {
     // Подключение к SQLite3
     $db = new SQLite3('/data/ads.db');
@@ -290,6 +303,84 @@ try {
             $stmt->execute();
             
             echo json_encode(['message' => 'Настройки разрешения обновлены']);
+            break;
+            
+        case 'force_resolution_check':
+            try {
+                // Получаем настройки Telegram
+                $stmt = $db->prepare("SELECT bot_token, chat_id FROM telegram_settings WHERE id = 1");
+                $result = $stmt->execute();
+                $telegram_settings = $result->fetchArray(SQLITE3_ASSOC);
+                $bot_token = $telegram_settings['bot_token'] ?? '';
+                $chat_id = $telegram_settings['chat_id'] ?? '';
+                
+                // Получаем имя системы
+                $stmt = $db->prepare("SELECT system_name FROM system_settings WHERE id = 1");
+                $result = $stmt->execute();
+                $system_settings = $result->fetchArray(SQLITE3_ASSOC);
+                $system_name = $system_settings['system_name'] ?? 'Ads Panel';
+                
+                if (empty($bot_token) || empty($chat_id)) {
+                    echo json_encode(['error' => 'Настройки Telegram не заполнены']);
+                    break;
+                }
+                
+                // Вызываем функцию проверки разрешений
+                $resolution_settings = getResolutionSettings($db);
+                $min_width = $resolution_settings['min_width'];
+                $min_height = $resolution_settings['min_height'];
+                
+                $low_res_devices = [];
+                
+                // Получаем устройства с низким разрешением
+                $stmt = $db->prepare("
+                    SELECT 
+                        c.uuid, 
+                        c.name, 
+                        COALESCE(ws.width, 0) as width, 
+                        COALESCE(ws.height, 0) as height,
+                        COALESCE(ws.resolution, '') as resolution
+                    FROM clients c
+                    LEFT JOIN client_window_sizes ws ON c.uuid = ws.uuid
+                    WHERE c.last_seen > :online_threshold
+                    AND (ws.width < :min_width OR ws.height < :min_height)
+                    AND ws.width > 0 AND ws.height > 0
+                ");
+                $online_threshold = time() - 60;
+                $stmt->bindValue(':online_threshold', $online_threshold, SQLITE3_INTEGER);
+                $stmt->bindValue(':min_width', $min_width, SQLITE3_INTEGER);
+                $stmt->bindValue(':min_height', $min_height, SQLITE3_INTEGER);
+                $result = $stmt->execute();
+                
+                while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                    $low_res_devices[] = $row;
+                }
+                
+                if (empty($low_res_devices)) {
+                    echo json_encode(['message' => 'Все устройства соответствуют минимальному разрешению']);
+                } else {
+                    // Отправляем сводное уведомление
+                    $message = "<b>📊 Проверка разрешений</b>\n\n";
+                    $message .= "<b>Система:</b> <i>$system_name</i>\n";
+                    $message .= "<b>Минимальное разрешение:</b> <code>{$min_width}×{$min_height}</code>\n\n";
+                    $message .= "<b>Устройства с низким разрешением:</b>\n";
+                    
+                    foreach ($low_res_devices as $device) {
+                        $message .= "• <i>{$device['name']}</i>: <code>{$device['width']}×{$device['height']}</code>\n";
+                    }
+                    
+                    $message .= "\nВсего: " . count($low_res_devices) . " устройств";
+                    
+                    if (sendTelegramMessage($bot_token, $chat_id, $message)) {
+                        echo json_encode(['message' => 'Отчет о разрешениях отправлен', 'count' => count($low_res_devices)]);
+                    } else {
+                        echo json_encode(['error' => 'Ошибка отправки отчета']);
+                    }
+                }
+                
+            } catch (Exception $e) {
+                echo json_encode(['error' => 'Ошибка проверки разрешений: ' . $e->getMessage()]);
+            }
             break;
         
         case 'list_clients_with_sizes':
