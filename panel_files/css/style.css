@@ -820,3 +820,34 @@ canvas#pdfCanvas {
 .client-card .fa-exclamation-triangle {
     animation: pulse-warning 2s infinite;
 }
+
+/* Стили для редактируемого разрешения */
+.resolution-input {
+    background: rgba(31, 41, 55, 0.8);
+    border: 1px solid #4b5563;
+    border-radius: 0.25rem;
+    padding: 0.1rem 0.3rem;
+    text-align: center;
+    min-width: 80px;
+}
+
+.resolution-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+/* Подсказка под разрешением */
+.client-card .italic {
+    font-size: 0.65rem;
+    opacity: 0.7;
+}
+
+/* Иконка редактирования */
+.client-card .border-2 {
+    transition: all 0.2s ease;
+}
+
+.client-card .border-2:hover {
+    transform: scale(1.02);
+}

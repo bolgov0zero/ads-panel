@@ -225,6 +225,27 @@ try {
                 ['name' => 'last_updated', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 0'],
             ],
             'initial_data' => null
+        ],
+        'resolution_settings' => [
+            'create' => "
+                CREATE TABLE resolution_settings (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    min_width INTEGER DEFAULT 1920,
+                    min_height INTEGER DEFAULT 1080,
+                    updated_at INTEGER DEFAULT 0
+                )",
+            'columns' => [
+                ['name' => 'id', 'type' => 'INTEGER', 'constraints' => 'PRIMARY KEY CHECK (id = 1)'],
+                ['name' => 'min_width', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 1920'],
+                ['name' => 'min_height', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 1080'],
+                ['name' => 'updated_at', 'type' => 'INTEGER', 'constraints' => 'DEFAULT 0'],
+            ],
+            'initial_data' => function ($db) {
+                $result = $db->querySingle("SELECT COUNT(*) FROM resolution_settings");
+                if ($result == 0) {
+                    $db->exec("INSERT INTO resolution_settings (id, min_width, min_height, updated_at) VALUES (1, 1920, 1080, 0)");
+                }
+            }
         ]
     ];
 

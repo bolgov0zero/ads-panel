@@ -1,8 +1,9 @@
 // Глобальная переменная для хранения данных о клиентах
 let clientsData = [];
 let isEditingName = false; // Флаг для отслеживания редактирования имени
-const MIN_REQUIRED_WIDTH = 1920; // Минимальная ширина (можно сделать настраиваемой)
-const MIN_REQUIRED_HEIGHT = 1080; // Минимальная высота (можно сделать настраиваемой)
+let isEditingResolution = false; // Флаг для отслеживания редактирования разрешения
+let MIN_REQUIRED_WIDTH = 1920; // Минимальная ширина (по умолчанию)
+let MIN_REQUIRED_HEIGHT = 1080; // Минимальная высота (по умолчанию)
 
 // Функция проверки соответствия минимальному разрешению
 function checkResolution(minWidth, minHeight, currentWidth, currentHeight) {
@@ -29,7 +30,7 @@ function getResolutionTextClass(width, height, hasResolution) {
     return meetsRequirements ? 'text-green-400' : 'text-red-400';
 }
 
-// Функция получения текста разрешения
+// Функция получения текста разрешения для отображения
 function getResolutionText(client) {
     const hasResolution = client.width > 0 && client.height > 0;
     
@@ -45,9 +46,55 @@ function getResolutionText(client) {
     return `${client.width}×${client.height}`;
 }
 
+// Функция парсинга введенного разрешения (поддержка форматов: "1920x1080", "1920×1080", "1920*1080")
+function parseResolutionInput(input) {
+    input = input.trim();
+    
+    // Удаляем все нецифровые символы, кроме разделителей
+    const cleanInput = input.replace(/[^\d×x\*]/g, '');
+    
+    // Разделяем по различным разделителям
+    const separators = ['×', 'x', 'X', '*'];
+    let width = 0;
+    let height = 0;
+    
+    for (const sep of separators) {
+        if (cleanInput.includes(sep)) {
+            const parts = cleanInput.split(sep);
+            if (parts.length === 2) {
+                width = parseInt(parts[0]) || 0;
+                height = parseInt(parts[1]) || 0;
+                break;
+            }
+        }
+    }
+    
+    // Если не нашли разделитель, пробуем распарсить как число (возможно, только ширину)
+    if (width === 0 && height === 0) {
+        const num = parseInt(input);
+        if (!isNaN(num) && num > 0) {
+            width = num;
+            height = Math.round(width * 9 / 16); // Предполагаем 16:9
+        }
+    }
+    
+    return { width, height };
+}
+
+// Функция форматирования разрешения для ввода
+function getResolutionInputValue(width, height) {
+    if (width > 0 && height > 0) {
+        return `${width}×${height}`;
+    }
+    return '';
+}
+
 async function loadClients() {
     try {
-        if (isEditingName) return; // Не обновляем во время редактирования
+        if (isEditingName || isEditingResolution) return; // Не обновляем во время редактирования
+        
+        // Загружаем настройки минимального разрешения
+        await loadResolutionSettings();
         
         const response = await fetch('api.php?action=list_clients_with_sizes');
         if (!response.ok) {
@@ -103,6 +150,27 @@ async function loadClients() {
     }
 }
 
+// Функция загрузки настроек минимального разрешения
+async function loadResolutionSettings() {
+    try {
+        const response = await fetch('api.php?action=get_resolution_settings');
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const settings = await response.json();
+        
+        MIN_REQUIRED_WIDTH = settings.min_width || 1920;
+        MIN_REQUIRED_HEIGHT = settings.min_height || 1080;
+        
+        console.log('Настройки разрешения загружены:', settings);
+    } catch (err) {
+        console.error('Ошибка загрузки настроек разрешения:', err);
+        // Используем значения по умолчанию
+        MIN_REQUIRED_WIDTH = 1920;
+        MIN_REQUIRED_HEIGHT = 1080;
+    }
+}
+
 // Функция обновления карточки клиента (компактный стиль)
 function updateClientCard(card, client) {
     const isOnline = client.status === 'online';
@@ -115,6 +183,9 @@ function updateClientCard(card, client) {
     const resolutionTextClass = getResolutionTextClass(client.width, client.height, hasResolution);
     const meetsRequirements = hasResolution && 
         checkResolution(MIN_REQUIRED_WIDTH, MIN_REQUIRED_HEIGHT, client.width, client.height);
+    
+    // Текущее минимальное разрешение
+    const minResolutionText = `${MIN_REQUIRED_WIDTH}×${MIN_REQUIRED_HEIGHT}`;
     
     card.innerHTML = `
         <!-- Верхняя панель: статус и кнопки -->
@@ -180,23 +251,156 @@ function updateClientCard(card, client) {
             
             <!-- Информация о разрешении экрана -->
             <div class="flex items-center gap-2">
-                <i class="fas fa-desktop text-gray-400 text-xs" title="Разрешение экрана"></i>
-                <div class="border ${resolutionBorderClass} border-2 rounded-md px-2 py-0.5 bg-gray-800 flex items-center gap-1">
-                    <span class="${resolutionTextClass} font-mono text-xs">
+                <i class="fas fa-desktop text-gray-400 text-xs" title="Разрешение экрана устройства / Минимальное требование: ${minResolutionText}"></i>
+                <div class="border ${resolutionBorderClass} border-2 rounded-md px-2 py-0.5 bg-gray-800 flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity" 
+                     onclick="editResolution(this, '${client.uuid}')"
+                     title="Нажмите чтобы изменить минимальное разрешение. Текущее: ${resolutionText}, Минимальное: ${minResolutionText}">
+                    <!-- Отображаемое разрешение -->
+                    <span class="resolution-display ${resolutionTextClass} font-mono text-xs">
                         ${resolutionText}
                     </span>
+                    
+                    <!-- Поле для ввода разрешения -->
+                    <input type="text" 
+                           class="hidden resolution-input bg-transparent border-none outline-none text-xs font-mono w-20 ${resolutionTextClass}" 
+                           value="${minResolutionText}"
+                           onblur="saveResolution(this, '${client.uuid}')" 
+                           onkeydown="handleResolutionKeydown(event, this, '${client.uuid}')">
+                    
+                    <!-- Иконки состояния -->
                     ${!meetsRequirements && hasResolution ? `
                         <i class="fas fa-exclamation-triangle text-red-400 text-xs" 
                            title="Ниже минимального разрешения (${MIN_REQUIRED_WIDTH}×${MIN_REQUIRED_HEIGHT})"></i>
                     ` : ''}
-                    ${meetsRequirements ? `
+                    ${meetsRequirements && hasResolution ? `
                         <i class="fas fa-check text-green-400 text-xs" 
                            title="Соответствует минимальному разрешению"></i>
                     ` : ''}
+                    ${!hasResolution ? `
+                        <i class="fas fa-question text-gray-400 text-xs" 
+                           title="Разрешение неизвестно"></i>
+                    ` : ''}
                 </div>
+            </div>
+            
+            <!-- Подсказка под разрешением -->
+            <div class="text-xs text-gray-500 text-center italic">
+                Мин: ${minResolutionText}
             </div>
         </div>
     `;
+}
+
+// Редактирование минимального разрешения
+function editResolution(element, uuid) {
+    if (isEditingName || isEditingResolution) return;
+    
+    isEditingResolution = true;
+    const container = element;
+    const display = container.querySelector('.resolution-display');
+    const input = container.querySelector('.resolution-input');
+    
+    display.classList.add('hidden');
+    input.classList.remove('hidden');
+    input.focus();
+    input.select();
+    
+    // Обработчик для клика вне поля
+    const clickOutsideHandler = (e) => {
+        if (!container.contains(e.target)) {
+            input.blur();
+        }
+    };
+    
+    setTimeout(() => {
+        document.addEventListener('click', clickOutsideHandler);
+    }, 10);
+    
+    // Убираем обработчик после blur
+    input.addEventListener('blur', () => {
+        document.removeEventListener('click', clickOutsideHandler);
+    }, { once: true });
+}
+
+// Обработка нажатия клавиш при редактировании разрешения
+function handleResolutionKeydown(event, input, uuid) {
+    if (event.key === 'Enter') {
+        input.blur();
+    } else if (event.key === 'Escape') {
+        // Восстанавливаем исходное значение
+        input.value = `${MIN_REQUIRED_WIDTH}×${MIN_REQUIRED_HEIGHT}`;
+        input.blur();
+    }
+}
+
+// Сохранение нового минимального разрешения
+async function saveResolution(input, uuid) {
+    isEditingResolution = false;
+    
+    const newValue = input.value.trim();
+    const container = input.closest('.border-2');
+    const display = container.querySelector('.resolution-display');
+    
+    // Парсим введенное значение
+    const { width, height } = parseResolutionInput(newValue);
+    
+    if (width > 0 && height > 0) {
+        // Сохраняем на сервере
+        try {
+            const response = await fetch('api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'update_resolution_settings',
+                    min_width: width,
+                    min_height: height
+                })
+            });
+            
+            const result = await response.json();
+            if (result.error) {
+                throw new Error(result.error);
+            }
+            
+            // Обновляем локальные настройки
+            MIN_REQUIRED_WIDTH = width;
+            MIN_REQUIRED_HEIGHT = height;
+            
+            // Показываем уведомление
+            showNotification(`Минимальное разрешение обновлено: ${width}×${height}`);
+            
+            // Обновляем все карточки
+            await reloadAllCards();
+            
+        } catch (err) {
+            console.error('Ошибка сохранения разрешения:', err);
+            showNotification('Ошибка сохранения разрешения: ' + err.message, 'bg-red-500');
+            // Восстанавливаем исходное значение в поле
+            input.value = `${MIN_REQUIRED_WIDTH}×${MIN_REQUIRED_HEIGHT}`;
+        }
+    } else {
+        // Некорректный ввод
+        showNotification('Некорректный формат разрешения. Используйте: "1920×1080"', 'bg-red-500');
+        input.value = `${MIN_REQUIRED_WIDTH}×${MIN_REQUIRED_HEIGHT}`;
+    }
+    
+    // Возвращаем отображение
+    input.classList.add('hidden');
+    display.classList.remove('hidden');
+}
+
+// Функция перезагрузки всех карточек
+async function reloadAllCards() {
+    const grid = document.getElementById('clientsGrid');
+    const cards = grid.querySelectorAll('.client-card');
+    
+    cards.forEach(card => {
+        const uuid = card.getAttribute('data-uuid');
+        const client = clientsData.find(c => c.uuid === uuid);
+        if (client) {
+            updateClientCard(card, client);
+        }
+    });
 }
 
 // Функция обновления селектора клиентов (без индикаторов статуса)
@@ -403,7 +607,7 @@ async function deleteClient(uuid) {
 
 async function updateClientStatuses() {
     try {
-        if (isEditingName) return; // Не обновляем во время редактирования
+        if (isEditingName || isEditingResolution) return; // Не обновляем во время редактирования
         
         // Загружаем свежие данные
         await loadClients();
@@ -431,25 +635,6 @@ function formatLastSeen(last_seen) {
     }
     const d = Math.floor(diff / 86400);
     return `${d}д`;
-}
-
-// Функция для обновления минимальных требований к разрешению
-function updateResolutionRequirements(minWidth, minHeight) {
-    MIN_REQUIRED_WIDTH = minWidth;
-    MIN_REQUIRED_HEIGHT = minHeight;
-    
-    // Перерисовываем все карточки
-    const grid = document.getElementById('clientsGrid');
-    if (grid) {
-        const cards = grid.querySelectorAll('.client-card');
-        cards.forEach(card => {
-            const uuid = card.getAttribute('data-uuid');
-            const client = clientsData.find(c => c.uuid === uuid);
-            if (client) {
-                updateClientCard(card, client);
-            }
-        });
-    }
 }
 
 // Инициализация

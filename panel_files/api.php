@@ -257,6 +257,40 @@ try {
             }
             echo json_encode($clients);
             break;
+            
+        // Добавьте в switch блок:
+        case 'get_resolution_settings':
+            $stmt = $db->prepare("SELECT min_width, min_height FROM resolution_settings WHERE id = 1");
+            $result = $stmt->execute();
+            if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                echo json_encode($row);
+            } else {
+                echo json_encode(['min_width' => 1920, 'min_height' => 1080]);
+            }
+            break;
+        
+        case 'update_resolution_settings':
+            $min_width = isset($input['min_width']) ? (int)$input['min_width'] : 1920;
+            $min_height = isset($input['min_height']) ? (int)$input['min_height'] : 1080;
+            
+            // Валидация
+            if ($min_width <= 0 || $min_height <= 0) {
+                echo json_encode(['error' => 'Некорректные значения разрешения']);
+                break;
+            }
+            
+            $stmt = $db->prepare("
+                INSERT OR REPLACE INTO resolution_settings 
+                (id, min_width, min_height, updated_at) 
+                VALUES (1, :width, :height, :timestamp)
+            ");
+            $stmt->bindValue(':width', $min_width, SQLITE3_INTEGER);
+            $stmt->bindValue(':height', $min_height, SQLITE3_INTEGER);
+            $stmt->bindValue(':timestamp', time(), SQLITE3_INTEGER);
+            $stmt->execute();
+            
+            echo json_encode(['message' => 'Настройки разрешения обновлены']);
+            break;
         
         case 'list_clients_with_sizes':
             $result = $db->query("
