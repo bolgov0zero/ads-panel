@@ -753,3 +753,70 @@ canvas#pdfCanvas {
     padding: 2rem;
     color: #6b7280;
 }
+
+/* Стили для отображения разрешения */
+.resolution-badge {
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 0.25rem;
+    background-color: rgba(31, 41, 55, 0.8);
+    backdrop-filter: blur(2px);
+}
+
+.resolution-good {
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.resolution-bad {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.resolution-unknown {
+    border-color: #6b7280;
+    color: #6b7280;
+}
+
+/* Стили для отображения разрешения в карточке устройства */
+.client-card .border-green-500 {
+    border-color: #10b981 !important;
+}
+
+.client-card .border-red-500 {
+    border-color: #ef4444 !important;
+}
+
+.client-card .border-gray-500 {
+    border-color: #6b7280 !important;
+}
+
+.client-card .text-green-400 {
+    color: #10b981 !important;
+}
+
+.client-card .text-red-400 {
+    color: #ef4444 !important;
+}
+
+.client-card .text-gray-400 {
+    color: #9ca3af !important;
+}
+
+/* Иконка монитора */
+.client-card .fa-desktop {
+    opacity: 0.7;
+}
+
+/* Анимация для предупреждения */
+@keyframes pulse-warning {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.client-card .fa-exclamation-triangle {
+    animation: pulse-warning 2s infinite;
+}

@@ -189,6 +189,99 @@ try {
             $stmt->execute();
             echo json_encode(['message' => 'Отображение UUID обновлено']);
             break;
+            
+        case 'update_window_size':
+            $uuid = $input['uuid'] ?? '';
+            $width = isset($input['width']) ? (int)$input['width'] : 0;
+            $height = isset($input['height']) ? (int)$input['height'] : 0;
+            $resolution = $input['resolution'] ?? '';
+            
+            if (empty($uuid)) {
+                echo json_encode(['error' => 'UUID не указан']);
+                break;
+            }
+            
+            // Сохраняем в отдельной таблице или добавляем поля в clients
+            $stmt = $db->prepare("
+                INSERT OR REPLACE INTO client_window_sizes 
+                (uuid, width, height, resolution, last_updated) 
+                VALUES (:uuid, :width, :height, :resolution, :timestamp)
+            ");
+            $stmt->bindValue(':uuid', $uuid, SQLITE3_TEXT);
+            $stmt->bindValue(':width', $width, SQLITE3_INTEGER);
+            $stmt->bindValue(':height', $height, SQLITE3_INTEGER);
+            $stmt->bindValue(':resolution', $resolution, SQLITE3_TEXT);
+            $stmt->bindValue(':timestamp', time(), SQLITE3_INTEGER);
+            $stmt->execute();
+            
+            echo json_encode(['message' => 'Размеры окна сохранены']);
+            break;
+        
+        case 'get_window_sizes':
+            $result = $db->query("
+                SELECT c.uuid, c.name, c.status, 
+                       COALESCE(ws.width, 0) as width, 
+                       COALESCE(ws.height, 0) as height,
+                       COALESCE(ws.resolution, 'Неизвестно') as resolution
+                FROM clients c
+                LEFT JOIN client_window_sizes ws ON c.uuid = ws.uuid
+                ORDER BY ws.last_updated DESC
+            ");
+            $sizes = [];
+            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $sizes[] = $row;
+            }
+            echo json_encode($sizes);
+            break;
+            
+        case 'list_clients_with_sizes':
+            $result = $db->query("
+                SELECT 
+                    c.uuid, 
+                    c.name, 
+                    c.show_info, 
+                    c.last_seen, 
+                    c.playback_status,
+                    COALESCE(ws.width, 0) as width,
+                    COALESCE(ws.height, 0) as height,
+                    COALESCE(ws.resolution, '') as resolution
+                FROM clients c
+                LEFT JOIN client_window_sizes ws ON c.uuid = ws.uuid
+                ORDER BY c.last_seen DESC
+            ");
+            
+            $clients = [];
+            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $row['status'] = (time() - $row['last_seen']) <= 60 ? 'online' : 'offline';
+                $clients[] = $row;
+            }
+            echo json_encode($clients);
+            break;
+        
+        case 'list_clients_with_sizes':
+            $result = $db->query("
+                SELECT 
+                    c.uuid, 
+                    c.name, 
+                    c.show_info, 
+                    c.last_seen, 
+                    c.playback_status,
+                    COALESCE(ws.width, 0) as width,
+                    COALESCE(ws.height, 0) as height,
+                    COALESCE(ws.resolution, '') as resolution,
+                    ws.last_updated as resolution_updated
+                FROM clients c
+                LEFT JOIN client_window_sizes ws ON c.uuid = ws.uuid
+                ORDER BY c.last_seen DESC
+            ");
+            
+            $clients = [];
+            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $row['status'] = (time() - $row['last_seen']) <= 60 ? 'online' : 'offline';
+                $clients[] = $row;
+            }
+            echo json_encode($clients);
+            break;
 
         case 'scan_files':
             $uploadDir = '/opt/ads/';

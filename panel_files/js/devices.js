@@ -1,12 +1,58 @@
 // Глобальная переменная для хранения данных о клиентах
 let clientsData = [];
 let isEditingName = false; // Флаг для отслеживания редактирования имени
+const MIN_REQUIRED_WIDTH = 1920; // Минимальная ширина (можно сделать настраиваемой)
+const MIN_REQUIRED_HEIGHT = 1080; // Минимальная высота (можно сделать настраиваемой)
+
+// Функция проверки соответствия минимальному разрешению
+function checkResolution(minWidth, minHeight, currentWidth, currentHeight) {
+    return currentWidth >= minWidth && currentHeight >= minHeight;
+}
+
+// Функция получения класса для рамки разрешения
+function getResolutionBorderClass(width, height, hasResolution) {
+    if (!hasResolution) {
+        return 'border-gray-500'; // Серый для неизвестного разрешения
+    }
+    
+    const meetsRequirements = checkResolution(MIN_REQUIRED_WIDTH, MIN_REQUIRED_HEIGHT, width, height);
+    return meetsRequirements ? 'border-green-500' : 'border-red-500';
+}
+
+// Функция получения класса для текста разрешения
+function getResolutionTextClass(width, height, hasResolution) {
+    if (!hasResolution) {
+        return 'text-gray-400'; // Серый для неизвестного разрешения
+    }
+    
+    const meetsRequirements = checkResolution(MIN_REQUIRED_WIDTH, MIN_REQUIRED_HEIGHT, width, height);
+    return meetsRequirements ? 'text-green-400' : 'text-red-400';
+}
+
+// Функция получения текста разрешения
+function getResolutionText(client) {
+    const hasResolution = client.width > 0 && client.height > 0;
+    
+    if (!hasResolution) {
+        return 'Неизвестно';
+    }
+    
+    // Используем resolution если есть, иначе формируем из width и height
+    if (client.resolution && client.resolution !== '') {
+        return client.resolution;
+    }
+    
+    return `${client.width}×${client.height}`;
+}
 
 async function loadClients() {
     try {
         if (isEditingName) return; // Не обновляем во время редактирования
         
-        const response = await fetch('api.php?action=list_clients');
+        const response = await fetch('api.php?action=list_clients_with_sizes');
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
         clientsData = await response.json();
         const grid = document.getElementById('clientsGrid');
         const clientSelect = document.getElementById('clientSelect');
@@ -43,8 +89,17 @@ async function loadClients() {
         // Обновляем список в селекторе плейлистов
         updateClientSelect(clientSelect);
 
+        // Показываем/скрываем сообщение о пустом списке
+        const noClientsMessage = document.getElementById('noClientsMessage');
+        if (clientsData.length === 0) {
+            noClientsMessage.classList.remove('hidden');
+        } else {
+            noClientsMessage.classList.add('hidden');
+        }
+
     } catch (err) {
         console.error('Ошибка загрузки клиентов:', err);
+        showNotification('Ошибка загрузки устройств', 'bg-red-500');
     }
 }
 
@@ -52,6 +107,14 @@ async function loadClients() {
 function updateClientCard(card, client) {
     const isOnline = client.status === 'online';
     const isPlaying = client.playback_status === 'playing';
+    
+    // Информация о разрешении
+    const hasResolution = client.width > 0 && client.height > 0;
+    const resolutionText = getResolutionText(client);
+    const resolutionBorderClass = getResolutionBorderClass(client.width, client.height, hasResolution);
+    const resolutionTextClass = getResolutionTextClass(client.width, client.height, hasResolution);
+    const meetsRequirements = hasResolution && 
+        checkResolution(MIN_REQUIRED_WIDTH, MIN_REQUIRED_HEIGHT, client.width, client.height);
     
     card.innerHTML = `
         <!-- Верхняя панель: статус и кнопки -->
@@ -99,19 +162,39 @@ function updateClientCard(card, client) {
                onkeydown="if(event.key==='Enter') this.blur()">
         
         <!-- Нижняя панель: статус и время -->
-        <div class="flex justify-between items-center text-xs">
-            <div class="flex items-center gap-1">
-                <span class="text-gray-500">${formatLastSeen(client.last_seen)}</span>
-                <span class="text-gray-600">•</span>
-                <span class="${isPlaying ? 'text-green-500' : 'text-red-500'}">
-                    ${isPlaying ? '▶ Воспр.' : '⏹ Стоп'}
-                </span>
+        <div class="flex flex-col gap-2">
+            <div class="flex justify-between items-center text-xs">
+                <div class="flex items-center gap-1">
+                    <span class="text-gray-500">${formatLastSeen(client.last_seen)}</span>
+                    <span class="text-gray-600">•</span>
+                    <span class="${isPlaying ? 'text-green-500' : 'text-red-500'}">
+                        ${isPlaying ? '▶ Воспр.' : '⏹ Стоп'}
+                    </span>
+                </div>
+                <button onclick="deleteClient('${client.uuid}')" 
+                        class="text-gray-500 hover:text-red-500 p-0.5 hover:bg-red-500 hover:bg-opacity-10 rounded transition-colors"
+                        title="Удалить устройство">
+                    <i class="fas fa-trash text-xs"></i>
+                </button>
             </div>
-            <button onclick="deleteClient('${client.uuid}')" 
-                    class="text-gray-500 hover:text-red-500 p-0.5 hover:bg-red-500 hover:bg-opacity-10 rounded transition-colors"
-                    title="Удалить устройство">
-                <i class="fas fa-trash text-xs"></i>
-            </button>
+            
+            <!-- Информация о разрешении экрана -->
+            <div class="flex items-center gap-2">
+                <i class="fas fa-desktop text-gray-400 text-xs" title="Разрешение экрана"></i>
+                <div class="border ${resolutionBorderClass} border-2 rounded-md px-2 py-0.5 bg-gray-800 flex items-center gap-1">
+                    <span class="${resolutionTextClass} font-mono text-xs">
+                        ${resolutionText}
+                    </span>
+                    ${!meetsRequirements && hasResolution ? `
+                        <i class="fas fa-exclamation-triangle text-red-400 text-xs" 
+                           title="Ниже минимального разрешения (${MIN_REQUIRED_WIDTH}×${MIN_REQUIRED_HEIGHT})"></i>
+                    ` : ''}
+                    ${meetsRequirements ? `
+                        <i class="fas fa-check text-green-400 text-xs" 
+                           title="Соответствует минимальному разрешению"></i>
+                    ` : ''}
+                </div>
+            </div>
         </div>
     `;
 }
@@ -242,11 +325,16 @@ async function saveName(input, uuid) {
     display.classList.remove('hidden');
 
     try {
-        await fetch('api.php', {
+        const response = await fetch('api.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'update_client_name', uuid, name: newName })
         });
+        
+        const result = await response.json();
+        if (result.error) {
+            throw new Error(result.error);
+        }
         
         // Обновляем данные клиента
         const client = clientsData.find(c => c.uuid === uuid);
@@ -266,7 +354,7 @@ async function saveName(input, uuid) {
 }
 
 async function deleteClient(uuid) {
-    if (!confirm('Удалить устройство?')) return;
+    if (!confirm('Удалить устройство? Это действие нельзя отменить.')) return;
     try {
         const response = await fetch('api.php', {
             method: 'POST',
@@ -276,7 +364,10 @@ async function deleteClient(uuid) {
         const result = await response.json();
         if (!result.error) {
             // Удаляем карточку
-            document.querySelector(`.client-card[data-uuid="${uuid}"]`)?.remove();
+            const card = document.querySelector(`.client-card[data-uuid="${uuid}"]`);
+            if (card) {
+                card.remove();
+            }
             
             // Удаляем из данных
             clientsData = clientsData.filter(c => c.uuid !== uuid);
@@ -287,15 +378,26 @@ async function deleteClient(uuid) {
             
             // Очищаем таблицу плейлиста если удалено выбранное устройство
             if (document.getElementById('clientSelect').value === uuid) {
-                document.getElementById('playlistTable').innerHTML = '';
+                const playlistTable = document.getElementById('playlistTable');
+                if (playlistTable) {
+                    playlistTable.innerHTML = '';
+                }
                 document.getElementById('clientSelect').value = '';
             }
             
+            // Показываем сообщение если нет устройств
+            const noClientsMessage = document.getElementById('noClientsMessage');
+            if (clientsData.length === 0) {
+                noClientsMessage.classList.remove('hidden');
+            }
+            
             showNotification('Устройство удалено');
+        } else {
+            throw new Error(result.error);
         }
     } catch (err) {
         console.error('Ошибка удаления:', err);
-        showNotification('Ошибка удаления устройства', 'bg-red-500');
+        showNotification('Ошибка удаления устройства: ' + err.message, 'bg-red-500');
     }
 }
 
@@ -329,6 +431,25 @@ function formatLastSeen(last_seen) {
     }
     const d = Math.floor(diff / 86400);
     return `${d}д`;
+}
+
+// Функция для обновления минимальных требований к разрешению
+function updateResolutionRequirements(minWidth, minHeight) {
+    MIN_REQUIRED_WIDTH = minWidth;
+    MIN_REQUIRED_HEIGHT = minHeight;
+    
+    // Перерисовываем все карточки
+    const grid = document.getElementById('clientsGrid');
+    if (grid) {
+        const cards = grid.querySelectorAll('.client-card');
+        cards.forEach(card => {
+            const uuid = card.getAttribute('data-uuid');
+            const client = clientsData.find(c => c.uuid === uuid);
+            if (client) {
+                updateClientCard(card, client);
+            }
+        });
+    }
 }
 
 // Инициализация
