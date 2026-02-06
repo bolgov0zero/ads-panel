@@ -869,39 +869,39 @@ try {
                 }
                 
                 // Отправляем сводное уведомление
-                $message = "<b>📊 Отчет по разрешениям</b>\n\n";
-                $message .= "<b>Система:</b> <i>$system_name</i>\n";
-                $message .= "<b>Минимальное разрешение:</b> <code>{$min_width}×{$min_height}</code>\n\n";
+                $message = "<b>Отчет по разрешениям</b>\n\n";
+                $message .= "<blockquote><b>Система:</b> <i>$system_name</i>\n";
+                $message .= "<b>Минимальное разрешение:</b> <code>{$min_width}×{$min_height}</code></blockquote>\n\n";
                 
                 if (!empty($low_res_devices)) {
-                    $message .= "<b>⚠ Устройства с низким разрешением:</b>\n";
+                    $message .= "<b>Устройства с низким разрешением:</b>\n<blockquote>";
                     foreach ($low_res_devices as $device) {
                         $message .= "• <i>{$device['name']}</i>: <code>{$device['width']}×{$device['height']}</code>\n";
                     }
-                    $message .= "\n";
+                    $message .= "</blockquote>\n";
                 }
                 
                 if (!empty($good_res_devices)) {
-                    $message .= "<b>✅ Устройства с хорошим разрешением:</b>\n";
+                    $message .= "<b>Устройства с хорошим разрешением:</b>\n<blockquote>";
                     foreach ($good_res_devices as $device) {
                         $message .= "• <i>{$device['name']}</i>: <code>{$device['width']}×{$device['height']}</code>\n";
                     }
-                    $message .= "\n";
+                    $message .= "</blockquote>\n";
                 }
                 
                 if (!empty($unknown_res_devices)) {
-                    $message .= "<b>❓ Устройства с неизвестным разрешением:</b>\n";
+                    $message .= "<b>Устройства с неизвестным разрешением:</b>\n<blockquote>";
                     foreach ($unknown_res_devices as $device) {
                         $message .= "• <i>{$device['name']}</i>\n";
                     }
-                    $message .= "\n";
+                    $message .= "</blockquote>\n";
                 }
                 
-                $message .= "<b>📈 Статистика:</b>\n";
-                $message .= "• Низкое разрешение: " . count($low_res_devices) . " устройств\n";
+                $message .= "<b>Статистика:</b>\n";
+                $message .= "<blockquote>• Низкое разрешение: " . count($low_res_devices) . " устройств\n";
                 $message .= "• Хорошее разрешение: " . count($good_res_devices) . " устройств\n";
                 $message .= "• Неизвестно: " . count($unknown_res_devices) . " устройств\n";
-                $message .= "• Всего онлайн: " . (count($low_res_devices) + count($good_res_devices) + count($unknown_res_devices)) . " устройств";
+                $message .= "• Всего онлайн: " . (count($low_res_devices) + count($good_res_devices) + count($unknown_res_devices)) . " устройств</blockquote>";
                 
                 // Используем существующую функцию sendTelegramMessage
                 $result = sendTelegramMessage($bot_token, $chat_id, $message);
