@@ -60,20 +60,39 @@ async function sendTestTelegramMessage() {
 
 async function forceResolutionCheck() {
     try {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Проверка...';
+        button.disabled = true;
+        
         const response = await fetch('api.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'force_resolution_check' })
         });
         const result = await response.json();
+        
+        button.innerHTML = originalText;
+        button.disabled = false;
+        
         if (result.error) {
             console.error(result.error);
             showNotification(result.error, 'bg-red-500');
         } else {
-            showNotification(result.message);
+            if (result.stats) {
+                const stats = result.stats;
+                const total = stats.low + stats.good + stats.unknown;
+                showNotification(`Отчет отправлен. Низкое: ${stats.low}, Хорошее: ${stats.good}, Неизвестно: ${stats.unknown}`, 'bg-green-500');
+            } else {
+                showNotification(result.message);
+            }
         }
     } catch (err) {
         console.error('Ошибка проверки разрешений:', err);
         showNotification('Ошибка проверки разрешений', 'bg-red-500');
+        // Восстанавливаем кнопку в случае ошибки
+        const button = event.target;
+        button.innerHTML = '<i class="fas fa-desktop mr-2"></i>Проверить разрешения';
+        button.disabled = false;
     }
 }

@@ -807,6 +807,7 @@ try {
             echo json_encode($clients);
             break;
 
+        // Обновите case 'force_resolution_check':
         case 'force_resolution_check':
             try {
                 // Получаем настройки Telegram
@@ -835,8 +836,10 @@ try {
                 $min_height = $resolution_settings['min_height'] ?? 1080;
                 
                 $low_res_devices = [];
+                $good_res_devices = [];
+                $unknown_res_devices = [];
                 
-                // Получаем устройства с низким разрешением
+                // Получаем все онлайн устройства
                 $stmt = $db->prepare("
                     SELECT 
                         c.uuid, 
@@ -847,41 +850,73 @@ try {
                     FROM clients c
                     LEFT JOIN client_window_sizes ws ON c.uuid = ws.uuid
                     WHERE c.last_seen > :online_threshold
-                    AND (ws.width < :min_width OR ws.height < :min_height)
-                    AND ws.width > 0 AND ws.height > 0
                 ");
                 $online_threshold = time() - 60;
                 $stmt->bindValue(':online_threshold', $online_threshold, SQLITE3_INTEGER);
-                $stmt->bindValue(':min_width', $min_width, SQLITE3_INTEGER);
-                $stmt->bindValue(':min_height', $min_height, SQLITE3_INTEGER);
                 $result = $stmt->execute();
                 
                 while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                    $low_res_devices[] = $row;
+                    $width = $row['width'] ?? 0;
+                    $height = $row['height'] ?? 0;
+                    
+                    if ($width <= 0 || $height <= 0) {
+                        $unknown_res_devices[] = $row;
+                    } elseif ($width < $min_width || $height < $min_height) {
+                        $low_res_devices[] = $row;
+                    } else {
+                        $good_res_devices[] = $row;
+                    }
                 }
                 
-                if (empty($low_res_devices)) {
-                    echo json_encode(['message' => 'Все устройства соответствуют минимальному разрешению']);
-                } else {
-                    // Отправляем сводное уведомление
-                    $message = "<b>📊 Проверка разрешений</b>\n\n";
-                    $message .= "<b>Система:</b> <i>$system_name</i>\n";
-                    $message .= "<b>Минимальное разрешение:</b> <code>{$min_width}×{$min_height}</code>\n\n";
-                    $message .= "<b>Устройства с низким разрешением:</b>\n";
-                    
+                // Отправляем сводное уведомление
+                $message = "<b>📊 Отчет по разрешениям</b>\n\n";
+                $message .= "<b>Система:</b> <i>$system_name</i>\n";
+                $message .= "<b>Минимальное разрешение:</b> <code>{$min_width}×{$min_height}</code>\n\n";
+                
+                if (!empty($low_res_devices)) {
+                    $message .= "<b>⚠ Устройства с низким разрешением:</b>\n";
                     foreach ($low_res_devices as $device) {
                         $message .= "• <i>{$device['name']}</i>: <code>{$device['width']}×{$device['height']}</code>\n";
                     }
-                    
-                    $message .= "\nВсего: " . count($low_res_devices) . " устройств";
-                    
-                    // Используем существующую функцию sendTelegramMessage
-                    $result = sendTelegramMessage($bot_token, $chat_id, $message);
-                    if (isset($result['error'])) {
-                        echo json_encode(['error' => 'Ошибка отправки отчета: ' . $result['error']]);
-                    } else {
-                        echo json_encode(['message' => 'Отчет о разрешениях отправлен', 'count' => count($low_res_devices)]);
+                    $message .= "\n";
+                }
+                
+                if (!empty($good_res_devices)) {
+                    $message .= "<b>✅ Устройства с хорошим разрешением:</b>\n";
+                    foreach ($good_res_devices as $device) {
+                        $message .= "• <i>{$device['name']}</i>: <code>{$device['width']}×{$device['height']}</code>\n";
                     }
+                    $message .= "\n";
+                }
+                
+                if (!empty($unknown_res_devices)) {
+                    $message .= "<b>❓ Устройства с неизвестным разрешением:</b>\n";
+                    foreach ($unknown_res_devices as $device) {
+                        $message .= "• <i>{$device['name']}</i>\n";
+                    }
+                    $message .= "\n";
+                }
+                
+                $message .= "<b>📈 Статистика:</b>\n";
+                $message .= "• Низкое разрешение: " . count($low_res_devices) . " устройств\n";
+                $message .= "• Хорошее разрешение: " . count($good_res_devices) . " устройств\n";
+                $message .= "• Неизвестно: " . count($unknown_res_devices) . " устройств\n";
+                $message .= "• Всего онлайн: " . (count($low_res_devices) + count($good_res_devices) + count($unknown_res_devices)) . " устройств";
+                
+                // Используем существующую функцию sendTelegramMessage
+                $result = sendTelegramMessage($bot_token, $chat_id, $message);
+                if (isset($result['error'])) {
+                    echo json_encode(['error' => 'Ошибка отправки отчета: ' . $result['error']]);
+                } else {
+                    echo json_encode([
+                        'message' => 'Отчет о разрешениях отправлен', 
+                        'stats' => [
+                            'low' => count($low_res_devices),
+                            'good' => count($good_res_devices),
+                            'unknown' => count($unknown_res_devices),
+                            'total' => count($low_res_devices) + count($good_res_devices) + count($unknown_res_devices)
+                        ]
+                    ]);
                 }
                 
             } catch (Exception $e) {
