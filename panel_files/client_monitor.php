@@ -123,11 +123,9 @@ function checkResolutionAndNotify($db, $bot_token, $chat_id, $system_name) {
                 
                 if ($notified_low == 0) {
                     // Отправляем уведомление о низком разрешении
-                    $message = "<b>⚠ Низкое разрешение!</b>\n\n";
-                    $message .= "<b>Система:</b> <i>$system_name</i>\n";
+                    $message = "<b>Система:</b> <i>$system_name</i>\n";
                     $message .= "<blockquote><b>Устройство:</b> <i>{$row['name']}</i>\n";
-                    $message .= "<b>Текущее:</b> <code>{$width}×{$height}</code>\n";
-                    $message .= "<b>Требуется:</b> <code>{$min_width}×{$min_height}</code>\n";
+                    $message .= "<b>Монитор:</b> 🚨 аномальное разрешение\n";
                     $message .= "<b>UUID:</b> <code>{$row['uuid']}</code></blockquote>";
                     
                     if (!empty($bot_token) && !empty($chat_id)) {
@@ -168,13 +166,10 @@ function checkResolutionAndNotify($db, $bot_token, $chat_id, $system_name) {
                 
                 if ($had_low_res > 0 && $notified_good == 0) {
                     // Отправляем уведомление о восстановлении разрешения
-                    $message = "<b>✅ Разрешение восстановлено!</b>\n\n";
-                    $message .= "<b>Система:</b> <i>$system_name</i>\n";
+                    $message = "<b>Система:</b> <i>$system_name</i>\n";
                     $message .= "<blockquote><b>Устройство:</b> <i>{$row['name']}</i>\n";
-                    $message .= "<b>Текущее:</b> <code>{$width}×{$height}</code>\n";
-                    $message .= "<b>Требуется:</b> <code>{$min_width}×{$min_height}</code>\n";
+                    $message .= "<b>Монитор:</b> ✅ разрешение в норме\n";
                     $message .= "<b>UUID:</b> <code>{$row['uuid']}</code></blockquote>";
-                    $message .= "\n✅ Теперь соответствует минимальным требованиям";
                     
                     if (!empty($bot_token) && !empty($chat_id)) {
                         logMessage("Отправка уведомления о восстановлении разрешения для {$row['uuid']}");
