@@ -73,6 +73,12 @@ canvas#pdfCanvas {
     animation: marquee linear infinite;
 }
 
+.footer-bg {
+    background-color: rgba(15, 15, 15, 1);
+    border-color: #333232fc !important;
+    border: 0.2px solid;
+}
+
 @keyframes marquee {
     0% { transform: translateX(0); }
     100% { transform: translateX(calc(-100% - 100vw)); }
