@@ -204,7 +204,6 @@ function updateClientCard(card, client) {
                 <div class="flex-shrink-0">
                     <div class="status-dot ${isOnline ? 'status-online' : 'status-offline'}"></div>
                 </div>
-                // Блок имени внутри карточки
                 <div class="min-w-0 flex-1 relative">
                     <div class="text-sm font-medium text-gray-100 truncate name-display cursor-pointer hover:text-blue-300 transition-colors"
                          onclick="editName(this, '${client.uuid}')"
@@ -276,7 +275,7 @@ function updateClientCard(card, client) {
 
         <!-- Последнее появление -->
         <div class="mt-2 text-xs text-gray-500">
-            Последнее: ${formatLastSeen(client.last_seen)}
+            Был в сети: ${formatLastSeen(client.last_seen)}
         </div>
     `;
 }
