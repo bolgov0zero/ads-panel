@@ -204,17 +204,17 @@ function updateClientCard(card, client) {
                 <div class="flex-shrink-0">
                     <div class="status-dot ${isOnline ? 'status-online' : 'status-offline'}"></div>
                 </div>
-                <div class="min-w-0 flex-1 relative">
-                    <div class="text-sm font-medium text-gray-100 truncate name-display cursor-pointer hover:text-blue-300 transition-colors"
+                <div class="min-w-0 flex-1 h-7 flex items-center relative">
+                    <div class="text-sm font-medium text-gray-100 truncate name-display cursor-pointer hover:text-blue-300 transition-colors flex-1"
                          onclick="editName(this, '${client.uuid}')"
                          title="${client.name}">
                         ${client.name}
                     </div>
                 
                     <input type="text"
-                           class="name-input hidden absolute inset-0 bg-gray-900 border border-gray-600 rounded-md px-2 py-2 text-sm font-medium text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 z-10 transition-all duration-150"
+                           class="name-input hidden absolute inset-0 bg-gray-900 border border-gray-600 rounded-md px-2 py-1 text-sm font-medium text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 z-10"
                            value="${client.name}"
-                           placeholder="Введите имя устройства"
+                           placeholder="Введите имя"
                            onblur="saveName(this, '${client.uuid}')"
                            onkeydown="if(event.key==='Enter') this.blur(); if(event.key==='Escape') {this.value='${client.name}'; this.classList.add('hidden'); this.previousElementSibling.classList.remove('hidden'); isEditingName=false;}">
                 </div>
