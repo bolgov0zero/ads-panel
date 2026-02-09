@@ -254,22 +254,19 @@ function updateClientCard(card, client) {
 
         <!-- Разрешение (текущее + минимальное) -->
         <div class="flex items-center gap-3">
-            <!-- Текущее разрешение в рамке -->
-            <div class="flex items-center gap-2">
-                <i class="fas fa-desktop text-gray-400 text-xs"></i>
-                <div class="border ${resolutionBorderClass} border-2 rounded-md px-2 py-0.5 bg-gray-800 flex items-center gap-1 cursor-default">
-                    <span class="resolution-display ${resolutionTextClass} font-mono text-xs">
-                        ${resolutionText}
-                    </span>
+            <div class="min-w-0 flex-1 relative">
+                <div class="text-sm font-medium text-gray-100 truncate name-display cursor-pointer hover:text-blue-300 transition-colors"
+                     onclick="editName(this, '${client.uuid}')"
+                     title="${client.name}">
+                    ${client.name}
                 </div>
-            </div>
-
-            <!-- Минимальное разрешение (редактируемое) -->
-            <div class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer hover:text-gray-300 transition-colors"
-                 onclick="editResolution(this, '${client.uuid}')">
-                <span>мин:</span>
-                <span class="font-mono">${minResolutionText}</span>
-                <i class="fas fa-pencil-alt text-gray-600 text-[10px]"></i>
+            
+                <input type="text"
+                       class="name-input hidden absolute inset-0 bg-gray-900 border border-gray-600 rounded-md px-2 py-1.5 text-sm font-medium text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 z-10 transition-all duration-150"
+                       value="${client.name}"
+                       placeholder="Введите имя устройства"
+                       onblur="saveName(this, '${client.uuid}')"
+                       onkeydown="if(event.key==='Enter') this.blur(); if(event.key==='Escape') {this.value='${client.name}'; this.classList.add('hidden'); this.previousElementSibling.classList.remove('hidden'); isEditingName=false;}">
             </div>
         </div>
 
