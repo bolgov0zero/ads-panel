@@ -96,7 +96,14 @@ async function loadClients() {
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
+
         clientsData = await response.json();
+
+        // ← Здесь добавляем статус, потому что сервер его больше не возвращает
+        const now = Math.floor(Date.now() / 1000);
+        clientsData.forEach(client => {
+            client.status = (now - Number(client.last_seen)) <= 60 ? 'online' : 'offline';
+        });
 
         const grid = document.getElementById('clientsGrid');
         const clientSelect = document.getElementById('clientSelect');
@@ -106,11 +113,12 @@ async function loadClients() {
         const existingUuids = new Set(existingCards.map(card => card.getAttribute('data-uuid')));
         const newUuids = new Set(clientsData.map(client => client.uuid));
 
-        // Обновляем / создаём карточки
+        // Обновляем или создаём карточки клиентов
         clientsData.forEach(client => {
             let card = grid.querySelector(`.client-card[data-uuid="${client.uuid}"]`);
 
             if (!card) {
+                // Создаём новую карточку
                 card = document.createElement('div');
                 card.className = 'client-card bg-gray-800 rounded-lg p-3 shadow border border-gray-700 hover:border-gray-600 transition-all duration-150';
                 card.setAttribute('data-uuid', client.uuid);
@@ -120,7 +128,7 @@ async function loadClients() {
             updateClientCard(card, client);
         });
 
-        // Удаляем карточки, которых больше нет
+        // Удаляем карточки клиентов, которых больше нет
         existingCards.forEach(card => {
             const uuid = card.getAttribute('data-uuid');
             if (!newUuids.has(uuid)) {
@@ -128,10 +136,10 @@ async function loadClients() {
             }
         });
 
-        // Обновляем выпадающий список в плейлистах
+        // Обновляем список в селекторе плейлистов
         updateClientSelect(clientSelect);
 
-        // Показываем/скрываем сообщение об отсутствии устройств
+        // Показываем/скрываем сообщение при пустом списке
         const noClientsMessage = document.getElementById('noClientsMessage');
         if (clientsData.length === 0) {
             noClientsMessage.classList.remove('hidden');
