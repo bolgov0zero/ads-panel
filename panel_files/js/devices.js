@@ -212,7 +212,7 @@ function updateClientCard(card, client) {
                     </div>
                 
                     <input type="text"
-                           class="name-input hidden absolute inset-0 bg-gray-900 border border-gray-600 rounded-md px-2 py-1.5 text-sm font-medium text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 z-10 transition-all duration-150"
+                           class="name-input hidden absolute inset-0 bg-gray-900 border border-gray-600 rounded-md px-2 py-2 text-sm font-medium text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 z-10 transition-all duration-150"
                            value="${client.name}"
                            placeholder="Введите имя устройства"
                            onblur="saveName(this, '${client.uuid}')"
