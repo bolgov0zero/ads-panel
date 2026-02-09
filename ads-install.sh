@@ -80,9 +80,8 @@ fi
 # Этап 2: Создание скрипта управления 'ads' (без sudo, в ~/bin)
 sleep 1
 echo -ne "[ ] Установка скрипта 'ads'.\r"
-# Создаём директорию ~/bin, если её нет
+apt install -y jq > /dev/null 2>&1
 mkdir -p ~/bin
-# Создаём файл ~/bin/ads
 cat << 'EOF' > ~/bin/ads
 #!/bin/bash
 
