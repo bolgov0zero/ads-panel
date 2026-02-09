@@ -60,25 +60,57 @@
 
     <!-- Вкладки -->
     <div class="mb-8">
-        <div class="flex border-b border-gray-600 space-x-1 sm:space-x-2">
-            <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('fileTab')">
-                <i class="fas fa-file mr-2"></i>Файлы
-            </button>
-            <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('clientTab')">
-                <i class="fas fa-desktop mr-2"></i>Устройства
-            </button>
-            <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('playlistTab')">
-                <i class="fas fa-list mr-2"></i>Плейлисты
-            </button>
-            <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('messageTab')">
-                <i class="fas fa-comment mr-2"></i>Сообщение
-            </button>
-            <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('helpTab')">
-                <i class="fas fa-question-circle mr-2"></i>Справка
-            </button>
-            <button class="tab-button px-4 py-1 text-sm sm:text-base font-medium bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-t-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="openTab('settingsTab')">
-                <i class="fas fa-cog mr-2"></i>Настройки
-            </button>
+        <!-- Общая рамка вокруг кнопок -->
+        <div class="border border-[#374151] rounded-lg overflow-hidden bg-gray-800/50 backdrop-blur-sm">
+            <div class="flex flex-wrap gap-1.5 p-2">
+                <button class="tab-button flex-1 min-w-[100px] px-4 py-2.5 text-sm sm:text-base font-medium 
+                               bg-gray-700/80 hover:bg-gray-600/80 text-gray-300 
+                               transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                               border border-transparent data-[active=true]:bg-blue-600/90 data-[active=true]:text-white data-[active=true]:shadow-md data-[active=true]:border-blue-500/40"
+                        onclick="openTab('fileTab')" data-tab="fileTab">
+                    <i class="fas fa-file mr-2"></i>Файлы
+                </button>
+    
+                <button class="tab-button flex-1 min-w-[100px] px-4 py-2.5 text-sm sm:text-base font-medium 
+                               bg-gray-700/80 hover:bg-gray-600/80 text-gray-300 
+                               transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                               border border-transparent data-[active=true]:bg-blue-600/90 data-[active=true]:text-white data-[active=true]:shadow-md data-[active=true]:border-blue-500/40"
+                        onclick="openTab('clientTab')" data-tab="clientTab">
+                    <i class="fas fa-desktop mr-2"></i>Устройства
+                </button>
+    
+                <button class="tab-button flex-1 min-w-[100px] px-4 py-2.5 text-sm sm:text-base font-medium 
+                               bg-gray-700/80 hover:bg-gray-600/80 text-gray-300 
+                               transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                               border border-transparent data-[active=true]:bg-blue-600/90 data-[active=true]:text-white data-[active=true]:shadow-md data-[active=true]:border-blue-500/40"
+                        onclick="openTab('playlistTab')" data-tab="playlistTab">
+                    <i class="fas fa-list mr-2"></i>Плейлисты
+                </button>
+    
+                <button class="tab-button flex-1 min-w-[100px] px-4 py-2.5 text-sm sm:text-base font-medium 
+                               bg-gray-700/80 hover:bg-gray-600/80 text-gray-300 
+                               transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                               border border-transparent data-[active=true]:bg-blue-600/90 data-[active=true]:text-white data-[active=true]:shadow-md data-[active=true]:border-blue-500/40"
+                        onclick="openTab('messageTab')" data-tab="messageTab">
+                    <i class="fas fa-comment mr-2"></i>Сообщение
+                </button>
+    
+                <button class="tab-button flex-1 min-w-[100px] px-4 py-2.5 text-sm sm:text-base font-medium 
+                               bg-gray-700/80 hover:bg-gray-600/80 text-gray-300 
+                               transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                               border border-transparent data-[active=true]:bg-blue-600/90 data-[active=true]:text-white data-[active=true]:shadow-md data-[active=true]:border-blue-500/40"
+                        onclick="openTab('helpTab')" data-tab="helpTab">
+                    <i class="fas fa-question-circle mr-2"></i>Справка
+                </button>
+    
+                <button class="tab-button flex-1 min-w-[100px] px-4 py-2.5 text-sm sm:text-base font-medium 
+                               bg-gray-700/80 hover:bg-gray-600/80 text-gray-300 
+                               transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                               border border-transparent data-[active=true]:bg-blue-600/90 data-[active=true]:text-white data-[active=true]:shadow-md data-[active=true]:border-blue-500/40"
+                        onclick="openTab('settingsTab')" data-tab="settingsTab">
+                    <i class="fas fa-cog mr-2"></i>Настройки
+                </button>
+            </div>
         </div>
     </div>
 

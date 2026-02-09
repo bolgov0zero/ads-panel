@@ -340,19 +340,27 @@ async function sendTestTelegramMessage() {
 }
 
 function openTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-    document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('bg-blue-600', 'text-white');
-        btn.classList.add('bg-gray-800', 'text-gray-100');
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.add('hidden');
     });
-    document.getElementById(tabId).classList.remove('hidden');
-    document.querySelector(`button[onclick="openTab('${tabId}')"]`).classList.add('bg-blue-600', 'text-white');
-    if (tabId === 'helpTab') {
-        renderHelpContent();
-    } else if (tabId === 'settingsTab') {
-        loadTelegramSettings();
-        loadSystemName();
+
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.removeAttribute('data-active');
+    });
+
+    const targetTab = document.getElementById(tabId);
+    if (targetTab) {
+        targetTab.classList.remove('hidden');
     }
+
+    const activeButton = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
+    if (activeButton) {
+        activeButton.setAttribute('data-active', 'true');
+    }
+
+    try {
+        localStorage.setItem('lastOpenedTab', tabId);
+    } catch {}
 }
 
 function showNotification(message, bgClass = 'bg-green-500') {
