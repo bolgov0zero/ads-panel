@@ -19,7 +19,8 @@ async function loadVersion() {
 
 function renderHelpContent() {
     const helpContent = document.getElementById('helpContent');
-    helpContent.innerHTML = marked.parse(helpMarkdown);
+    // helpContent.innerHTML = marked.parse(helpMarkdown);
+    helpContent.innerHTML = helpMarkdown;
 }
 
 async function checkUserExists() {
