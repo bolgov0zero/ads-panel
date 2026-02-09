@@ -145,27 +145,6 @@ async function loadClients() {
     }
 }
 
-// Функция загрузки настроек минимального разрешения
-async function loadResolutionSettings() {
-    try {
-        const response = await fetch('api.php?action=get_resolution_settings');
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const settings = await response.json();
-        
-        MIN_REQUIRED_WIDTH = settings.min_width || 1920;
-        MIN_REQUIRED_HEIGHT = settings.min_height || 1080;
-        
-        console.log('Настройки разрешения загружены:', settings);
-    } catch (err) {
-        console.error('Ошибка загрузки настроек разрешения:', err);
-        // Используем значения по умолчанию
-        MIN_REQUIRED_WIDTH = 1920;
-        MIN_REQUIRED_HEIGHT = 1080;
-    }
-}
-
 // Функция обновления карточки клиента (компактный стиль)
 function updateClientCard(card, client) {
     const isOnline = client.status === 'online';
@@ -270,13 +249,12 @@ function updateClientCard(card, client) {
                  onclick="editResolution(this, '${client.uuid}')">
                 <span>мин:</span>
                 <span class="font-mono">${minResolutionText}</span>
-                <i class="fas fa-pencil-alt text-gray-600 text-[10px]"></i>
             </div>
         </div>
 
         <!-- Последнее появление -->
         <div class="mt-2 text-xs text-gray-500">
-            Был в сети: ${formatLastSeen(client.last_seen)}
+            В сети: ${formatLastSeen(client.last_seen)}
         </div>
     `;
 }
@@ -651,7 +629,7 @@ function formatLastSeen(last_seen) {
     const now = Math.floor(Date.now() / 1000);
     const diff = now - parsed;
     
-    if (diff <= 10) return 'только что';
+    if (diff <= 10) return 'сейчас';
     if (diff < 60) return `${diff}с назад`;
     if (diff < 3600) {
         const m = Math.floor(diff / 60);
