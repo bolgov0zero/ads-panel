@@ -197,8 +197,9 @@ function updateClientCard(card, client) {
             : 'text-red-400';
 
     card.innerHTML = `
-        <!-- Верхняя панель: статус и кнопки -->
+        <!-- Верхняя панель: статус, имя, кнопки -->
         <div class="flex justify-between items-center mb-2">
+            <!-- Левая часть: статус + имя -->
             <div class="flex items-center gap-2 min-w-0 flex-1">
                 <div class="flex-shrink-0">
                     <div class="status-dot ${isOnline ? 'status-online' : 'status-offline'}"></div>
@@ -212,44 +213,57 @@ function updateClientCard(card, client) {
                 </div>
             </div>
 
+            <!-- Правая часть: кнопки управления (маленькие) -->
             <div class="flex items-center gap-1 flex-shrink-0">
+                <!-- Перезапуск -->
                 <button class="p-1 rounded hover:bg-gray-700 transition-colors ${isPlaying ? 'text-green-400' : 'text-red-400 hover:bg-red-900'}" 
                         ${isPlaying ? 'disabled' : ''} 
                         onclick="restartPlayback('${client.uuid}')"
                         title="${isPlaying ? 'Воспроизводится' : 'Перезапустить'}">
                     <i class="fas ${isPlaying ? 'fa-play' : 'fa-stop'} text-xs"></i>
                 </button>
+
+                <!-- Показать/скрыть UUID -->
                 <button class="p-1 rounded hover:bg-gray-700 transition-colors" 
                         onclick="toggleShowInfo('${client.uuid}')"
                         title="${client.show_info ? 'Скрыть UUID' : 'Показать UUID'}">
                     <i class="fas fa-eye${client.show_info ? '' : '-slash'} ${client.show_info ? 'text-green-400' : 'text-gray-400'} text-xs"></i>
                 </button>
+
+                <!-- Кнопка УДАЛЕНИЯ устройства -->
+                <button class="p-1 rounded hover:bg-red-900/50 transition-colors text-red-400 hover:text-red-300"
+                        onclick="deleteClient('${client.uuid}')"
+                        title="Удалить устройство">
+                    <i class="fas fa-trash-alt text-xs"></i>
+                </button>
             </div>
         </div>
 
-        <!-- UUID -->
+        <!-- UUID (мелкий) -->
         <div class="mb-2">
-            <div class="text-xs text-gray-400 font-mono truncate select-all" title="${client.uuid}">
+            <div class="text-xs text-gray-500 font-mono truncate select-all" title="${client.uuid}">
                 ${client.uuid}
             </div>
         </div>
 
-        <!-- Разрешение (кликабельное для редактирования минимума) -->
-        <div class="flex items-center gap-2">
-            <i class="fas fa-desktop text-gray-400 text-xs" title="Разрешение экрана / минимальная планка"></i>
-            <div class="border ${resolutionBorderClass} border-2 rounded-md px-2 py-0.5 bg-gray-800 flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
-                 onclick="editResolution(this, '${client.uuid}')"
-                 title="Текущее: ${resolutionText} | Минимальная планка: ${minResolutionText}\nНажмите, чтобы изменить минимум для этого устройства">
-                <span class="resolution-display ${resolutionTextClass} font-mono text-xs">
-                    ${resolutionText}
-                </span>
-                <input type="text" class="hidden resolution-input bg-gray-900 border border-gray-600 rounded px-1 py-0.5 text-xs font-mono text-white w-28 focus:outline-none focus:border-blue-500"
-                       value="${minResolutionText}"
-                       onblur="saveResolution(this, '${client.uuid}')"
-                       onkeydown="if(event.key === 'Enter') this.blur();">
+        <!-- Разрешение (текущее + минимальное) -->
+        <div class="flex items-center gap-3">
+            <!-- Текущее разрешение в рамке -->
+            <div class="flex items-center gap-2">
+                <i class="fas fa-desktop text-gray-400 text-xs"></i>
+                <div class="border ${resolutionBorderClass} border-2 rounded-md px-2 py-0.5 bg-gray-800 flex items-center gap-1 cursor-default">
+                    <span class="resolution-display ${resolutionTextClass} font-mono text-xs">
+                        ${resolutionText}
+                    </span>
+                </div>
             </div>
-            <div class="text-xs text-gray-500">
-                мин: ${minResolutionText}
+
+            <!-- Минимальное разрешение (редактируемое) -->
+            <div class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer hover:text-gray-300 transition-colors"
+                 onclick="editResolution(this, '${client.uuid}')">
+                <span>мин:</span>
+                <span class="font-mono">${minResolutionText}</span>
+                <i class="fas fa-pencil-alt text-gray-600 text-[10px]"></i>
             </div>
         </div>
 
