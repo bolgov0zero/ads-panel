@@ -276,33 +276,35 @@ function updateClientCard(card, client) {
 
 // Редактирование минимального разрешения
 function editResolution(element, uuid) {
-    if (isEditingName || isEditingResolution) return;
-    
     isEditingResolution = true;
+    
     const container = element;
-    const display = container.querySelector('.resolution-display');
-    const input = container.querySelector('.resolution-input');
+    const displaySpan = container.querySelector('span.font-mono');
+    const currentValue = displaySpan.textContent.trim();
     
-    display.classList.add('hidden');
-    input.classList.remove('hidden');
-    input.focus();
-    input.select();
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'bg-gray-800 border border-gray-600 rounded px-1 py-0.5 text-xs font-mono text-white w-28 focus:outline-none focus:border-blue-500';
+    input.value = currentValue === '—' ? '' : currentValue;
+    input.placeholder = '1920×1080';
     
-    // Обработчик для клика вне поля
-    const clickOutsideHandler = (e) => {
-        if (!container.contains(e.target)) {
-            input.blur();
+    input.onblur = () => saveResolution(input, uuid);
+    input.onkeydown = (e) => {
+        if (e.key === 'Enter') input.blur();
+        if (e.key === 'Escape') {
+            container.innerHTML = `
+                <span>мин:</span>
+                <span class="font-mono">${currentValue}</span>
+                <i class="fas fa-pencil-alt text-gray-600 text-[10px]"></i>
+            `;
+            isEditingResolution = false;
         }
     };
     
-    setTimeout(() => {
-        document.addEventListener('click', clickOutsideHandler);
-    }, 10);
-    
-    // Убираем обработчик после blur
-    input.addEventListener('blur', () => {
-        document.removeEventListener('click', clickOutsideHandler);
-    }, { once: true });
+    container.innerHTML = '';
+    container.appendChild(input);
+    input.focus();
+    input.select();
 }
 
 // Обработка нажатия клавиш при редактировании разрешения
@@ -319,10 +321,12 @@ function handleResolutionKeydown(event, input, uuid) {
 // Сохранение нового минимального разрешения
 async function saveResolution(input, uuid) {
     isEditingResolution = false;
-
+    
     const value = input.value.trim();
     const { width: newMinW, height: newMinH } = parseResolutionInput(value);
-
+    
+    const container = input.parentElement;
+    
     if (newMinW > 0 && newMinH > 0) {
         try {
             const response = await fetch('api.php', {
@@ -335,41 +339,45 @@ async function saveResolution(input, uuid) {
                     min_height: newMinH
                 })
             });
-
+            
             const result = await response.json();
-
-            if (result.error) {
-                throw new Error(result.error);
-            }
-
-            // Обновляем локальные данные
+            if (result.error) throw new Error(result.error);
+            
+            // обновляем локальные данные
             const client = clientsData.find(c => c.uuid === uuid);
             if (client) {
                 client.min_width = newMinW;
                 client.min_height = newMinH;
             }
-
-            showNotification(`Минимальное разрешение для устройства обновлено: ${newMinW}×${newMinH}`);
-
-            // Перерисовываем все карточки (или можно только эту)
-            await reloadAllCards();  // предполагается, что функция reloadAllCards существует
-
+            
+            showNotification(`Мин. разрешение: ${newMinW}×${newMinH}`);
+            
+            // перерисовываем карточки
+            await reloadAllCards();
+            
         } catch (err) {
-            console.error('Ошибка сохранения минимального разрешения:', err);
-            showNotification('Ошибка сохранения: ' + err.message, 'bg-red-500');
-            // Восстанавливаем старое значение в поле
-            input.value = getResolutionInputValue(client?.min_width || 0, client?.min_height || 0);
+            showNotification('Ошибка сохранения', 'bg-red-500');
+            console.error(err);
         }
+    } else if (value === '') {
+        // если очистили поле — можно сбросить минимум (по желанию)
+        showNotification('Мин. разрешение сброшено', 'bg-yellow-600');
+        // здесь можно отправить запрос на сброс min_width/min_height = 0
     } else {
-        showNotification('Некорректный формат. Пример: 1920×1080', 'bg-red-500');
+        showNotification('Неверный формат (пример: 1920×1080)', 'bg-red-500');
     }
-
-    // Возвращаем отображение
-    const container = input.closest('div.border-2');
-    if (container) {
-        container.querySelector('.resolution-display').classList.remove('hidden');
-    }
-    input.classList.add('hidden');
+    
+    // восстанавливаем отображение
+    const client = clientsData.find(c => c.uuid === uuid);
+    const displayValue = (client?.min_width > 0 && client?.min_height > 0) 
+        ? `${client.min_width}×${client.min_height}` 
+        : '—';
+    
+    container.innerHTML = `
+        <span>мин:</span>
+        <span class="font-mono">${displayValue}</span>
+        <i class="fas fa-pencil-alt text-gray-600 text-[10px]"></i>
+    `;
 }
 
 // Функция перезагрузки всех карточек
@@ -493,29 +501,59 @@ async function restartPlayback(uuid) {
 
 function editName(element, uuid) {
     isEditingName = true;
+    
     const display = element;
-    const input = element.closest('.client-card').querySelector('.name-input');
+    const card = display.closest('.client-card');
+    const input = card.querySelector('.name-input') || document.createElement('input');
+    
+    if (!card.querySelector('.name-input')) {
+        input.type = 'text';
+        input.className = 'bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm font-medium text-white w-full focus:outline-none focus:border-blue-500';
+        input.value = display.textContent.trim();
+        input.style.display = 'none';
+        display.parentNode.insertBefore(input, display.nextSibling);
+    }
+    
     display.classList.add('hidden');
     input.classList.remove('hidden');
     input.focus();
     input.select();
+    
+    input.onblur = () => saveName(input, uuid);
+    input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+            input.blur();
+        }
+        if (e.key === 'Escape') {
+            input.value = display.textContent;
+            display.classList.remove('hidden');
+            input.classList.add('hidden');
+            isEditingName = false;
+        }
+    };
 }
 
 async function saveName(input, uuid) {
     isEditingName = false;
+    
     const newName = input.value.trim() || 'Без имени';
     const card = input.closest('.client-card');
     const display = card.querySelector('.name-display');
+    
     display.textContent = newName;
     display.title = newName;
-    input.classList.add('hidden');
     display.classList.remove('hidden');
+    input.classList.add('hidden');
 
     try {
         const response = await fetch('api.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'update_client_name', uuid, name: newName })
+            body: JSON.stringify({
+                action: 'update_client_name',
+                uuid: uuid,
+                name: newName
+            })
         });
         
         const result = await response.json();
@@ -523,20 +561,20 @@ async function saveName(input, uuid) {
             throw new Error(result.error);
         }
         
-        // Обновляем данные клиента
+        // Обновляем локальные данные
         const client = clientsData.find(c => c.uuid === uuid);
-        if (client) {
-            client.name = newName;
-        }
+        if (client) client.name = newName;
         
-        // Обновляем селектор
-        const select = document.getElementById('clientSelect');
-        updateClientSelect(select);
+        // Обновляем выпадающий список устройств
+        updateClientSelect(document.getElementById('clientSelect'));
         
         showNotification('Имя устройства обновлено');
+        
     } catch (err) {
         console.error('Ошибка сохранения имени:', err);
-        showNotification('Ошибка сохранения имени', 'bg-red-500');
+        showNotification('Не удалось сохранить имя', 'bg-red-500');
+        // откатываем визуально
+        display.textContent = client?.name || 'Без имени';
     }
 }
 
