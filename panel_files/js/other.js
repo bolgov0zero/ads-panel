@@ -1,3 +1,10 @@
+const helpMarkdown = `
+- Кнопка Сканировать ищет файлы и добавляет их в базу, если они были загружены вручную(например через sftp) или Ads Panel была переустановлена.
+- Поддерживается загрузка файлов до 500мб.
+- Переконвертировать файлы в формат MP4 можно тут: [freeconvert.com](https://www.freeconvert.com/mp4-converter "https://www.freeconvert.com/mp4-converter")
+- PDF только с горизонтальной ориентацией и только одностраничные.
+`;
+
 async function loadVersion() {
     try {
         const response = await fetch('version.json');
@@ -8,6 +15,12 @@ async function loadVersion() {
         console.error('Ошибка загрузки версии:', err);
         document.getElementById('appVersion').textContent = 'Неизвестно';
     }
+}
+
+function renderHelpContent() {
+    const helpContent = document.getElementById('helpContent');
+    // helpContent.innerHTML = marked.parse(helpMarkdown);
+    helpContent.innerHTML = helpMarkdown;
 }
 
 async function checkUserExists() {
@@ -328,37 +341,32 @@ async function sendTestTelegramMessage() {
 }
 
 function openTab(tabId) {
-    // скрываем все вкладки
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-    
-    // сбрасываем активный стиль у кнопок
-    document.querySelectorAll('.tab-button').forEach(b => {
-        b.classList.remove('bg-blue-600', 'text-white');
-        b.classList.add('bg-gray-700/70', 'text-gray-300'); // или ваши дефолтные классы
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.add('hidden');
     });
 
-    // показываем нужную
-    document.getElementById(tabId)?.classList.remove('hidden');
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('bg-gray-800', 'text-gray-100');
+    });
 
-    // активируем кнопку (лучше по data-атрибуту, если он есть)
-    const btn = document.querySelector(`.tab-button[data-tab="${tabId}"]`) ||
-                document.querySelector(`button[onclick="openTab('${tabId}')"]`);
+    const targetTab = document.getElementById(tabId);
+    if (targetTab) {
+        targetTab.classList.remove('hidden');
+    }
+
+    const activeButton = document.querySelector(`button[onclick="openTab('${tabId}')"]`);
+    if (activeButton) {
+        activeButton.classList.add('bg-blue-600', 'text-white');
+        activeButton.classList.remove('bg-gray-800', 'text-gray-100');
+    }
     
-    if (btn) {
-        btn.classList.add('bg-blue-600', 'text-white');
-        btn.classList.remove('bg-gray-700/70', 'text-gray-300');
-    }
-
-    // если хотите — возвращаем запоминание вкладки
-    // localStorage.setItem('lastOpenedTab', tabId);
-
-    // логика для конкретных вкладок
-    if (tabId === 'settingsTab') {
-        loadSystemName();
-        loadTelegramSettings();
-    }
     if (tabId === 'helpTab') {
         renderHelpContent();
+    }
+    else if (tabId === 'settingsTab') {
+        loadSystemName();
+        loadTelegramSettings();
     }
 }
 
