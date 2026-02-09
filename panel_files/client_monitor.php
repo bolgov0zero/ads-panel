@@ -124,8 +124,6 @@ function checkResolutionAndNotify($db, $bot_token, $chat_id, $system_name) {
                     $message = "<b>Система:</b> <i>$system_name</i>\n";
                     $message .= "<blockquote><b>Устройство:</b> <i>{$row['name']}</i>\n";
                     $message .= "<b>Монитор:</b> 🚨 аномальное разрешение\n";
-                    $message .= "<b>Текущее:</b> <code>{$width}×{$height}</code>\n";
-                    $message .= "<b>Минимум:</b> <code>{$min_width}×{$min_height}</code>\n";
                     $message .= "<b>UUID:</b> <code>{$row['uuid']}</code></blockquote>";
                     
                     if (sendTelegramMessage($bot_token, $chat_id, $message)) {
@@ -163,8 +161,6 @@ function checkResolutionAndNotify($db, $bot_token, $chat_id, $system_name) {
                         $message = "<b>Система:</b> <i>$system_name</i>\n";
                         $message .= "<blockquote><b>Устройство:</b> <i>{$row['name']}</i>\n";
                         $message .= "<b>Монитор:</b> ✅ разрешение восстановлено\n";
-                        $message .= "<b>Текущее:</b> <code>{$width}×{$height}</code>\n";
-                        $message .= "<b>Минимум:</b> <code>{$min_width}×{$min_height}</code>\n";
                         $message .= "<b>UUID:</b> <code>{$row['uuid']}</code></blockquote>";
                         
                         if (sendTelegramMessage($bot_token, $chat_id, $message)) {
