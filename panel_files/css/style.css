@@ -74,9 +74,15 @@ canvas#pdfCanvas {
 }
 
 .footer-bg {
-    background-color: rgba(15, 15, 15, 1);
-    border-color: #333232fc !important;
-    border: 0.2px solid;
+    background-color: rgba(31, 41, 55, 1);
+    border-color: #374151ff !important;
+    border: 1px solid;
+}
+
+.box-bg {
+    background-color: rgba(31, 41, 55, 1);
+    border-color: #374151ff !important;
+    border: 1px solid;
 }
 
 @keyframes marquee {
@@ -272,7 +278,9 @@ canvas#pdfCanvas {
 
 /* === СПРАВКА === */
 .help-content {
-    background-color: #1f2937;
+    background-color: rgba(31, 41, 55, 1);
+    border-color: #374151ff !important;
+    border: 1px solid;
     padding: 2rem;
     border-radius: 0.5rem;
     color: #e5e7eb;
