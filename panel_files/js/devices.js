@@ -205,7 +205,7 @@ function updateClientCard(card, client) {
                     <div class="status-dot ${isOnline ? 'status-online' : 'status-offline'}"></div>
                 </div>
                 <div class="min-w-0 flex-1 h-7 flex items-center relative">
-                    <div class="text-sm font-medium text-gray-100 truncate name-display cursor-pointer hover:text-blue-300 transition-colors flex-1 translate-y-[1px]"
+                    <div class="text-sm font-medium text-gray-100 truncate name-display cursor-pointer hover:text-blue-300 transition-colors flex-1 translate-y-[2px]"
                          onclick="editName(this, '${client.uuid}')"
                          title="${client.name}">
                         ${client.name}
