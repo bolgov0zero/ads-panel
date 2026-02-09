@@ -1,10 +1,3 @@
-const helpMarkdown = `
-- Кнопка Сканировать ищет файлы и добавляет их в базу, если они были загружены вручную(например через sftp) или Ads Panel была переустановлена.
-- Поддерживается загрузка файлов до 500мб.
-- Переконвертировать файлы в формат MP4 можно тут: [freeconvert.com](https://www.freeconvert.com/mp4-converter "https://www.freeconvert.com/mp4-converter")
-- PDF только с горизонтальной ориентацией и только одностраничные.
-`;
-
 async function loadVersion() {
     try {
         const response = await fetch('version.json');
@@ -15,12 +8,6 @@ async function loadVersion() {
         console.error('Ошибка загрузки версии:', err);
         document.getElementById('appVersion').textContent = 'Неизвестно';
     }
-}
-
-function renderHelpContent() {
-    const helpContent = document.getElementById('helpContent');
-    // helpContent.innerHTML = marked.parse(helpMarkdown);
-    helpContent.innerHTML = helpMarkdown;
 }
 
 async function checkUserExists() {
