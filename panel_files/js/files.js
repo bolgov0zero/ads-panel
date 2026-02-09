@@ -194,7 +194,7 @@ async function loadFiles() {
 
                     <!-- Длительность -->
                     <div class="col-span-2 text-center">
-                        <div class="text-gray-300 font-mono text-sm bg-gray-700 rounded-lg py-1 border border-gray-600">
+                        <div class="text-gray-300 font-mono text-xs bg-gray-700 rounded-lg py-1 border border-gray-600">
                             ${formatDuration(duration)}
                         </div>
                     </div>
