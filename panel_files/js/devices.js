@@ -204,14 +204,16 @@ function updateClientCard(card, client) {
                 <div class="flex-shrink-0">
                     <div class="status-dot ${isOnline ? 'status-online' : 'status-offline'}"></div>
                 </div>
+                // Блок имени внутри карточки
                 <div class="min-w-0 flex-1 relative">
-                    <div class="text-sm font-medium text-gray-100 truncate name-display cursor-pointer hover:text-blue-300 transition-colors" 
-                         onclick="editName(this, '${client.uuid}')" 
+                    <div class="text-sm font-medium text-gray-100 truncate name-display cursor-pointer hover:text-blue-300 transition-colors"
+                         onclick="editName(this, '${client.uuid}')"
                          title="${client.name}">
                         ${client.name}
                     </div>
-                    
-                    <input type="text" class="name-input hidden absolute inset-0 bg-gray-800 border border-blue-500 rounded px-2 py-1 text-sm font-medium text-white focus:outline-none z-10"
+                
+                    <input type="text"
+                           class="name-input hidden absolute inset-0 bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-sm font-medium text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 z-10"
                            value="${client.name}"
                            onblur="saveName(this, '${client.uuid}')"
                            onkeydown="if(event.key==='Enter') this.blur(); if(event.key==='Escape') {this.value='${client.name}'; this.classList.add('hidden'); this.previousElementSibling.classList.remove('hidden'); isEditingName=false;}">
