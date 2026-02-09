@@ -328,27 +328,38 @@ async function sendTestTelegramMessage() {
 }
 
 function openTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.add('hidden');
+    // скрываем все вкладки
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+    
+    // сбрасываем активный стиль у кнопок
+    document.querySelectorAll('.tab-button').forEach(b => {
+        b.classList.remove('bg-blue-600', 'text-white');
+        b.classList.add('bg-gray-700/70', 'text-gray-300'); // или ваши дефолтные классы
     });
 
-    document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.removeAttribute('data-active');
-    });
+    // показываем нужную
+    document.getElementById(tabId)?.classList.remove('hidden');
 
-    const targetTab = document.getElementById(tabId);
-    if (targetTab) {
-        targetTab.classList.remove('hidden');
+    // активируем кнопку (лучше по data-атрибуту, если он есть)
+    const btn = document.querySelector(`.tab-button[data-tab="${tabId}"]`) ||
+                document.querySelector(`button[onclick="openTab('${tabId}')"]`);
+    
+    if (btn) {
+        btn.classList.add('bg-blue-600', 'text-white');
+        btn.classList.remove('bg-gray-700/70', 'text-gray-300');
     }
 
-    const activeButton = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
-    if (activeButton) {
-        activeButton.setAttribute('data-active', 'true');
-    }
+    // если хотите — возвращаем запоминание вкладки
+    // localStorage.setItem('lastOpenedTab', tabId);
 
-    try {
-        localStorage.setItem('lastOpenedTab', tabId);
-    } catch {}
+    // логика для конкретных вкладок
+    if (tabId === 'settingsTab') {
+        loadSystemName();
+        loadTelegramSettings();
+    }
+    if (tabId === 'helpTab') {
+        renderHelpContent();
+    }
 }
 
 function showNotification(message, bgClass = 'bg-green-500') {
