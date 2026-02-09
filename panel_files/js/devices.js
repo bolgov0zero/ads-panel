@@ -2,12 +2,11 @@
 let clientsData = [];
 let isEditingName = false; // Флаг для отслеживания редактирования имени
 let isEditingResolution = false; // Флаг для отслеживания редактирования разрешения
-let MIN_REQUIRED_WIDTH = 1920; // Минимальная ширина (по умолчанию)
-let MIN_REQUIRED_HEIGHT = 1080; // Минимальная высота (по умолчанию)
 
 // Функция проверки соответствия минимальному разрешению
-function checkResolution(minWidth, minHeight, currentWidth, currentHeight) {
-    return currentWidth >= minWidth && currentHeight >= minHeight;
+function checkResolution(clientMinW, clientMinH, currentW, currentH) {
+    if (clientMinW === 0 || clientMinH === 0) return true; // ещё не установлено → считаем OK
+    return currentW >= clientMinW && currentH >= clientMinH;
 }
 
 // Функция получения класса для рамки разрешения
@@ -92,40 +91,36 @@ function getResolutionInputValue(width, height) {
 async function loadClients() {
     try {
         if (isEditingName || isEditingResolution) return; // Не обновляем во время редактирования
-        
-        // Загружаем настройки минимального разрешения
-        await loadResolutionSettings();
-        
+
         const response = await fetch('api.php?action=list_clients_with_sizes');
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
         clientsData = await response.json();
+
         const grid = document.getElementById('clientsGrid');
         const clientSelect = document.getElementById('clientSelect');
 
-        // Очищаем сетку клиентов
+        // Очищаем существующие карточки
         const existingCards = Array.from(grid.querySelectorAll('.client-card'));
         const existingUuids = new Set(existingCards.map(card => card.getAttribute('data-uuid')));
         const newUuids = new Set(clientsData.map(client => client.uuid));
 
-        // Обновляем или создаем карточки клиентов
+        // Обновляем / создаём карточки
         clientsData.forEach(client => {
             let card = grid.querySelector(`.client-card[data-uuid="${client.uuid}"]`);
-            
+
             if (!card) {
-                // Создаем новую карточку
                 card = document.createElement('div');
                 card.className = 'client-card bg-gray-800 rounded-lg p-3 shadow border border-gray-700 hover:border-gray-600 transition-all duration-150';
                 card.setAttribute('data-uuid', client.uuid);
                 grid.appendChild(card);
             }
-            
-            // Обновляем содержимое карточки
+
             updateClientCard(card, client);
         });
 
-        // Удаляем карточки клиентов, которых больше нет
+        // Удаляем карточки, которых больше нет
         existingCards.forEach(card => {
             const uuid = card.getAttribute('data-uuid');
             if (!newUuids.has(uuid)) {
@@ -133,10 +128,10 @@ async function loadClients() {
             }
         });
 
-        // Обновляем список в селекторе плейлистов
+        // Обновляем выпадающий список в плейлистах
         updateClientSelect(clientSelect);
 
-        // Показываем/скрываем сообщение о пустом списке
+        // Показываем/скрываем сообщение об отсутствии устройств
         const noClientsMessage = document.getElementById('noClientsMessage');
         if (clientsData.length === 0) {
             noClientsMessage.classList.remove('hidden');
@@ -175,35 +170,48 @@ async function loadResolutionSettings() {
 function updateClientCard(card, client) {
     const isOnline = client.status === 'online';
     const isPlaying = client.playback_status === 'playing';
-    
-    // Информация о разрешении
+
+    // Данные о разрешении
     const hasResolution = client.width > 0 && client.height > 0;
-    const resolutionText = getResolutionText(client);
-    const resolutionBorderClass = getResolutionBorderClass(client.width, client.height, hasResolution);
-    const resolutionTextClass = getResolutionTextClass(client.width, client.height, hasResolution);
+    const resolutionText = hasResolution 
+        ? (client.resolution && client.resolution !== '' ? client.resolution : `${client.width}×${client.height}`)
+        : 'Неизвестно';
+
+    const minW = client.min_width || 0;
+    const minH = client.min_height || 0;
+    const minResolutionText = (minW > 0 && minH > 0) ? `${minW}×${minH}` : '—';
+
     const meetsRequirements = hasResolution && 
-        checkResolution(MIN_REQUIRED_WIDTH, MIN_REQUIRED_HEIGHT, client.width, client.height);
-    
-    // Текущее минимальное разрешение
-    const minResolutionText = `${MIN_REQUIRED_WIDTH}×${MIN_REQUIRED_HEIGHT}`;
-    
+        (minW === 0 || minH === 0 || (client.width >= minW && client.height >= minH));
+
+    const resolutionBorderClass = !hasResolution 
+        ? 'border-gray-500' 
+        : meetsRequirements 
+            ? 'border-green-500' 
+            : 'border-red-500';
+
+    const resolutionTextClass = !hasResolution 
+        ? 'text-gray-400' 
+        : meetsRequirements 
+            ? 'text-green-400' 
+            : 'text-red-400';
+
     card.innerHTML = `
         <!-- Верхняя панель: статус и кнопки -->
         <div class="flex justify-between items-center mb-2">
-            <!-- Статус и имя -->
             <div class="flex items-center gap-2 min-w-0 flex-1">
                 <div class="flex-shrink-0">
                     <div class="status-dot ${isOnline ? 'status-online' : 'status-offline'}"></div>
                 </div>
                 <div class="min-w-0 flex-1">
                     <div class="text-sm font-medium text-gray-100 truncate name-display cursor-pointer hover:text-blue-300 transition-colors" 
-                         onclick="editName(this, '${client.uuid}')" title="${client.name}">
+                         onclick="editName(this, '${client.uuid}')" 
+                         title="${client.name}">
                         ${client.name}
                     </div>
                 </div>
             </div>
-            
-            <!-- Кнопки управления -->
+
             <div class="flex items-center gap-1 flex-shrink-0">
                 <button class="p-1 rounded hover:bg-gray-700 transition-colors ${isPlaying ? 'text-green-400' : 'text-red-400 hover:bg-red-900'}" 
                         ${isPlaying ? 'disabled' : ''} 
@@ -218,74 +226,36 @@ function updateClientCard(card, client) {
                 </button>
             </div>
         </div>
-        
+
         <!-- UUID -->
         <div class="mb-2">
             <div class="text-xs text-gray-400 font-mono truncate select-all" title="${client.uuid}">
                 ${client.uuid}
             </div>
         </div>
-        
-        <!-- Поле редактирования имени -->
-        <input type="text" class="hidden name-input w-full p-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-gray-100 mb-2" 
-               value="${client.name}" 
-               onblur="saveName(this, '${client.uuid}')" 
-               onkeydown="if(event.key==='Enter') this.blur()">
-        
-        <!-- Нижняя панель: статус и время -->
-        <div class="flex flex-col gap-2">
-            <div class="flex justify-between items-center text-xs">
-                <div class="flex items-center gap-1">
-                    <span class="text-gray-500">${formatLastSeen(client.last_seen)}</span>
-                    <span class="text-gray-600">•</span>
-                    <span class="${isPlaying ? 'text-green-500' : 'text-red-500'}">
-                        ${isPlaying ? '▶ Воспр.' : '⏹ Стоп'}
-                    </span>
-                </div>
-                <button onclick="deleteClient('${client.uuid}')" 
-                        class="text-gray-500 hover:text-red-500 p-0.5 hover:bg-red-500 hover:bg-opacity-10 rounded transition-colors"
-                        title="Удалить устройство">
-                    <i class="fas fa-trash text-xs"></i>
-                </button>
+
+        <!-- Разрешение (кликабельное для редактирования минимума) -->
+        <div class="flex items-center gap-2">
+            <i class="fas fa-desktop text-gray-400 text-xs" title="Разрешение экрана / минимальная планка"></i>
+            <div class="border ${resolutionBorderClass} border-2 rounded-md px-2 py-0.5 bg-gray-800 flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+                 onclick="editResolution(this, '${client.uuid}')"
+                 title="Текущее: ${resolutionText} | Минимальная планка: ${minResolutionText}\nНажмите, чтобы изменить минимум для этого устройства">
+                <span class="resolution-display ${resolutionTextClass} font-mono text-xs">
+                    ${resolutionText}
+                </span>
+                <input type="text" class="hidden resolution-input bg-gray-900 border border-gray-600 rounded px-1 py-0.5 text-xs font-mono text-white w-28 focus:outline-none focus:border-blue-500"
+                       value="${minResolutionText}"
+                       onblur="saveResolution(this, '${client.uuid}')"
+                       onkeydown="if(event.key === 'Enter') this.blur();">
             </div>
-            
-            <!-- Информация о разрешении экрана -->
-            <div class="flex items-center gap-2">
-                <i class="fas fa-desktop text-gray-400 text-xs" title="Разрешение экрана устройства / Минимальное требование: ${minResolutionText}"></i>
-                <div class="border ${resolutionBorderClass} border-2 rounded-md px-2 py-0.5 bg-gray-800 flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity" 
-                     onclick="editResolution(this, '${client.uuid}')"
-                     title="Нажмите чтобы изменить минимальное разрешение. Текущее: ${resolutionText}, Минимальное: ${minResolutionText}">
-                    <!-- Отображаемое разрешение -->
-                    <span class="resolution-display ${resolutionTextClass} font-mono text-xs">
-                        ${resolutionText}
-                    </span>
-                    
-                    <!-- Поле для ввода разрешения -->
-                    <input type="text" 
-                           class="hidden resolution-input bg-transparent border-none outline-none text-xs font-mono w-20 ${resolutionTextClass}" 
-                           value="${minResolutionText}"
-                           onblur="saveResolution(this, '${client.uuid}')" 
-                           onkeydown="handleResolutionKeydown(event, this, '${client.uuid}')">
-                    
-                    <!-- Иконки состояния -->
-                    ${!meetsRequirements && hasResolution ? `
-                        <i class="fas fa-exclamation-triangle text-red-400 text-xs" 
-                           title="Ниже минимального разрешения (${MIN_REQUIRED_WIDTH}×${MIN_REQUIRED_HEIGHT})"></i>
-                    ` : ''}
-                    ${meetsRequirements && hasResolution ? `
-                        <i class="fas fa-check text-green-400 text-xs" 
-                           title="Соответствует минимальному разрешению"></i>
-                    ` : ''}
-                    ${!hasResolution ? `
-                        <i class="fas fa-question text-gray-400 text-xs" 
-                           title="Разрешение неизвестно"></i>
-                    ` : ''}
-                </div>
-                <div class="text-xs text-gray-500 text-center italic">
-                    Мин: ${minResolutionText}
-                </div>
+            <div class="text-xs text-gray-500">
+                мин: ${minResolutionText}
             </div>
-            
+        </div>
+
+        <!-- Последнее появление -->
+        <div class="mt-2 text-xs text-gray-500">
+            Последнее: ${formatLastSeen(client.last_seen)}
         </div>
     `;
 }
@@ -335,57 +305,57 @@ function handleResolutionKeydown(event, input, uuid) {
 // Сохранение нового минимального разрешения
 async function saveResolution(input, uuid) {
     isEditingResolution = false;
-    
-    const newValue = input.value.trim();
-    const container = input.closest('.border-2');
-    const display = container.querySelector('.resolution-display');
-    
-    // Парсим введенное значение
-    const { width, height } = parseResolutionInput(newValue);
-    
-    if (width > 0 && height > 0) {
-        // Сохраняем на сервере
+
+    const value = input.value.trim();
+    const { width: newMinW, height: newMinH } = parseResolutionInput(value);
+
+    if (newMinW > 0 && newMinH > 0) {
         try {
             const response = await fetch('api.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    action: 'update_resolution_settings',
-                    min_width: width,
-                    min_height: height
+                    action: 'update_client_min_resolution',
+                    uuid: uuid,
+                    min_width: newMinW,
+                    min_height: newMinH
                 })
             });
-            
+
             const result = await response.json();
+
             if (result.error) {
                 throw new Error(result.error);
             }
-            
-            // Обновляем локальные настройки
-            MIN_REQUIRED_WIDTH = width;
-            MIN_REQUIRED_HEIGHT = height;
-            
-            // Показываем уведомление
-            showNotification(`Минимальное разрешение обновлено: ${width}×${height}`);
-            
-            // Обновляем все карточки
-            await reloadAllCards();
-            
+
+            // Обновляем локальные данные
+            const client = clientsData.find(c => c.uuid === uuid);
+            if (client) {
+                client.min_width = newMinW;
+                client.min_height = newMinH;
+            }
+
+            showNotification(`Минимальное разрешение для устройства обновлено: ${newMinW}×${newMinH}`);
+
+            // Перерисовываем все карточки (или можно только эту)
+            await reloadAllCards();  // предполагается, что функция reloadAllCards существует
+
         } catch (err) {
-            console.error('Ошибка сохранения разрешения:', err);
-            showNotification('Ошибка сохранения разрешения: ' + err.message, 'bg-red-500');
-            // Восстанавливаем исходное значение в поле
-            input.value = `${MIN_REQUIRED_WIDTH}×${MIN_REQUIRED_HEIGHT}`;
+            console.error('Ошибка сохранения минимального разрешения:', err);
+            showNotification('Ошибка сохранения: ' + err.message, 'bg-red-500');
+            // Восстанавливаем старое значение в поле
+            input.value = getResolutionInputValue(client?.min_width || 0, client?.min_height || 0);
         }
     } else {
-        // Некорректный ввод
-        showNotification('Некорректный формат разрешения. Используйте: "1920×1080"', 'bg-red-500');
-        input.value = `${MIN_REQUIRED_WIDTH}×${MIN_REQUIRED_HEIGHT}`;
+        showNotification('Некорректный формат. Пример: 1920×1080', 'bg-red-500');
     }
-    
+
     // Возвращаем отображение
+    const container = input.closest('div.border-2');
+    if (container) {
+        container.querySelector('.resolution-display').classList.remove('hidden');
+    }
     input.classList.add('hidden');
-    display.classList.remove('hidden');
 }
 
 // Функция перезагрузки всех карточек
