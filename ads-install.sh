@@ -130,7 +130,10 @@ echo ""
 echo "1. Запустить Ads Panel"
 echo "2. Перезапустить Ads Panel"
 echo "3. Обновить Ads Panel"
-echo -e "4. \e[31mЗавершить Ads Panel\e[0m"
+echo ""
+echo ""
+echo -e "4. \e[31mПересоздать Ads Panel\e[0m"
+echo -e "5. \e[31mЗавершить Ads Panel\e[0m"
 echo ""
 echo -e "\e[32mПанель администратора:\e[0m https://${HOST_IP}/admin.html"
 echo -e "\e[33mИли нажмите Enter чтобы проверить обновления.\e[0m"
@@ -167,6 +170,15 @@ case $choice in
         ads
         ;;
     4)
+        clear
+        echo "Пересоздание Ads Panel..."
+        docker compose up -d --force-recreate > /dev/null 2>&1
+        echo "Пересоздание Ads Panel завершено!"
+        sleep 2
+        clear
+        ads
+        ;;
+    5)
         clear
         echo "Завершение Ads Panel..."
         docker compose down > /dev/null 2>&1
