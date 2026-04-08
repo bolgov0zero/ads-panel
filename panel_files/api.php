@@ -11,7 +11,15 @@ function logMessage($message) {
 try {
     // Подключение к SQLite3
     $db = new SQLite3('/data/ads.db');
-    $db->busyTimeout(5000);
+    
+    // === Настройки для высокой конкурентности (WAL + таймаут) ===
+    $db->busyTimeout(10000);                    // 10 секунд ожидания разблокировки
+    $db->exec('PRAGMA journal_mode = WAL;');    // Главное — включаем WAL режим
+    $db->exec('PRAGMA synchronous = NORMAL;');  // Баланс скорости и безопасности
+    $db->exec('PRAGMA cache_size = -16000;');   // ~64 МБ кэша в памяти
+    $db->exec('PRAGMA temp_store = MEMORY;');
+    
+    logMessage("SQLite инициализирован: journal_mode=WAL, busy_timeout=10000");
 
     // Проверка корректности входного JSON
     $input = file_get_contents('php://input');
