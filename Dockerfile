@@ -108,7 +108,13 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf && \
     { \
         echo "display_errors = Off"; \
         echo "display_startup_errors = Off"; \
+        echo "log_errors = On"; \
+        echo "error_reporting = E_ALL"; \
+        echo "error_log = /dev/stderr"; \
     } > /usr/local/etc/php/conf.d/errors.ini
+    
+RUN ln -sf /dev/stdout /var/log/apache2/access.log && \
+    ln -sf /dev/stderr /var/log/apache2/error.log
 
 # Открываем порты
 EXPOSE 80 443
