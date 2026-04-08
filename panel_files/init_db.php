@@ -5,7 +5,7 @@ header('Content-Type: text/html; charset=UTF-8');
 $db_path = '/data/ads.db';
 
 try {
-    // Проверяем, существует ли директория /data и доступна ли она для записи
+    // Проверка директории
     $data_dir = '/data';
     if (!is_dir($data_dir)) {
         throw new Exception("Директория $data_dir не существует");
@@ -14,17 +14,26 @@ try {
         throw new Exception("Директория $data_dir не доступна для записи");
     }
 
-    // Подключение к SQLite3
+    // ==================== ПОДКЛЮЧЕНИЕ И НАСТРОЙКА SQLITE ====================
     $db = new SQLite3($db_path);
-    $db->busyTimeout(5000);
 
-    // Функция для проверки существования таблицы
+    // Оптимальные настройки для многопользовательской работы
+    $db->busyTimeout(10000);                    // 10 секунд ожидания разблокировки
+    $db->exec('PRAGMA journal_mode = WAL;');    // Самое важное изменение
+    $db->exec('PRAGMA synchronous = NORMAL;');
+    $db->exec('PRAGMA cache_size = -20000;');   // ≈ 80 МБ кэша в памяти
+    $db->exec('PRAGMA temp_store = MEMORY;');
+    $db->exec('PRAGMA foreign_keys = ON;');
+
+    echo "✅ SQLite успешно настроен в режиме <strong>WAL</strong> (busy_timeout = 15s)<br><br>";
+
+    // Функция проверки существования таблицы
     function tableExists($db, $tableName) {
         $result = $db->querySingle("SELECT name FROM sqlite_master WHERE type='table' AND name='$tableName'");
         return $result !== null;
     }
 
-    // Функция для проверки существования столбца в таблице
+    // Функция проверки существования столбца
     function columnExists($db, $tableName, $columnName) {
         $result = $db->query("PRAGMA table_info($tableName)");
         while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
@@ -35,7 +44,7 @@ try {
         return false;
     }
 
-    // Определение структуры таблиц
+    // ==================== ОПИСАНИЕ ТАБЛИЦ ====================
     $tables = [
         'users' => [
             'create' => "
@@ -72,17 +81,17 @@ try {
                 ['name' => 'thumbnail', 'type' => 'TEXT', 'constraints' => 'DEFAULT \'\'']
             ],
             'initial_data' => function ($db) {
-                // Добавляем ads.pdf ТОЛЬКО если его нет в БД
                 $stmt = $db->prepare("SELECT COUNT(*) FROM files WHERE file_url = '/ads.pdf'");
                 $count = $stmt->execute()->fetchArray(SQLITE3_NUM)[0];
-            
+           
                 if ($count == 0 && file_exists('/var/www/html/ads.pdf')) {
                     $stmt = $db->prepare("
                         INSERT INTO files 
-                        (file_url, name, type, duration, order_num, is_default) 
+                        (file_url, name, type, duration, order_num, is_default)
                         VALUES ('/ads.pdf', 'ads.pdf', 'pdf', 5, 0, 1)
                     ");
                     $stmt->execute();
+                    echo "Системный файл ads.pdf добавлен.<br>";
                 }
             }
         ],
@@ -148,7 +157,8 @@ try {
             'initial_data' => function ($db) {
                 $result = $db->querySingle("SELECT COUNT(*) FROM message_settings");
                 if ($result == 0) {
-                    $db->exec("INSERT INTO message_settings (id, enabled, text, color, font_size, speed, bold, background_color) VALUES (1, 0, '', '#ffffff', 24, 100, 0, '#000000')");
+                    $db->exec("INSERT INTO message_settings (id, enabled, text, color, font_size, speed, bold, background_color) 
+                               VALUES (1, 0, '', '#ffffff', 24, 100, 0, '#000000')");
                 }
             }
         ],
@@ -248,35 +258,37 @@ try {
         ]
     ];
 
-    // Создание или обновление таблиц
+    // ==================== СОЗДАНИЕ / ОБНОВЛЕНИЕ ТАБЛИЦ ====================
     foreach ($tables as $tableName => $tableDef) {
-        // Создаём таблицу, если она не существует
         if (!tableExists($db, $tableName)) {
             $db->exec($tableDef['create']);
-            echo "Таблица $tableName создана.<br>";
+            echo "✅ Таблица <strong>$tableName</strong> создана.<br>";
         }
 
-        // Проверяем и добавляем новые столбцы
+        // Добавление недостающих столбцов
         foreach ($tableDef['columns'] as $column) {
             if (!columnExists($db, $tableName, $column['name'])) {
-                $constraints = isset($column['constraints']) ? $column['constraints'] : '';
+                $constraints = $column['constraints'] ?? '';
                 $db->exec("ALTER TABLE $tableName ADD COLUMN {$column['name']} {$column['type']} $constraints");
-                echo "Столбец {$column['name']} добавлен в таблицу $tableName.<br>";
+                echo "➕ Столбец <strong>{$column['name']}</strong> добавлен в таблицу $tableName.<br>";
             }
         }
 
-        // Выполняем вставку начальных данных, если она определена
+        // Выполнение начальных данных
         if (isset($tableDef['initial_data']) && is_callable($tableDef['initial_data'])) {
             $tableDef['initial_data']($db);
         }
     }
 
-    // Установка прав на файл базы данных
-    chmod($db_path, 0664);
+    // Установка прав на файл базы
+    chmod($db_path, 0666);
+    echo "<br>✅ Права на файл БД установлены (0666)<br>";
 
-    echo 'База данных успешно инициализирована. <a href="admin.html">Перейти в админ-панель</a>';
+    echo '<br><strong style="color:green;">База данных успешно инициализирована и настроена в режиме WAL!</strong><br>';
+    echo '<a href="admin.html">→ Перейти в админ-панель</a>';
+
 } catch (Exception $e) {
-    echo 'Ошибка инициализации базы данных: ' . $e->getMessage();
+    echo '<strong style="color:red;">Ошибка инициализации базы данных:</strong> ' . $e->getMessage();
 } finally {
     if (isset($db)) {
         $db->close();
